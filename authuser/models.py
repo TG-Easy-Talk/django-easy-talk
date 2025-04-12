@@ -1,22 +1,21 @@
 from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import PermissionsMixin
-from django.contrib.auth.models import UserManager
+from django.contrib.auth.models import PermissionsMixin, UserManager
 from django.utils import timezone
 from django.db import models
 
 
-class CustomUserManager(UserManager):
+class UsuarioManager(UserManager):
     def _create_user(self, email, password=None, **extra_fields):
         """
-        Create and return a user with an email and password.
+        Cria e retorna um usuário com email e senha.
         """
         if not email:
-            raise ValueError('The Email field must be set')
+            raise ValueError('O campo Email deve ser preenchido.')
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
+        usuario = self.model(email=email, **extra_fields)
+        usuario.set_password(password)
+        usuario.save(using=self._db)
+        return usuario
 
     def create_user(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
@@ -25,48 +24,48 @@ class CustomUserManager(UserManager):
 
     def create_superuser(self, email, password=None, **extra_fields):
         """
-        Create and return a superuser with an email and password.
+        Cria e retorna um superusuário (administrador) com email e senha.
         """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
         if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
+            raise ValueError('O superusuário precisa ter is_staff=True.')
         if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+            raise ValueError('O superusuário precisa ter is_superuser=True.')
 
-        return self.create_user(email, password, **extra_fields)
+        return self._create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class Usuario(AbstractBaseUser, PermissionsMixin):
     """
-    Custom user model that uses email as the unique identifier.
+    Modelo de usuário personalizado que utiliza o email como identificador único.
     """
     email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
+    nome = models.CharField(max_length=30, blank=True)
+    sobrenome = models.CharField(max_length=30, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-    date_joined = models.DateTimeField(default=timezone.now)
-    last_login = models.DateTimeField(blank=True, null=True)
+    data_criacao = models.DateTimeField(default=timezone.now)
+    ultimo_login = models.DateTimeField(blank=True, null=True)
 
-    objects = CustomUserManager()
+    objects = UsuarioManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+    EMAIL_FIELD = 'email'
 
     class Meta:
-        verbose_name = 'user'
-        verbose_name_plural = 'users'
+        verbose_name = 'Usuário'
+        verbose_name_plural = 'Usuários'
         ordering = ['email']
 
     def get_full_name(self):
         """
-        Return the user's full name.
+        Retorna o nome completo do usuário.
         """
-        return f"{self.first_name} {self.last_name}".strip()
+        return f"{self.nome} {self.sobrenome}".strip()
 
-
-def __str__(self):
-    return self.email
+    def __str__(self):
+        return self.email

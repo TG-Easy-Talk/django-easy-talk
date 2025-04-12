@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 'ordering': ['email'],
             },
             managers=[
-                ('objects', authuser.models.CustomUserManager()),
+                ('objects', authuser.models.UsuarioManager()),
             ],
         ),
     ]
