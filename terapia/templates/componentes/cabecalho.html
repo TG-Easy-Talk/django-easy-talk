@@ -1,19 +1,9 @@
-<nav class="navbar navbar-expand-md bg-body fixed-top" data-bs-theme="dark">
+{# Esse if será mudado para checar se o usuário está logado #}
+<header class="navbar {% if False %}navbar-expand-md{% else %}navbar-expand-sm{% endif %} bg-body fixed-top" data-bs-theme="dark">
     <div class="container-fluid">
 
         <a class="navbar-brand font-family-easy-talk-logo" href="#">EasyTalk</a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
-            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-            aria-label="Toggle navigation">
-            {% load static %}
-            {% comment %} <span class="navbar-toggler-icon"></span> {% endcomment %}
-            Usuário
-            <img src="{% static 'img/foto_de_perfil.jpg' %}" class="rounded-circle" style="width: 1.5em; height: 1.5em;">
-            {% comment %} <div class="navbar-toggler-icon" style="--bs-navbar-toggler-icon-bg: null;">
-                <img src="{% static 'img/foto_de_perfil.jpg' %}" class="z-3 rounded-circle">
-            </div> {% endcomment %}
-        </button>
-
+        
         <div class="offcanvas offcanvas-end" tabindex="-1" id="navbarSupportedContent"
             aria-labelledby="navbarSupportedContentLabel">
             <div class="offcanvas-header">
@@ -21,7 +11,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body">
-                <ul class="navbar-nav my-2 justify-content-end flex-grow-1 align-items-md-center">
+                <ul class="navbar-nav my-2 justify-content-end flex-grow-1 align-items-sm-center">
                     {% if False %} {# Esse if será mudado para checar se o usuário está logado #}
                         <li class="nav-item">
                             <a class="nav-link" href="#">Home</a>
@@ -51,10 +41,27 @@
                         <li class="nav-item">
                             <a class="nav-link" href="#">Minhas consultas</a>
                         </li>
-                        <div class="d-none d-md-block m-0 mx-md-2 vr text-primary opacity-100"></div>
+                        <div class="d-none d-sm-block m-0 mx-sm-2 vr text-primary opacity-100"></div>
                     {% endif %}
                 </ul>
             </div>
         </div>
+        {% if False %} {# Esse if será mudado para checar se o usuário está logado #}
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        {% else %}
+            <div class="navbar-nav">
+                <div class="nav-item hstack d-sm-none" role="button" data-bs-toggle="offcanvas" data-bs-target="#navbarSupportedContent">
+                    {% include 'componentes/cabecalho/usuario.html' %}
+                </div>
+
+                <div class="nav-item hstack d-none d-sm-flex">
+                    {% include 'componentes/cabecalho/usuario.html' %}
+                </div>
+            </div>
+        {% endif %}
     </div>
-</nav>
+</header>
