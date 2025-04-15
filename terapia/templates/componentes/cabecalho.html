@@ -1,5 +1,5 @@
 {# Esse if será mudado para checar se o usuário está logado #}
-<header class="navbar {% if False %}navbar-expand-md{% else %}navbar-expand-sm{% endif %} bg-body fixed-top" data-bs-theme="dark">
+<header class="navbar {% if True %}navbar-expand-md{% else %}navbar-expand-sm{% endif %} bg-body fixed-top" data-bs-theme="dark">
     <div class="container-fluid">
 
         <a class="navbar-brand font-family-easy-talk-logo" href="#">EasyTalk</a>
@@ -11,8 +11,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body">
-                <ul class="navbar-nav my-2 justify-content-end flex-grow-1 align-items-sm-center">
-                    {% if False %} {# Esse if será mudado para checar se o usuário está logado #}
+                <ul class="navbar-nav my-2 justify-content-end flex-grow-1 {% if True %}align-items-md-center{% else %}align-items-sm-center{% endif %}">
+                    {% if True %} {# Esse if será mudado para checar se o usuário está logado #}
                         <li class="nav-item">
                             <a class="nav-link" href="#">Home</a>
                         </li>
@@ -39,14 +39,14 @@
                             <a class="nav-link" href="#">Profissionais</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Minhas consultas</a>
+                            <a class="nav-link text-nowrap" href="#">Minhas consultas</a>
                         </li>
                         <div class="d-none d-sm-block m-0 mx-sm-2 vr text-primary opacity-100"></div>
                     {% endif %}
                 </ul>
             </div>
         </div>
-        {% if False %} {# Esse if será mudado para checar se o usuário está logado #}
+        {% if True %} {# Esse if será mudado para checar se o usuário está logado #}
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                 aria-label="Toggle navigation">
