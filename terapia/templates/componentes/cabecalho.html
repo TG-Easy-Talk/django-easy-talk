@@ -5,7 +5,13 @@
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
             data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
             aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+            {% load static %}
+            {% comment %} <span class="navbar-toggler-icon"></span> {% endcomment %}
+            Usuário
+            <img src="{% static 'img/foto_de_perfil.jpg' %}" class="rounded-circle" style="width: 1.5em; height: 1.5em;">
+            {% comment %} <div class="navbar-toggler-icon" style="--bs-navbar-toggler-icon-bg: null;">
+                <img src="{% static 'img/foto_de_perfil.jpg' %}" class="z-3 rounded-circle">
+            </div> {% endcomment %}
         </button>
 
         <div class="offcanvas offcanvas-end" tabindex="-1" id="navbarSupportedContent"
@@ -45,7 +51,7 @@
                         <li class="nav-item">
                             <a class="nav-link" href="#">Minhas consultas</a>
                         </li>
-                        <div class="vr text-primary opacity-100"></div>
+                        <div class="d-none d-md-block m-0 mx-md-2 vr text-primary opacity-100"></div>
                     {% endif %}
                 </ul>
             </div>
