@@ -16,8 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from authuser.views import PacienteCreateView, PsicologoCreateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Rotas de authuser:
+    path('', include('authuser.urls')),
+
+    # Rotas de login/logout do Django:
+    path('accounts/', include('django.contrib.auth.urls')),
     path('', include('terapia.urls'))
 ]
