@@ -11,7 +11,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body">
-                <ul class="navbar-nav my-2 justify-content-end flex-grow-1 {% if True %}align-items-md-center{% else %}align-items-sm-center{% endif %}">
+                <ul class="navbar-nav my-2 justify-content-end flex-grow-1
+                {% if True %}align-items-md-center{% else %}align-items-sm-center{% endif %}">
                     {% if True %} {# Esse if será mudado para checar se o usuário está logado #}
                         <li class="nav-item">
                             <a class="nav-link" href="#">Home</a>

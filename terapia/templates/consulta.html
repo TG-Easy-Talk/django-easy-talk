@@ -7,18 +7,45 @@
 {% block rodape %}{% endblock %}
 
 {% block conteudo %}
-<div class="container-fluid vh-100 bg-black p-3 position-relative" data-bs-theme="dark">
-    <section class="w-100 h-100 bg-body">
-        <div class="w-100 rounded-4 camera-desligada-bg position-relative" style="height: 90%;">
+<div class="w-100 vh-100 bg-black p-3" data-bs-theme="dark">
+    <main class="w-100 h-100 position-relative">
+
+        <section class="w-100 rounded-4 camera-desligada-bg position-relative" style="height: 90%;">
             <img class="rounded-circle position-absolute top-50 start-50 translate-middle"
             style="width: 6em; height: 6em;"
             src="{% static 'img/foto_de_perfil.jpg' %}"
             alt="Foto de perfil">
 
             <div class="bg-black bg-opacity-50 rounded-bottom-left-4 rounded-top-right-4 position-absolute bottom-0 start-0 px-3 py-1">
-                <h5 class="text-center text-white fw-medium mb-0">Jéssica</h5>
+                <h6 class="text-center text-white fw-medium mb-0">Jéssica</h6>
             </div>
-        </div>
-    </section>
+
+            <div class="d-block d-sm-none position-absolute bottom-0 end-0 p-2">
+                {% include 'componentes/consulta/frame_menor.html' with width_px='200' %}
+            </div>
+        </section>
+
+        <section class="container-fluid position-absolute bottom-0">
+            <div class="row align-items-end" style="height: 200px;">
+                <div class="col-auto text-body">09:43</div>
+                <div class="col hstack align-items-end justify-content-end gap-3">
+                    <button class="btn btn-primary rounded-circle position-relative" style="width: 2.5em; aspect-ratio: 1;">
+                        <i class="bi bi-mic-fill text-body position-absolute start-50 top-50 translate-middle"></i>
+                    </button>
+                    <button class="btn btn-danger rounded-circle position-relative" style="width: 2.5em; aspect-ratio: 1;">
+                        <i class="bi bi-camera-video-fill text-body position-absolute start-50 top-50 translate-middle"></i>
+                    </button>
+                    <button class="btn btn-danger rounded-circle position-relative"
+                    style="width: 2.5em; aspect-ratio: 1; transform: rotate(135deg);">
+                        <i class="bi bi-telephone-fill text-body position-absolute start-50 top-50 translate-middle"></i>
+                    </button>
+
+                    <div class="d-none d-sm-block">
+                        {% include 'componentes/consulta/frame_menor.html' with width_px='250' %}
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
 {% endblock %}
