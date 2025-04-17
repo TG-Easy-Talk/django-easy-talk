@@ -13,9 +13,15 @@
 </head>
 
 <body>
-    {% include 'componentes/cabecalho.html' %}
+    {% block cabecalho %}
+        {% include 'componentes/cabecalho.html' %}
+    {% endblock %}
+    
     {% block conteudo %}{% endblock %}
-    {% include 'componentes/rodape.html' %}
+
+    {% block rodape %}
+        {% include 'componentes/rodape.html' %}
+    {% endblock %}
 </body>
 
 </html>

@@ -1,0 +1,159 @@
+////////// Importar Livvic, Karla, and ADLam Display fonts //////////
+@import url('https://fonts.googleapis.com/css2?family=ADLaM+Display&family=Karla:ital,wght@0,200..800;1,200..800&family=Livvic:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,900&display=swap');
+
+
+
+////////// Sobrescrever variáveis antes de importar o Bootstrap //////////
+
+//
+// Fontes
+//
+
+$headings-font-family:  Livvic, sans-serif;
+$font-family-base:      Karla,  sans-serif;
+
+//
+// Headings comuns
+//
+
+$headings-font-weight:  400;
+
+// Tamanhos padrão:
+// $h1-font-size:  $font-size-base * 2.5 !default;
+// $h2-font-size:  $font-size-base * 2 !default;
+// $h3-font-size:  $font-size-base * 1.75 !default;
+// $h4-font-size:  $font-size-base * 1.5 !default;
+// $h5-font-size:  $font-size-base * 1.25 !default;
+// $h6-font-size:  $font-size-base !default;
+
+//
+// Headings de display (maiores e de mais destaque)
+//
+
+$display-font-sizes: (
+    1:  3.5rem,
+    2:  3.25rem,
+    3:  3rem,      // 48px
+    4:  2.75rem,   // 44px
+    5:  2.5rem,    // 40px
+    6:  2.25rem,   // 36px
+);
+
+$display-font-weight: 400;
+
+//
+// Cores de tema
+//
+
+$primary:    #2E8D47;
+$secondary:  #1CDE61;
+$success:    #5EE83B;
+$info:       #1CA4DE;
+$warning:    #ABFC3B;
+$danger:     #FF4343;
+$completed:  #FB951F;
+
+$theme-colors: (
+    "primary":    $primary,
+    "secondary":  $secondary,
+    "success":    $success,
+    "info":       $info,
+    "warning":    $warning,
+    "danger":     $danger,
+    "completed":  $completed,
+);
+
+//
+// Outras cores
+//
+
+$body-color:       black;
+$body-bg:          #F5F5F5;
+$secondary-color:  #7B7B7B;
+$secondary-bg:     $secondary;
+$border-color:     $primary;
+$body-color-dark:  white;
+$body-bg-dark:     #344A2E;
+
+//
+// Navbar
+//
+
+$navbar-padding-y:               0.25rem;
+$navbar-brand-font-size:         1.75rem;
+$navbar-nav-link-padding-x:      1rem;
+$navbar-dark-active-color:       white;
+$navbar-dark-color:              $navbar-dark-active-color;
+$navbar-dark-hover-color:        $navbar-dark-active-color;
+$navbar-dark-icon-color:         $navbar-dark-active-color;
+$navbar-dark-brand-color:        $navbar-dark-active-color;
+$navbar-dark-brand-hover-color:  $navbar-dark-active-color;
+$navbar-toggler-focus-width:     0;
+
+//
+// Botões
+//
+$btn-font-weight: 500;
+
+//
+// Botão de fechar
+//
+
+$btn-close-focus-shadow:  0;
+
+//
+// Offcanvas
+//
+
+$offcanvas-horizontal-width:  300px;
+$offcanvas-border-width:      0;
+$offcanvas-padding-y:         0.5rem;
+$offcanvas-padding-x:         $offcanvas-padding-y * 2;
+
+//
+// Régua vertical (vertical rule)
+//
+
+$vr-border-width: 3px;
+
+//
+// Utilidades
+//
+
+$utilities: (
+    "width": (
+        responsive: true,
+        property: width,
+        class: w,
+        values: (25: 25%,
+            50: 50%,
+            75: 75%,
+            100: 100%,
+            auto: auto
+        )
+    ),
+);
+
+
+
+////////// Por último, importar Bootstrap //////////
+@import "../../node_modules/bootstrap/scss/bootstrap";
+
+
+
+////////// Classes próprias do EasyTalk //////////
+.font-family-easytalk-logo {
+    font-family: 'ADLaM Display', sans-serif;
+}
+
+.camera-desligada-bg {
+    background: radial-gradient(
+      circle at center,
+      #3d7f4c 0%,
+      #2f6f42 40%,
+      #2a5f38 70%,
+      #234f30 100%
+    ),
+    linear-gradient(135deg, #3d7547, #285b35);
+    background-blend-mode: overlay;
+}

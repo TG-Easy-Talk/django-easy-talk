@@ -1,10 +1,25 @@
-////////// Importar Livvic, Karla, and ADLam Display fonts //////////
+/**********************************************************************************************
+Importar fontes
+**********************************************************************************************/
 @import url('https://fonts.googleapis.com/css2?family=ADLaM+Display&family=Karla:ital,wght@0,200..800;1,200..800&family=Livvic:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,900&display=swap');
 
 
 
-////////// Sobrescrever variáveis antes de importar o Bootstrap //////////
 
+
+/**********************************************************************************************
+1. Importar funções do Bootstrap
+**********************************************************************************************/
+@import "../../node_modules/bootstrap/scss/functions";
+
+
+
+
+
+
+/**********************************************************************************************
+2. Sobrescrever variáveis do Bootstrap
+**********************************************************************************************/
 //
 // Fontes
 //
@@ -12,9 +27,22 @@
 $headings-font-family:  Livvic, sans-serif;
 $font-family-base:      Karla,  sans-serif;
 
+//
+// Headings comuns
+//
+
+$headings-font-weight:  400;
+
+// Tamanhos padrão:
+// $h1-font-size:  $font-size-base * 2.5 !default;
+// $h2-font-size:  $font-size-base * 2 !default;
+// $h3-font-size:  $font-size-base * 1.75 !default;
+// $h4-font-size:  $font-size-base * 1.5 !default;
+// $h5-font-size:  $font-size-base * 1.25 !default;
+// $h6-font-size:  $font-size-base !default;
 
 //
-// Tamanhos de cabeçalho de display (maiores e de mais destaque)
+// Headings de display (maiores e de mais destaque)
 //
 
 $display-font-sizes: (
@@ -25,10 +53,6 @@ $display-font-sizes: (
     5:  2.5rem,    // 40px
     6:  2.25rem,   // 36px
 );
-
-//
-// Outras variáveis de cabeçalho de display
-//
 
 $display-font-weight: 400;
 
@@ -107,31 +131,140 @@ $offcanvas-padding-x:         $offcanvas-padding-y * 2;
 
 $vr-border-width: 3px;
 
-//
-// Utilidades
-//
 
-$utilities: (
-    "width": (
+
+
+
+
+/**********************************************************************************************
+3. Importar partes obrigatórias do Bootstrap
+**********************************************************************************************/
+@import "../../node_modules/bootstrap/scss/variables";
+@import "../../node_modules/bootstrap/scss/variables-dark";
+@import "../../node_modules/bootstrap/scss/maps";
+@import "../../node_modules/bootstrap/scss/mixins";
+@import "../../node_modules/bootstrap/scss/root";
+
+
+
+
+
+/**********************************************************************************************
+4. Importar outros componentes opcionais
+**********************************************************************************************/
+@import "../../node_modules/bootstrap/scss/reboot";
+@import "../../node_modules/bootstrap/scss/type";
+@import "../../node_modules/bootstrap/scss/images";
+@import "../../node_modules/bootstrap/scss/containers";
+@import "../../node_modules/bootstrap/scss/grid";
+@import "../../node_modules/bootstrap/scss/tables";
+@import "../../node_modules/bootstrap/scss/forms";
+@import "../../node_modules/bootstrap/scss/buttons";
+@import "../../node_modules/bootstrap/scss/transitions";
+@import "../../node_modules/bootstrap/scss/dropdown";
+@import "../../node_modules/bootstrap/scss/button-group";
+@import "../../node_modules/bootstrap/scss/nav";
+@import "../../node_modules/bootstrap/scss/navbar";
+@import "../../node_modules/bootstrap/scss/card";
+@import "../../node_modules/bootstrap/scss/accordion";
+@import "../../node_modules/bootstrap/scss/breadcrumb";
+@import "../../node_modules/bootstrap/scss/pagination";
+@import "../../node_modules/bootstrap/scss/badge";
+@import "../../node_modules/bootstrap/scss/alert";
+@import "../../node_modules/bootstrap/scss/progress";
+@import "../../node_modules/bootstrap/scss/list-group";
+@import "../../node_modules/bootstrap/scss/close";
+@import "../../node_modules/bootstrap/scss/toasts";
+@import "../../node_modules/bootstrap/scss/modal";
+@import "../../node_modules/bootstrap/scss/tooltip";
+@import "../../node_modules/bootstrap/scss/popover";
+@import "../../node_modules/bootstrap/scss/carousel";
+@import "../../node_modules/bootstrap/scss/spinners";
+@import "../../node_modules/bootstrap/scss/offcanvas";
+@import "../../node_modules/bootstrap/scss/placeholders";
+@import "../../node_modules/bootstrap/scss/helpers";
+
+
+
+
+
+/**********************************************************************************************
+5. Customizar a API de utilidade
+**********************************************************************************************/
+@import "../../node_modules/bootstrap/scss/utilities";
+
+$utilities: map-merge(
+  $utilities,
+  (
+    "width": map-merge(
+      map-get($utilities, "width"),
+      (
         responsive: true,
-        property: width,
-        class: w,
-        values: (25: 25%,
-            50: 50%,
-            75: 75%,
-            100: 100%,
-            auto: auto
+      ),
+    ),
+    "line-height": map-merge(
+      map-get($utilities, "line-height"),
+      (
+        values: map-merge(
+          map-get(map-get($utilities, "line-height"), "values"),
+          (0: 0),
+        ),
+      ),
+    ),
+    "rounded-bottom-left": (
+        property: border-bottom-left-radius,
+        class: rounded-bottom-left,
+        values: (
+            null: var(--#{$prefix}border-radius),
+            0: 0,
+            1: var(--#{$prefix}border-radius-sm),
+            2: var(--#{$prefix}border-radius),
+            3: var(--#{$prefix}border-radius-lg),
+            4: var(--#{$prefix}border-radius-xl),
+            5: var(--#{$prefix}border-radius-xxl),
+            circle: 50%,
+            pill: var(--#{$prefix}border-radius-pill)
+            ),
+        ),
+    "rounded-top-right": (
+        property: border-top-right-radius,
+        class: rounded-top-right,
+        values: (
+            null: var(--#{$prefix}border-radius),
+            0: 0,
+            1: var(--#{$prefix}border-radius-sm),
+            2: var(--#{$prefix}border-radius),
+            3: var(--#{$prefix}border-radius-lg),
+            4: var(--#{$prefix}border-radius-xl),
+            5: var(--#{$prefix}border-radius-xxl),
+            circle: 50%,
+            pill: var(--#{$prefix}border-radius-pill)
         )
     ),
+  )
 );
 
-
-////////// Por último, importar Bootstrap //////////
-@import "../../node_modules/bootstrap/scss/bootstrap";
+@import "../../node_modules/bootstrap/scss/utilities/api";
 
 
 
-////////// Classes próprias do EasyTalk //////////
-.font-family-easy-talk-logo {
+
+
+/**********************************************************************************************
+Classes próprias do EasyTalk
+**********************************************************************************************/
+.font-family-easytalk-logo {
     font-family: 'ADLaM Display', sans-serif;
+}
+
+.camera-desligada-bg {
+    background: radial-gradient(
+      circle at center,
+      #3d7f4c 0%,
+      #2f6f42 40%,
+      #2a5f38 70%,
+      #234f30 100%
+    ),
+    linear-gradient(135deg, #3d7547, #285b35);
+    background-blend-mode: overlay;
 }

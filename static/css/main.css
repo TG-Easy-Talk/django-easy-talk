@@ -1,10 +1,17 @@
 @charset "UTF-8";
+/**********************************************************************************************
+Importar fontes
+**********************************************************************************************/
 @import url("https://fonts.googleapis.com/css2?family=ADLaM+Display&family=Karla:ital,wght@0,200..800;1,200..800&family=Livvic:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,900&display=swap");
-/*!
- * Bootstrap  v5.3.5 (https://getbootstrap.com/)
- * Copyright 2011-2025 The Bootstrap Authors
- * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
- */
+/**********************************************************************************************
+1. Importar funções do Bootstrap
+**********************************************************************************************/
+/**********************************************************************************************
+2. Sobrescrever variáveis do Bootstrap
+**********************************************************************************************/
+/**********************************************************************************************
+3. Importar partes obrigatórias do Bootstrap
+**********************************************************************************************/
 :root,
 [data-bs-theme=light] {
   --bs-blue: #0d6efd;
@@ -180,6 +187,9 @@
   --bs-form-invalid-border-color: #ea868f;
 }
 
+/**********************************************************************************************
+4. Importar outros componentes opcionais
+**********************************************************************************************/
 *,
 *::before,
 *::after {
@@ -217,7 +227,7 @@ h6, .h6, h5, .h5, h4, .h4, h3, .h3, h2, .h2, h1, .h1 {
   margin-top: 0;
   margin-bottom: 0.5rem;
   font-family: Livvic, sans-serif;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.2;
   color: var(--bs-heading-color);
 }
@@ -7059,6 +7069,9 @@ textarea.form-control-lg {
   opacity: 0.25;
 }
 
+/**********************************************************************************************
+5. Customizar a API de utilidade
+**********************************************************************************************/
 .align-baseline {
   vertical-align: baseline !important;
 }
@@ -8297,6 +8310,10 @@ textarea.form-control-lg {
   line-height: 2 !important;
 }
 
+.lh-0 {
+  line-height: 0 !important;
+}
+
 .text-start {
   text-align: left !important;
 }
@@ -9022,6 +9039,78 @@ textarea.form-control-lg {
 
 .z-3 {
   z-index: 3 !important;
+}
+
+.rounded-bottom-left {
+  border-bottom-left-radius: var(--bs-border-radius) !important;
+}
+
+.rounded-bottom-left-0 {
+  border-bottom-left-radius: 0 !important;
+}
+
+.rounded-bottom-left-1 {
+  border-bottom-left-radius: var(--bs-border-radius-sm) !important;
+}
+
+.rounded-bottom-left-2 {
+  border-bottom-left-radius: var(--bs-border-radius) !important;
+}
+
+.rounded-bottom-left-3 {
+  border-bottom-left-radius: var(--bs-border-radius-lg) !important;
+}
+
+.rounded-bottom-left-4 {
+  border-bottom-left-radius: var(--bs-border-radius-xl) !important;
+}
+
+.rounded-bottom-left-5 {
+  border-bottom-left-radius: var(--bs-border-radius-xxl) !important;
+}
+
+.rounded-bottom-left-circle {
+  border-bottom-left-radius: 50% !important;
+}
+
+.rounded-bottom-left-pill {
+  border-bottom-left-radius: var(--bs-border-radius-pill) !important;
+}
+
+.rounded-top-right {
+  border-top-right-radius: var(--bs-border-radius) !important;
+}
+
+.rounded-top-right-0 {
+  border-top-right-radius: 0 !important;
+}
+
+.rounded-top-right-1 {
+  border-top-right-radius: var(--bs-border-radius-sm) !important;
+}
+
+.rounded-top-right-2 {
+  border-top-right-radius: var(--bs-border-radius) !important;
+}
+
+.rounded-top-right-3 {
+  border-top-right-radius: var(--bs-border-radius-lg) !important;
+}
+
+.rounded-top-right-4 {
+  border-top-right-radius: var(--bs-border-radius-xl) !important;
+}
+
+.rounded-top-right-5 {
+  border-top-right-radius: var(--bs-border-radius-xxl) !important;
+}
+
+.rounded-top-right-circle {
+  border-top-right-radius: 50% !important;
+}
+
+.rounded-top-right-pill {
+  border-top-right-radius: var(--bs-border-radius-pill) !important;
 }
 
 @media (min-width: 576px) {
@@ -11953,6 +12042,14 @@ textarea.form-control-lg {
     display: none !important;
   }
 }
-.font-family-easy-talk-logo {
+/**********************************************************************************************
+Classes próprias do EasyTalk
+**********************************************************************************************/
+.font-family-easytalk-logo {
   font-family: "ADLaM Display", sans-serif;
+}
+
+.camera-desligada-bg {
+  background: radial-gradient(circle at center, #3d7f4c 0%, #2f6f42 40%, #2a5f38 70%, #234f30 100%), linear-gradient(135deg, #3d7547, #285b35);
+  background-blend-mode: overlay;
 }/*# sourceMappingURL=main.css.map */
