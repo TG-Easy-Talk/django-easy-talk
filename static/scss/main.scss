@@ -203,18 +203,40 @@ $utilities: map-merge(
         responsive: true,
       ),
     ),
-    "line-height": map-merge(
-      map-get($utilities, "line-height"),
+    "position": map-merge(
+      map-get($utilities, "position"),
       (
-        values: map-merge(
-          map-get(map-get($utilities, "line-height"), "values"),
-          (0: 0),
-        ),
+        responsive: true,
       ),
     ),
-    "rounded-bottom-left": (
-        property: border-bottom-left-radius,
-        class: rounded-bottom-left,
+    "top": map-merge(
+      map-get($utilities, "top"),
+      (
+        responsive: true,
+      ),
+    ),
+    "bottom": map-merge(
+      map-get($utilities, "bottom"),
+      (
+        responsive: true,
+      ),
+    ),
+    "start": map-merge(
+      map-get($utilities, "start"),
+      (
+        responsive: true,
+      ),
+    ),
+    "end": map-merge(
+      map-get($utilities, "end"),
+      (
+        responsive: true,
+      ),
+    ),
+    "rounded-bottom-right": (
+        responsive: true,
+        property: border-bottom-right-radius,
+        class: rounded-bottom-right,
         values: (
             null: var(--#{$prefix}border-radius),
             0: 0,
@@ -228,6 +250,7 @@ $utilities: map-merge(
             ),
         ),
     "rounded-top-right": (
+        responsive: true,
         property: border-top-right-radius,
         class: rounded-top-right,
         values: (
@@ -258,7 +281,7 @@ Classes próprias do EasyTalk
     font-family: 'ADLaM Display', sans-serif;
 }
 
-.camera-desligada-bg {
+.consulta-camera-desligada-bg {
     background: radial-gradient(
       circle at center,
       #3d7f4c 0%,
@@ -268,4 +291,14 @@ Classes próprias do EasyTalk
     ),
     linear-gradient(135deg, #3d7547, #285b35);
     background-blend-mode: overlay;
+}
+
+.consulta-chat-tamanho {
+    width: 100%;
+}
+
+@include media-breakpoint-up(sm) {
+    .consulta-chat-tamanho {
+        width: 250px;
+    }
 }
