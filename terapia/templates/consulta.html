@@ -29,20 +29,22 @@
         style="height: 55px;">
             <div class="text-body mb-2 position-absolute bottom-0 start-0 d-none d-md-block">09:43</div>
             
-            <button class="btn btn-primary rounded-circle position-relative" style="width: 2.5em; aspect-ratio: 1;">
+            <button id="microfoneBotao" class="btn btn-primary rounded-circle position-relative"
+            style="width: 2.5em; aspect-ratio: 1;">
                 <i class="bi bi-mic-fill text-white position-absolute start-50 top-50 translate-middle"></i>
             </button>
-            <button class="btn btn-danger rounded-circle position-relative" style="width: 2.5em; aspect-ratio: 1;">
-                <i class="bi bi-camera-video-fill text-white position-absolute start-50 top-50 translate-middle"></i>
+            <button id="cameraBotao" class="btn btn-danger rounded-circle position-relative"
+            style="width: 2.5em; aspect-ratio: 1;">
+                <i class="bi bi-camera-video-off-fill text-white position-absolute start-50 top-50 translate-middle"></i>
             </button>
             <button class="btn btn-danger rounded-circle position-relative"
             style="width: 2.5em; aspect-ratio: 1; transform: rotate(135deg);">
                 <i class="bi bi-telephone-fill text-white position-absolute start-50 top-50 translate-middle"></i>
             </button>
-            <button class="btn position-relative" style="width: 2.5em; aspect-ratio: 1;"
+            <button id="chatBotao" class="btn position-relative text-body border-0" style="width: 2.5em; aspect-ratio: 1;"
             data-bs-toggle="collapse" data-bs-target="#chatConsulta"
             aria-expanded="false" aria-controls="chatConsulta">
-                <i class="bi bi-chat-right-text text-body position-absolute start-50 top-50 translate-middle"></i>
+                <i class="bi bi-chat-right-text position-absolute start-50 top-50 translate-middle"></i>
             </button>
 
             <div class="d-none d-lg-block">
@@ -63,10 +65,46 @@
                 {% endfor %}
             </main>
             <form action="" class="hstack mx-3">
-                <input class="form-control rounded-pill" placeholder="Digite..." aria-label="Digitar">
+                <input class="form-control form-control-sm rounded-pill" placeholder="Digite..." aria-label="Digitar">
                 <i class="bi bi-send-fill text-primary px-2" role="button" type="submit"></i>
             </form>
         </div>
     </aside>
 </div>
+
+<script>
+    const microfoneBotao = document.getElementById('microfoneBotao');
+    const cameraBotao = document.getElementById('cameraBotao');
+    const chatBotao = document.getElementById('chatBotao');
+    const chatConsulta = document.getElementById('chatConsulta');
+    
+    microfoneBotao.addEventListener('click', () => {
+        if (microfoneBotao.classList.replace('btn-primary', 'btn-danger')) {
+            microfoneBotao.firstElementChild.classList.replace('bi-mic-fill', 'bi-mic-mute-fill')
+        }
+        else {
+            microfoneBotao.classList.replace('btn-danger', 'btn-primary')
+            microfoneBotao.firstElementChild.classList.replace('bi-mic-mute-fill', 'bi-mic-fill')
+        }
+    })
+
+    cameraBotao.addEventListener('click', () => {
+        if (cameraBotao.classList.replace('btn-primary', 'btn-danger')) {
+            cameraBotao.firstElementChild.classList.replace('bi-camera-video-fill', 'bi-camera-video-off-fill')
+        }
+        else {
+            cameraBotao.classList.replace('btn-danger', 'btn-primary')
+            cameraBotao.firstElementChild.classList.replace('bi-camera-video-off-fill', 'bi-camera-video-fill')
+        }
+    })
+
+    const observadorChatConsulta = new MutationObserver(() => {
+        if (chatConsulta.classList.contains('show'))
+            chatBotao.classList.replace('text-body', 'text-primary');
+        else
+            chatBotao.classList.replace('text-primary', 'text-body');
+    });
+
+    observadorChatConsulta.observe(chatConsulta, { attributes: true, attributeFilter: ['class'] });
+</script>
 {% endblock %}
