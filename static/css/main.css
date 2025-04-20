@@ -10464,4 +10464,14 @@ Classes próprias do EasyTalk
   .consulta-chat-tamanho {
     width: 325px;
   }
+}
+@media (min-width: 576px) {
+  .ratio-9x16-sm-16x9 {
+    --bs-aspect-ratio: 16/9;
+  }
+}
+@media (max-width: 575.98px) {
+  .ratio-9x16-sm-16x9 {
+    --bs-aspect-ratio: 9/16;
+  }
 }/*# sourceMappingURL=main.css.map */

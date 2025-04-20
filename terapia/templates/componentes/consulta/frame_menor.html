@@ -1,11 +1,11 @@
 {% load static %}
-<div class="rounded-4 consulta-camera-desligada-bg position-relative" style="width: {{ width_px }}px; aspect-ratio: 16/9;">
-    <img class="rounded-circle position-absolute top-50 start-50 translate-middle"
-    style="width: 3em; height: 3em;"
-    src="{% static 'img/foto_de_perfil.jpg' %}"
-    alt="Foto de perfil">
-
-    {% comment %} <div class="bg-black bg-opacity-50 rounded-bottom-left-4 rounded-top-right-4 position-absolute bottom-0 start-0 px-3 py-1">
-        <h6 class="text-center text-white fw-medium mb-0 small">Amanda</h6>
-    </div> {% endcomment %}
+<div class="rounded-4 consulta-camera-desligada-bg position-relative overflow-hidden" style="width: {{ width_px }}px; aspect-ratio: 16/9;">
+    {% if False %} {# Se a câmera estiver ligada #}
+        <img class="img-fluid" src="{% static 'img/psicologa_na_consulta.jpg' %}">
+    {% else %} {# Se a câmera estiver desligada #}
+        <img class="rounded-circle position-absolute top-50 start-50 translate-middle"
+        style="width: 3em; height: 3em;"
+        src="{% static 'img/foto_de_perfil.jpg' %}"
+        alt="Foto de perfil">
+    {% endif %}
 </div>

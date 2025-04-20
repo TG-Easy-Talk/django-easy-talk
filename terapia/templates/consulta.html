@@ -11,14 +11,18 @@
     <main class="vstack vh-100 p-3">
 
         <section class="rounded-3 consulta-camera-desligada-bg position-relative h-100 overflow-hidden">
-            <img class="rounded-circle position-absolute top-50 start-50 translate-middle"
-            style="width: 6em; height: 6em;"
-            src="{% static 'img/foto_de_perfil.jpg' %}"
-            alt="Foto de perfil">
 
-            <div class="bg-body bg-opacity-50 rounded-bottom-right-3 rounded-bottom-right-md-0 rounded-top-right-md-3 position-absolute bottom-md-0 start-md-0 px-3 py-1">
-                <h6 class="text-center text-body fw-medium mb-0">Jéssica</h6>
-            </div>
+            {% if True %} {# Se a câmera estiver ligada #}
+                <img class="img-fluid object-fit-cover position-absolute top-50 start-50 translate-middle"
+                src="{% static 'img/psicologa_na_consulta.jpg' %}">
+            {% else %}
+                <img class="rounded-circle position-absolute top-50 start-50 translate-middle"
+                style="width: 6em; height: 6em;"
+                src="{% static 'img/foto_de_perfil.jpg' %}"
+                alt="Foto de perfil">
+            {% endif %}
+
+            {% include 'componentes/consulta/nome_canto.html' %}
 
             <div class="d-block d-lg-none position-absolute bottom-0 end-0 p-2">
                 {% include 'componentes/consulta/frame_menor.html' with width_px='200' %}

@@ -274,27 +274,36 @@ $utilities: map-merge(
 Classes próprias do EasyTalk
 **********************************************************************************************/
 .font-family-easytalk-logo {
-    font-family: 'ADLaM Display', sans-serif;
+  font-family: 'ADLaM Display', sans-serif;
 }
 
 .consulta-camera-desligada-bg {
-    background: radial-gradient(
-      circle at center,
-      #3d7f4c 0%,
-      #2f6f42 40%,
-      #2a5f38 70%,
-      #234f30 100%
-    ),
-    linear-gradient(135deg, #3d7547, #285b35);
-    background-blend-mode: overlay;
+  background: radial-gradient(
+    circle at center,
+    #3d7f4c 0%,
+    #2f6f42 40%,
+    #2a5f38 70%,
+    #234f30 100%
+  ),
+  linear-gradient(135deg, #3d7547, #285b35);
+  background-blend-mode: overlay;
 }
 
 .consulta-chat-tamanho {
-    width: 100%;
+  width: 100%;
 }
 
 @include media-breakpoint-up(sm) {
-    .consulta-chat-tamanho {
-        width: 325px;
-    }
+  .consulta-chat-tamanho {
+      width: 325px;
+  }
+}
+
+.ratio-9x16-sm-16x9 {
+  @include media-breakpoint-up(sm) {
+    --bs-aspect-ratio: 16/9;
+  }
+  @include media-breakpoint-down(sm) {
+    --bs-aspect-ratio: 9/16;
+  }
 }
