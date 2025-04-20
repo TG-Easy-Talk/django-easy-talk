@@ -66,6 +66,7 @@ $info:       #1CA4DE;
 $warning:    #ABFC3B;
 $danger:     #FF4343;
 $completed:  #FB951F;
+$dark:       #344A2E;
 
 $theme-colors: (
   "primary":    $primary,
@@ -75,19 +76,21 @@ $theme-colors: (
   "warning":    $warning,
   "danger":     $danger,
   "completed":  $completed,
+  "dark":       $dark,
 );
 
 //
 // Outras cores
 //
 
-$body-color:       black;
-$body-bg:          #F5F5F5;
-$secondary-color:  #7B7B7B;
-$secondary-bg:     $secondary;
-$border-color:     $primary;
-$body-color-dark:  white;
-$body-bg-dark:     #344A2E;
+$body-color:                 black;
+$body-bg:                    #E9E9E9;
+$body-secondary-color:       #7B7B7B;
+$body-secondary-bg:          white;
+$body-color-dark:            white;
+$body-bg-dark:               black;
+$body-secondary-color-dark:  #7B7B7B;
+$body-secondary-bg-dark:     #222427;
 
 //
 // Navbar
@@ -96,12 +99,12 @@ $body-bg-dark:     #344A2E;
 $navbar-padding-y:               0.25rem;
 $navbar-brand-font-size:         1.75rem;
 $navbar-nav-link-padding-x:      1rem;
-$navbar-dark-active-color:       white;
-$navbar-dark-color:              $navbar-dark-active-color;
-$navbar-dark-hover-color:        $navbar-dark-active-color;
-$navbar-dark-icon-color:         $navbar-dark-active-color;
-$navbar-dark-brand-color:        $navbar-dark-active-color;
-$navbar-dark-brand-hover-color:  $navbar-dark-active-color;
+$navbar-light-active-color:       white;
+$navbar-light-color:              $navbar-light-active-color;
+$navbar-light-hover-color:        $navbar-light-active-color;
+$navbar-light-icon-color:         $navbar-light-active-color;
+$navbar-light-brand-color:        $navbar-light-active-color;
+$navbar-light-brand-hover-color:  $navbar-light-active-color;
 $navbar-toggler-focus-width:     0;
 
 //
@@ -109,12 +112,6 @@ $navbar-toggler-focus-width:     0;
 //
 $btn-font-weight:            500;
 $btn-hover-bg-shade-amount:  100%;
-
-//
-// Botão de fechar
-//
-
-$btn-close-focus-shadow:  0;
 
 //
 // Offcanvas
