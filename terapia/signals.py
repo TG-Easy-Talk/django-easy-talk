@@ -13,7 +13,7 @@ def create_paciente_profile(sender, instance, created, **kwargs):
     Ao criar um User, gera automaticamente o Paciente associado.
     """
     if created:
-        Paciente.objects.create(usuario=instance)  # :contentReference[oaicite:4]{index=4}
+        Paciente.objects.create(usuario=instance)
 
 
 @receiver(post_save, sender=User)
