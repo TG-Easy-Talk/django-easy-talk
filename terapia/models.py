@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 
 
 class Paciente(models.Model):
@@ -17,6 +18,12 @@ class Paciente(models.Model):
         verbose_name = "Paciente"
         verbose_name_plural = "Pacientes"
 
+    def clean(self):
+        super().clean()
+        # Checar se já há psicólogo relacionado
+        if hasattr(self.usuario, 'psicologo'):
+            raise ValidationError("Este usuário já está relacionado a um psicólogo.")
+        
     def __str__(self):
         return self.nome
 
@@ -38,7 +45,14 @@ class Psicologo(models.Model):
 
     class Meta:
         verbose_name = "Psicólogo"
+
         verbose_name_plural = "Psicólogos"
 
+    def clean(self):
+        super().clean()
+        # Checar se já há paciente relacionado
+        if hasattr(self.usuario, 'paciente'):
+            raise ValidationError("Este usuário já está relacionado a um paciente.")
+        
     def __str__(self):
         return self.nome_completo
