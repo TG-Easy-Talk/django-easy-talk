@@ -40,11 +40,14 @@ class PsicologoSignUpForm(UserCreationForm):
         fields = ["email", "password1", "password2"]  # Campos exibidos no form
 
     def save(self, commit=True):
-        user = super().save(commit=False)  # Cria User sem salvar no banco :contentReference[oaicite:5]{index=5}
-        user.username = self.cleaned_data["email"]  # Usa o e‑mail como username
+        # 1) Cria o objeto User
+        user = super().save(commit=False)
+        user.username = self.cleaned_data["email"]
         if commit:
-            user.save()  # Salva o User no banco
-        return user  # Não cria o perfil de Psicologo ainda
+            user.save()
+            # 2) Cria imediatamente o perfil de Psicólogo
+            Psicologo.objects.create(usuario=user)
+        return user
 
 
 class PacienteSignUpForm(UserCreationForm):
@@ -65,7 +68,7 @@ class PacienteSignUpForm(UserCreationForm):
             "class": "form-control",
         }),
         help_text="Use ao menos 8 caracteres."
-    )  # PasswordInput com validação de segurança e hash automático :contentReference[oaicite:7]{index=7}
+    )
     password2 = forms.CharField(
         label="Confirme a senha",
         strip=False,
@@ -81,9 +84,11 @@ class PacienteSignUpForm(UserCreationForm):
         fields = ["email", "password1", "password2"]  # Apenas três campos no form
 
     def save(self, commit=True):
-        user = super().save(
-            commit=False)  # Gera instância de User sem salvar ainda :contentReference[oaicite:9]{index=9}
-        user.username = self.cleaned_data["email"]  # E‑mail vira username
+        # 1) Cria o User sem gravar imediatamente
+        user = super().save(commit=False)  # :contentReference[oaicite:0]{index=0}
+        user.username = self.cleaned_data["email"]
         if commit:
-            user.save()  # Persiste no banco
-        return user  # Perfil de Paciente será criado posteriormente
+            user.save()
+            # 2) Cria o perfil de Paciente atrelado ao User
+            Paciente.objects.create(usuario=user)  # :contentReference[oaicite:1]{index=1}
+        return user
