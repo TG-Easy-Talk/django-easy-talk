@@ -16,12 +16,9 @@ class PsicologoInline(admin.StackedInline):
 
 
 admin.site.unregister(Usuario)
-
-
 @admin.register(Usuario)
 class UsuarioAdminComInlines(UsuarioAdmin):
     inlines = [PsicologoInline, PacienteInline]
-
 
 admin.site.register(Psicologo)
 admin.site.register(Paciente)

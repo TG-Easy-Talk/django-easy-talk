@@ -4,15 +4,14 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.non_field_errors }}
-        {% for field in form %}
-            <div class="mb-3">
+        {% for field in form.visible_fields %}
+            <div class="fieldWrapper">
+                {{ field.errors }}
                 {{ field.label_tag }}
                 {{ field }}
-                {{ field.help_text }}
-                {{ field.errors }}
             </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Cadastrar</button>
+        {{ form.hidden_fields }}
+        <button type="submit">Salvar</button>
     </form>
-
 {% endblock %}
