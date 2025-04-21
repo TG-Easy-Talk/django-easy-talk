@@ -9,7 +9,7 @@ class Paciente(models.Model):
         on_delete=models.CASCADE,
         related_name='paciente'
     )
-    # nome = models.CharField("Nome", max_length=100)
+    nome = models.CharField("Nome", max_length=50)
     cpf = models.CharField("CPF", max_length=14, unique=True)
     foto = models.ImageField("Foto", upload_to='pacientes/fotos/', blank=True, null=True)
 
@@ -27,13 +27,13 @@ class Psicologo(models.Model):
         on_delete=models.CASCADE,
         related_name='psicologo'
     )
-    # nome_completo = models.CharField("Nome Completo", max_length=100)
+    nome_completo = models.CharField("Nome Completo", max_length=50)
     crp = models.CharField("CRP", max_length=20, unique=True)
     foto = models.ImageField("Foto", upload_to='psicologos/fotos/', blank=True, null=True)
     sobre_mim = models.TextField("Sobre Mim", blank=True)
-    valor_consulta = models.DecimalField("Valor da Consulta", max_digits=10, decimal_places=2, validators=[
-        MinValueValidator(0)
-    ])
+    valor_consulta = models.DecimalField("Valor da Consulta", max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
     disponibilidade = models.JSONField("Disponibilidade", default=dict, blank=True)
 
     class Meta:
