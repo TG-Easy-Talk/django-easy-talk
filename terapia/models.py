@@ -11,8 +11,8 @@ class Paciente(models.Model):
         on_delete=models.CASCADE,
         related_name='paciente'
     )
-    nome = models.CharField("Nome", max_length=50, blank=True, default="")
-    cpf = models.CharField("CPF", max_length=14, unique=True, blank=True, default="")
+    nome = models.CharField("Nome", max_length=50)
+    cpf = models.CharField("CPF", max_length=14, unique=True)
     foto = models.ImageField("Foto", upload_to='pacientes/fotos/', blank=True, null=True)
 
     class Meta:
@@ -21,12 +21,15 @@ class Paciente(models.Model):
 
     def clean(self):
         super().clean()
-        # Checar se já há psicólogo relacionado
-        if hasattr(self.usuario, 'psicologo'):
+        try:
+            self.usuario
+        except ObjectDoesNotExist:
+            return  # usuário ainda não atribuído, tudo bem
+        if hasattr(self.usuario, 'paciente'):
             raise ValidationError("Este usuário já está relacionado a um psicólogo.")
 
     def __str__(self):
-        return self.nome or f"Paciente #{self.pk}"
+        return self.nome
 
 
 class Psicologo(models.Model):
@@ -35,25 +38,25 @@ class Psicologo(models.Model):
         on_delete=models.CASCADE,
         related_name='psicologo'
     )
-    nome_completo = models.CharField("Nome Completo", max_length=50, blank=True, default="")
-    crp = models.CharField("CRP", max_length=20, unique=True, blank=True, default="")
+    nome_completo = models.CharField("Nome Completo", max_length=50)
+    crp = models.CharField("CRP", max_length=20, unique=True)
     foto = models.ImageField("Foto", upload_to='psicologos/fotos/', blank=True, null=True)
-    sobre_mim = models.TextField("Sobre Mim", blank=True, default="")
-    valor_consulta = models.DecimalField(
-        "Valor da Consulta", max_digits=10, decimal_places=2,
-        default=0, validators=[MinValueValidator(0)]
-    )
+    sobre_mim = models.TextField("Sobre Mim", blank=True)
+    valor_consulta = models.DecimalField("Valor da Consulta", max_digits=10, decimal_places=2,
+                                         validators=[MinValueValidator(0)]
+                                         )
     disponibilidade = models.JSONField("Disponibilidade", default=dict, blank=True)
 
     class Meta:
         verbose_name = "Psicólogo"
+
         verbose_name_plural = "Psicólogos"
 
     def clean(self):
         super().clean()
         # Checar se já há paciente relacionado
-        if hasattr(self.usuario, 'Psiscólogo'):
+        if hasattr(self.usuario, 'paciente'):
             raise ValidationError("Este usuário já está relacionado a um paciente.")
 
     def __str__(self):
-        return self.nome_completo or f"Psicólogo #{self.pk}"
+        return self.nome_completo
