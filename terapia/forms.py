@@ -15,7 +15,7 @@ class PsicologoSignUpForm(UserCreationForm):
             "class": "form-control",
         }),
         help_text="Usaremos este e‑mail para futuras comunicações."
-    )
+    )  # EmailField gera validação automática de formato de e‑mail :contentReference[oaicite:2]{index=2}
     password1 = forms.CharField(
         label="Senha",
         strip=False,
@@ -33,7 +33,7 @@ class PsicologoSignUpForm(UserCreationForm):
             "class": "form-control",
         }),
         help_text="Confirme a senha digitada acima."
-    )
+    )  # Confirmação de senha usando UserCreationForm.Meta.fields :contentReference[oaicite:4]{index=4}
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -59,7 +59,7 @@ class PacienteSignUpForm(UserCreationForm):
             "class": "form-control",
         }),
         help_text="Serão enviados comunicados e confirmações para este e‑mail."
-    )
+    )  # EmailField fornece validação de formato e atributo required :contentReference[oaicite:6]{index=6}
     password1 = forms.CharField(
         label="Senha",
         strip=False,
