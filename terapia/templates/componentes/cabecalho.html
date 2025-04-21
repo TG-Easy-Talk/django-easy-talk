@@ -1,5 +1,6 @@
 {# Esse if será mudado para checar se o usuário está logado #}
-<header class="navbar {% if True %}navbar-expand-md{% else %}navbar-expand-sm{% endif %} text-bg-dark fixed-top">
+<header id="cabecalho"
+class="navbar {% if True %}navbar-expand-md{% else %}navbar-expand-sm{% endif %} text-bg-dark fixed-top">
     <div class="container-fluid">
 
         <a class="navbar-brand font-family-easytalk-logo" href="#">EasyTalk</a>
@@ -66,3 +67,16 @@
         {% endif %}
     </div>
 </header>
+
+<div id="cabecalhoEspaco" class=""></div>
+
+<script>
+    const cabecalhoEspaco = document.getElementById('cabecalhoEspaco');
+    const cabecalho = document.getElementById('cabecalho');
+
+    cabecalhoEspaco.style.height = `${cabecalho.offsetHeight}px`;
+    
+    window.addEventListener('resize', () => {
+        cabecalhoEspaco.style.height = `${cabecalho.offsetHeight}px`;
+    });
+</script>

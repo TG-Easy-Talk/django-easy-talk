@@ -26,19 +26,19 @@ Importar fontes
 
 $headings-font-family:  Livvic, sans-serif;
 $font-family-base:      Karla,  sans-serif;
-$font-size-base:        1rem;
+$font-size-base:        0.875rem;
 
 //
 // Headings comuns
 //
 
 $headings-font-weight:  400;
-$h1-font-size:  $font-size-base * 2;
-$h2-font-size:  $font-size-base * 1.75;
-$h3-font-size:  $font-size-base * 1.5;
-$h4-font-size:  $font-size-base * 1.25;
-$h5-font-size:  $font-size-base * 1.125;
-$h6-font-size:  $font-size-base;
+$h1-font-size:  1rem * 2;
+$h2-font-size:  1rem * 1.75;
+$h3-font-size:  1rem * 1.5;
+$h4-font-size:  1rem * 1.25;
+$h5-font-size:  1rem * 1.125;
+$h6-font-size:  1rem;
 
 //
 // Headings de display (maiores e de mais destaque)
@@ -84,7 +84,7 @@ $theme-colors: (
 //
 
 $body-color:                 black;
-$body-bg:                    #E9E9E9;
+$body-bg:                    #F5F5F5;
 $body-secondary-color:       #7B7B7B;
 $body-secondary-bg:          white;
 $body-color-dark:            white;
@@ -93,7 +93,7 @@ $body-secondary-color-dark:  #7B7B7B;
 $body-secondary-bg-dark:     #222427;
 
 //
-// Navbar
+// Navegação (navbar)
 //
 
 $navbar-padding-y:               0.25rem;
@@ -108,7 +108,7 @@ $navbar-light-brand-hover-color:  $navbar-light-active-color;
 $navbar-toggler-focus-width:     0;
 
 //
-// Botões
+// Botões (buttons)
 //
 $btn-font-weight:            500;
 $btn-hover-bg-shade-amount:  100%;
@@ -128,9 +128,26 @@ $offcanvas-padding-x:         $offcanvas-padding-y * 2;
 
 $vr-border-width: 3px;
 
+//
+// Insígnias (badges)
+//
 
+$badge-font-size:    .875em;
+$badge-font-weight:  500;
+$badge-color:        white;
 
+//
+// Tabelas (tables)
+//
 
+$table-bg:                   $body-secondary-bg;
+$table-bg-scale:             0;
+$table-th-font-weight:       400;
+$table-cell-padding-y:       .5rem;
+$table-cell-padding-x:       .5rem;
+$table-cell-padding-y-sm:    .25rem;
+$table-cell-padding-x-sm:    .25rem;
+$table-cell-vertical-align:  middle;
 
 
 /**********************************************************************************************
@@ -154,7 +171,7 @@ $vr-border-width: 3px;
 @import "../../node_modules/bootstrap/scss/images";
 @import "../../node_modules/bootstrap/scss/containers";
 @import "../../node_modules/bootstrap/scss/grid";
-// @import "../../node_modules/bootstrap/scss/tables";
+@import "../../node_modules/bootstrap/scss/tables";
 @import "../../node_modules/bootstrap/scss/forms";
 @import "../../node_modules/bootstrap/scss/buttons";
 @import "../../node_modules/bootstrap/scss/transitions";
@@ -295,15 +312,15 @@ Classes próprias do EasyTalk
 
 @include media-breakpoint-up(sm) {
   .consulta-chat-tamanho {
-      width: 325px;
+    width: 325px;
   }
 }
 
-.ratio-9x16-sm-16x9 {
-  @include media-breakpoint-up(sm) {
-    --bs-aspect-ratio: 16/9;
-  }
-  @include media-breakpoint-down(sm) {
-    --bs-aspect-ratio: 9/16;
-  }
+.table-equal-col-width {
+    table-layout: fixed;
+}
+  
+.table-equal-col-width th,
+.table-equal-col-width td {
+    width: 14.28%;
 }

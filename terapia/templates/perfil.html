@@ -1,0 +1,130 @@
+{% extends 'componentes/base.html' %}
+{% block titulo %} Perfil {% endblock %}
+
+{% load static %}
+
+{% block conteudo %}
+<div class="container-fluid p-5 d-flex gap-5">
+    <div class="row">
+        <section class="col vstack gap-5">
+            <div class="flex-grow-1 d-flex gap-4 align-items-center">
+                <img class="rounded-circle mx-auto"
+                style="width: 120px; height: 120px;"
+                src="{% static 'img/foto_de_perfil.jpg' %}"
+                alt="Foto de perfil">
+
+                <div class="flex-grow-1">
+                    <h4 class="fw-bold">Wanessa Vasconcelos Sampaio</h4>
+                    <hr class="border border-primary opacity-100">
+
+                    <div class="hstack gap-5">
+                        <div>    
+                            <h6 class="text-body-secondary">Valor da consulta</h6>
+                            <h6 class="fw-semibold">R$150,00</h6>
+                        </div>
+                        <div>    
+                            <h6 class="text-body-secondary">CRP</h6>
+                            <h6 class="fw-semibold">03/12345</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vstack gap-2">
+                <h6>Especializações</h6>
+                <div class="hstack gap-2 flex-wrap">
+                    {% for i in '123456789' %}
+                        <span class="badge text-bg-secondary rounded-pill text-white">Especialização {{ i }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="vstack gap-2">
+                <h6>Sobre mim</h6>
+                <div class="text-body-secondary">Atuo na promoção do autoconhecimento, acolhendo cada pessoa em sua singularidade para desenvolver saúde mental. Possuo pós-graduação em Neuropsicologia. Trabalho com a Terapia Cognitivo-Comportamental (TCC) e a integração com EMDR, uma abordagem específica para o tratamento de traumas psicológicos. Atendo jovens e adultos, sempre buscando oferecer um cuidado atento e personalizado.</div>
+            </div>
+
+            <div class="vstack gap-2">
+                <h6>Disponibilidade</h6>
+                <div class="w-100 table-responsive-sm text-nowrap rounded-3 border border-primary">
+                    <table class="table small table-borderless
+                    text-center rounded-3 text-nowrap mb-0"
+                    >
+                        <thead class="table-primary">
+                            <tr>
+                                <th class="text-white" scope="col">Domingo</th>
+                                <th class="text-white" scope="col">Segunda</th>
+                                <th class="text-white" scope="col">Terça</th>
+                                <th class="text-white" scope="col">Quarta</th>
+                                <th class="text-white" scope="col">Quinta</th>
+                                <th class="text-white" scope="col">Sexta</th>
+                                <th class="text-white" scope="col">Sábado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>-</td>
+                                <td>08:00 - 12:00</td>
+                                <td>08:00 - 12:00</td>
+                                <td>08:00 - 12:00</td>
+                                <td>08:00 - 12:00</td>
+                                <td>08:00 - 12:00</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>-</td>
+                                <td>13:00 - 15:00</td>
+                                <td>13:00 - 15:00</td>
+                                <td>13:00 - 15:00</td>
+                                <td>13:00 - 15:00</td>
+                                <td>13:00 - 15:00</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>-</td>  
+                                <td>-</td>
+                                <td>-</td>
+                                <td>17:00 - 19:00</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="vstack gap-2">
+                <h6>Sobre minhas especializações</h6>
+            </div>
+        </section>
+    </div>
+
+    
+    <aside class="col-auto bg-primary rounded-3" style="width: 250px;"></aside>
+</div>
+
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Col 1</th>
+        <th>Col 2</th>
+        <th>Col 3</th>
+        <th>Col 4</th>
+        <th>Col 5</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Data A</td>
+        <td>Data B</td>
+        <td>Data C</td>
+        <td>Data D</td>
+        <td>Data E</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

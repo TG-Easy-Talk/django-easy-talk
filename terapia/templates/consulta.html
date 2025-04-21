@@ -1,6 +1,7 @@
 {% extends 'componentes/base.html' %}
-{% load static %}
 {% block titulo %} Consulta {% endblock %}
+
+{% load static %}
 
 {# Excluir cabeçalho e rodapé #}
 {% block cabecalho %}{% endblock %}
@@ -31,21 +32,21 @@
 
         <section class="hstack justify-content-end align-items-end gap-2 gap-md-3 mx-3 position-relative"
         style="height: 55px;">
-            <div class="text-body mb-2 position-absolute bottom-0 start-0 d-none d-md-block">09:43</div>
+            <div class="text-body mb-2 position-absolute bottom-0 start-0 d-none d-md-block fs-6">09:43</div>
             
-            <button id="microfoneBotao" class="btn btn-primary rounded-circle position-relative"
+            <button id="microfoneBotao" class="btn btn-primary rounded-circle position-relative fs-6"
             style="width: 2.5em; aspect-ratio: 1;">
-                <i class="bi bi-mic-fill text-white position-absolute start-50 top-50 translate-middle"></i>
+                <i class="bi bi-mic-fill fs-6 text-white position-absolute start-50 top-50 translate-middle"></i>
             </button>
-            <button id="cameraBotao" class="btn btn-danger rounded-circle position-relative"
+            <button id="cameraBotao" class="btn btn-danger rounded-circle position-relative fs-6"
             style="width: 2.5em; aspect-ratio: 1;">
                 <i class="bi bi-camera-video-off-fill text-white position-absolute start-50 top-50 translate-middle"></i>
             </button>
-            <button class="btn btn-danger rounded-circle position-relative"
+            <button class="btn btn-danger rounded-circle position-relative fs-6"
             style="width: 2.5em; aspect-ratio: 1; transform: rotate(135deg);">
                 <i class="bi bi-telephone-fill text-white position-absolute start-50 top-50 translate-middle"></i>
             </button>
-            <button id="chatBotao" class="btn position-relative text-body border-0" style="width: 2.5em; aspect-ratio: 1;"
+            <button id="chatBotao" class="btn position-relative fs-6 text-body border-0" style="width: 2.5em; aspect-ratio: 1;"
             data-bs-toggle="collapse" data-bs-target="#chatConsulta"
             aria-expanded="false" aria-controls="chatConsulta">
                 <i class="bi bi-chat-right-text position-absolute start-50 top-50 translate-middle"></i>
@@ -63,7 +64,7 @@
                 <h6 class="mb-0">Chat da consulta</h6>
                 <i class="bi bi-x fs-4" role="button" data-bs-toggle="collapse" data-bs-target="#chatConsulta"></i>
             </header>
-            <main class="vstack small gap-3 overflow-y-auto px-3">
+            <main class="vstack gap-3 overflow-y-auto px-3">
                 {% for i in '1234' %}
                     {% include 'componentes/consulta/mensagem.html' %}
                 {% endfor %}
