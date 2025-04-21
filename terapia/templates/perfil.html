@@ -4,10 +4,10 @@
 {% load static %}
 
 {% block conteudo %}
-<div class="container-fluid p-5 d-flex gap-5">
-    <div class="row">
+<div class="container-fluid p-5">
+    <div class="row gap-4 flex-nowrap">
         <section class="col vstack gap-5">
-            <div class="flex-grow-1 d-flex gap-4 align-items-center">
+            <div class="hstack gap-4">
                 <img class="rounded-circle mx-auto"
                 style="width: 120px; height: 120px;"
                 src="{% static 'img/foto_de_perfil.jpg' %}"
@@ -46,85 +46,19 @@
 
             <div class="vstack gap-2">
                 <h6>Disponibilidade</h6>
-                <div class="w-100 table-responsive-sm text-nowrap rounded-3 border border-primary">
-                    <table class="table small table-borderless
-                    text-center rounded-3 text-nowrap mb-0"
-                    >
-                        <thead class="table-primary">
-                            <tr>
-                                <th class="text-white" scope="col">Domingo</th>
-                                <th class="text-white" scope="col">Segunda</th>
-                                <th class="text-white" scope="col">Terça</th>
-                                <th class="text-white" scope="col">Quarta</th>
-                                <th class="text-white" scope="col">Quinta</th>
-                                <th class="text-white" scope="col">Sexta</th>
-                                <th class="text-white" scope="col">Sábado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>-</td>
-                                <td>08:00 - 12:00</td>
-                                <td>08:00 - 12:00</td>
-                                <td>08:00 - 12:00</td>
-                                <td>08:00 - 12:00</td>
-                                <td>08:00 - 12:00</td>
-                                <td>-</td>
-                            </tr>
-                            <tr>
-                                <td>-</td>
-                                <td>13:00 - 15:00</td>
-                                <td>13:00 - 15:00</td>
-                                <td>13:00 - 15:00</td>
-                                <td>13:00 - 15:00</td>
-                                <td>13:00 - 15:00</td>
-                                <td>-</td>
-                            </tr>
-                            <tr>
-                                <td>-</td>  
-                                <td>-</td>
-                                <td>-</td>
-                                <td>17:00 - 19:00</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                {% include 'componentes/perfil/tabela_disponibilidade.html' %}
             </div>
 
             <div class="vstack gap-2">
                 <h6>Sobre minhas especializações</h6>
+                {% include 'componentes/perfil/sobre_minhas_especializacoes.html' %}
             </div>
+
+            
         </section>
+        
+        <aside class="col-auto bg-primary rounded-3" style="width: 250px;"></aside>
     </div>
-
-    
-    <aside class="col-auto bg-primary rounded-3" style="width: 250px;"></aside>
-</div>
-
-<div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Col 1</th>
-        <th>Col 2</th>
-        <th>Col 3</th>
-        <th>Col 4</th>
-        <th>Col 5</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Data A</td>
-        <td>Data B</td>
-        <td>Data C</td>
-        <td>Data D</td>
-        <td>Data E</td>
-      </tr>
-    </tbody>
-  </table>
 </div>
 
 {% endblock %}
