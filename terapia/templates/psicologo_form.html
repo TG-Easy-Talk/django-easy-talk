@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Cadastrar Psicólogo</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {# Renderização manual permite controlar a ordem #}
+    <div>
+      {{ form.nome_completo.label_tag }} {{ form.nome_completo }} {{ form.nome_completo.errors }}
+    </div>
+    <div>
+      {{ form.crp.label_tag }} {{ form.crp }} {{ form.crp.errors }}
+    </div>
+    <div>
+      {{ form.valor_consulta.label_tag }} {{ form.valor_consulta }} {{ form.valor_consulta.errors }}
+    </div>
+    <div>
+      {{ form.foto.label_tag }} {{ form.foto }} {{ form.foto.errors }}
+    </div>
+    <div>
+      {{ form.sobre_mim.label_tag }} {{ form.sobre_mim }} {{ form.sobre_mim.errors }}
+    </div>
+    <div>
+      {{ form.disponibilidade.label_tag }} {{ form.disponibilidade }} {{ form.disponibilidade.errors }}
+    </div>
+    <button type="submit">Salvar</button>
+  </form>
+{% endblock %}
