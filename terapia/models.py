@@ -52,7 +52,7 @@ class Psicologo(models.Model):
     def clean(self):
         super().clean()
         # Checar se já há paciente relacionado
-        if hasattr(self.usuario, 'Psiscólogo'):
+        if hasattr(self.usuario, 'paciente'):
             raise ValidationError("Este usuário já está relacionado a um paciente.")
 
     def __str__(self):
