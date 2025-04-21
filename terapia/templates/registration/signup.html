@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastro de Conta{% endblock %}
+
+{% block content %}
+    <h1>Cadastre-se</h1>
+    <p>Informe seu e‑mail e senha para criar uma conta.</p>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}<br>
+                {{ field }}<br>
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Cadastrar</button>
+    </form>
+{% endblock %}
