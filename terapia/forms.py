@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import login
 from django.views.generic import FormView
 from django.urls import reverse_lazy
-
+from django.contrib.auth.forms import AuthenticationForm
 from usuario.models import Usuario
 from terapia.models import Paciente, Psicologo
 from usuario.forms import UsuarioCreationForm
@@ -89,3 +89,15 @@ class PsicologoSignupForm(UsuarioCreationForm):
             crp=self.cleaned_data["crp"],
         )
         return user
+
+
+class EmailAuthenticationForm(AuthenticationForm):
+    username = forms.EmailField(
+        label="E‑mail",
+        widget=forms.EmailInput(attrs={'placeholder': 'seu@exemplo.com', 'autofocus': True})
+    )
+    password = forms.CharField(
+        label="Senha",
+        strip=False,
+        widget=forms.PasswordInput(attrs={'placeholder': '••••••••'})
+    )
