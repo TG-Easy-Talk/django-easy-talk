@@ -35,9 +35,7 @@ class PacienteSignupView(FormView):
     success_url = reverse_lazy('home')  # quando for o momento, redireciona para a tela personalizada do paciente
 
     def form_valid(self, form):
-        # salva usuário + paciente
         user = form.save()
-        # faz login automático
         login(self.request, user)
         return super().form_valid(form)
 

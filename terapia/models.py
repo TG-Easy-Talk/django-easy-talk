@@ -65,3 +65,46 @@ class Psicologo(models.Model):
 
     def __str__(self):
         return self.nome_completo
+
+
+class EstadoConsulta(models.TextChoices):
+    SOLICITADA = 'SOLICITADA', 'Solicitada'
+    CONFIRMADA = 'CONFIRMADA', 'Confirmada'
+    CANCELADA = 'CANCELADA', 'Cancelada'
+    EM_ANDAMENTO = 'EM_ANDAMENTO', 'Em andamento'
+    FINALIZADA = 'FINALIZADA', 'Finalizada'
+
+
+class Especializacao(models.Model):
+    titulo = models.CharField("Título", max_length=100, unique=True)
+    descricao = models.TextField("Descrição")
+
+    class Meta:
+        verbose_name = "Especialização"
+        verbose_name_plural = "Especializações"
+
+    def __str__(self):
+        return self.titulo
+
+
+class Consulta(models.Model):
+    data_hora_marcada = models.DateTimeField("Data e Hora Marcada")
+    duracao = models.IntegerField(
+        "Duração (minutos)",
+        validators=[MinValueValidator(1)]
+    )
+    estado = models.CharField(
+        "Estado",
+        max_length=20,
+        choices=EstadoConsulta.choices,
+        default=EstadoConsulta.SOLICITADA
+    )
+    anotacoes = models.TextField("Anotações", blank=True)
+    checklist_tarefas = models.TextField("Checklist de Tarefas", blank=True)
+
+    class Meta:
+        verbose_name = "Consulta"
+        verbose_name_plural = "Consultas"
+
+    def __str__(self):
+        return f"Consulta em {self.data_hora_marcada.strftime('%Y-%m-%d %H:%M')}"
