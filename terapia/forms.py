@@ -15,8 +15,6 @@ class PacienteForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Widgets e labels podem ser personalizados aqui se necessário
-        # Exemplo: adicionar placeholder
         self.fields['cpf'].widget.attrs.update({'placeholder': '000.000.000-00'})
 
 
@@ -53,9 +51,7 @@ class PacienteSignupForm(UsuarioCreationForm):
         fields = ['email', 'nome', 'cpf']  # password1/password2 já vêm do pai
 
     def save(self, commit=True):
-        # salva o usuário
         user = super().save(commit=commit)
-        # cria o perfil vazio de Paciente
         Paciente.objects.create(
             usuario=user,
             nome=self.cleaned_data['nome'],
@@ -79,16 +75,14 @@ class PsicologoSignupForm(UsuarioCreationForm):
 
     class Meta(UsuarioCreationForm.Meta):
         model = Usuario
-        fields = (
-            "email",
-            "nome_completo",  # novo campo adicionado
-            "crp"
-        )
+        fields = [
+            'email',
+            'nome_completo',
+            'crp'
+        ]
 
     def save(self, commit=True):
-        # Primeiro cria o usuário (email + senha)
         user = super().save(commit=commit)
-        # Depois cria o perfil de Psicólogo, usando nome_completo e crp
         Psicologo.objects.create(
             usuario=user,
             nome_completo=self.cleaned_data["nome_completo"],
