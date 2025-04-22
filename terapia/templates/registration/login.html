@@ -1,19 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2>Cadastrar Psicólogo</h2>
-    <form method="post" enctype="multipart/form-data">
+    <h2>Login</h2>
+    <form method="post" novalidate>
         {% csrf_token %}
         {{ form.non_field_errors }}
 
+        {# Campos ocultos (como next) #}
+        {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+
+        {# Campos visíveis: email e senha #}
         {% for field in form.visible_fields %}
             <div class="fieldWrapper">
-                {{ field.errors }}
                 {{ field.label_tag }}
                 {{ field }}
+                {{ field.errors }}
             </div>
         {% endfor %}
 
-        {{ form.hidden_fields }}
-        <button type="submit">Salvar</button>
+        <button type="submit">Entrar</button>
     </form>
 {% endblock %}
