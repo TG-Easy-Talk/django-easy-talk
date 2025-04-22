@@ -1,8 +1,8 @@
 from django.urls import path
-from . import views
+from .views import home, PacienteSignupView, PsicologoSignupView
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('pacientes/criar/', views.PacienteCreateView.as_view(), name='paciente_criar'),
-    path('psicologos/criar/', views.PsicologoCreateView.as_view(), name='psicologo_criar'),
+    path('', home, name='home'),  # rota “home”
+    path('signup/paciente/', PacienteSignupView.as_view(), name='paciente_signup'),
+    path('signup/psicologo/', PsicologoSignupView.as_view(), name='psicologo_signup'),
 ]
