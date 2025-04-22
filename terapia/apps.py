@@ -6,6 +6,5 @@ class TerapiaConfig(AppConfig):
     name = 'terapia'
     verbose_name = 'Terapia'
 
-    @staticmethod
-    def ready():
+    def ready(self):
         import terapia.signals
