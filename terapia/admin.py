@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from usuario.admin import UsuarioAdmin
 
-from .models import Paciente, Psicologo
+from .models import Paciente, Psicologo, Consulta, Especializacao
 
 Usuario = get_user_model()
 
@@ -25,3 +25,5 @@ class UsuarioAdminComInlines(UsuarioAdmin):
 
 admin.site.register(Psicologo)
 admin.site.register(Paciente)
+admin.site.register(Especializacao)
+admin.site.register(Consulta)

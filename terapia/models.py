@@ -78,6 +78,11 @@ class EstadoConsulta(models.TextChoices):
 class Especializacao(models.Model):
     titulo = models.CharField("Título", max_length=100, unique=True)
     descricao = models.TextField("Descrição")
+    psicologos = models.ManyToManyField(
+        Psicologo,
+        related_name='especializacoes',
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "Especialização"
@@ -91,7 +96,7 @@ class Consulta(models.Model):
     data_hora_marcada = models.DateTimeField("Data e Hora Marcada")
     duracao = models.IntegerField(
         "Duração (minutos)",
-        validators=[MinValueValidator(1)]
+        validators=[MinValueValidator(0)]
     )
     estado = models.CharField(
         "Estado",
@@ -101,6 +106,16 @@ class Consulta(models.Model):
     )
     anotacoes = models.TextField("Anotações", blank=True)
     checklist_tarefas = models.TextField("Checklist de Tarefas", blank=True)
+    paciente = models.ForeignKey(
+        Paciente,
+        on_delete=models.CASCADE,
+        related_name='consultas'
+    )
+    psicologo = models.ForeignKey(
+        Psicologo,
+        on_delete=models.CASCADE,
+        related_name='consultas'
+    )
 
     class Meta:
         verbose_name = "Consulta"
