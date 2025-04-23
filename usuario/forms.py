@@ -23,11 +23,11 @@ class UsuarioCreationForm(forms.ModelForm):
 
     def save(self, commit=True):
         # Salvar a senha em hash
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password1"])
+        usuario = super().save(commit=False)
+        usuario.set_password(self.cleaned_data["password1"])
         if commit:
-            user.save()
-        return user
+            usuario.save()
+        return usuario
 
 
 class UsuarioChangeForm(forms.ModelForm):
@@ -35,4 +35,4 @@ class UsuarioChangeForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ["email", "password", "is_active", "is_staff"]
+        fields = ["email", "password", "is_active", "is_staff", "is_superuser"]

@@ -51,13 +51,13 @@ class PacienteSignupForm(UsuarioCreationForm):
         fields = ['email', 'nome', 'cpf']  # password1/password2 já vêm do pai
 
     def save(self, commit=True):
-        user = super().save(commit=commit)
+        usuario = super().save(commit=commit)
         Paciente.objects.create(
-            usuario=user,
+            usuario=usuario,
             nome=self.cleaned_data['nome'],
             cpf=self.cleaned_data['cpf']
         )
-        return user
+        return usuario
 
 
 class PsicologoSignupForm(UsuarioCreationForm):
@@ -82,13 +82,13 @@ class PsicologoSignupForm(UsuarioCreationForm):
         ]
 
     def save(self, commit=True):
-        user = super().save(commit=commit)
+        usuario = super().save(commit=commit)
         Psicologo.objects.create(
-            usuario=user,
+            usuario=usuario,
             nome_completo=self.cleaned_data["nome_completo"],
             crp=self.cleaned_data["crp"],
         )
-        return user
+        return usuario
 
 
 class EmailAuthenticationForm(AuthenticationForm):

@@ -9,7 +9,7 @@ class UsuarioAdmin(UserAdmin):
     form = UsuarioChangeForm
     add_form = UsuarioCreationForm
 
-    list_display = ["email", "is_staff", "is_active"]
+    list_display = ["email", "is_staff", "is_active", "is_superuser"]
     list_filter = []
     fieldsets = []
 
