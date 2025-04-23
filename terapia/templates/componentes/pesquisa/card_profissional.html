@@ -1,0 +1,39 @@
+{% load static %}
+<div class="card text-bg-body-secondary border border-secondary-subtle shadow">
+    <div class="card-body vstack gap-4 p-4">
+        <div class="hstack gap-4 flex-column flex-sm-row flex-md-column flex-lg-row">
+            <img class="rounded-circle mx-auto"
+            style="width: 5rem; height: 5rem;"
+            src="{% static 'img/foto_de_perfil.jpg' %}"
+            alt="Foto de perfil">
+
+            <div class="flex-grow-1">
+                <h5 class="fw-bold">Wanessa Vasconcelos Sampaio</h5>
+                <div class="d-block text-body-secondary">Atuo na promoção do autoconhecimento, acolhendo cada pessoa em sua singularidade para desenvolver saúde mental.</div>
+            </div>
+        </div>
+
+        <div class="hstack gap-2 flex-wrap">
+            {% for i in '123456' %}
+            <div class="text-nowrap">
+                <span class="badge text-bg-secondary rounded-pill text-white">Especialização {{ i }}</span>
+                {% if forloop.last %}    
+                <span class="text-body-secondary ms-2">+3</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="hstack justify-content-between gap-3 flex-column flex-sm-row flex-md-column flex-lg-row">
+            <div class="hstack gap-3">
+                <h6 class="fw-semibold mb-0">R$85,00</h6>
+                <div>Disponível em <span class="text-primary fw-medium text-wrap text-nowrap">06/04/2025, 15:00</span></div>
+            </div>
+        
+            <div class="flex-grow-0 flex-md-grow-1 flex-lg-grow-0 align-self-stretch">
+                <button class="btn btn-primary text-white w-100">Visualizar</button>
+            </div>
+        </div>
+    </div>
+</div>
+    

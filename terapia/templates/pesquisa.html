@@ -4,10 +4,10 @@
 {% load static %}
 
 {% block conteudo %}
-<div class="container-xxl px-3 px-md-5 py-5 vstack gap-4">
+<div class="container-xxl px-3 px-md-5 py-4 py-md-5 vstack gap-4">
     <h4 class="fw-bold">Profissionais</h4>
 
-    <section class="card text-bg-primary mb-3 text-white">
+    <section class="card text-bg-primary mb-3 text-white border border-primary-subtle shadow">
         <div class="card-body">
             <h5 class="card-title mb-3">Filtros</h5>
             
@@ -49,31 +49,12 @@
         </div>
     </section>
 
-    <main class="row row-cols-1 row-cols-md-2 g-3">
-        <div class="col">
-            <div class="card text-bg-body-secondary">
-                <div class="card-body vstack gap-3 p-4">
-                    <div class="hstack gap-4 flex-row flex-md-column flex-lg-row">
-                        <img class="rounded-circle mx-auto"
-                        style="width: 80px; height: 80px;"
-                        src="{% static 'img/foto_de_perfil.jpg' %}"
-                        alt="Foto de perfil">
-
-                        <div class="flex-grow-1">
-                            <h5 class="fw-bold">Wanessa Vasconcelos Sampaio</h5>
-                            <div class="d-block text-body-secondary">Atuo na promoção do autoconhecimento, acolhendo cada pessoa em sua singularidade para desenvolver saúde mental.</div>
-                        </div>
-                    </div>
-
-                    <div class="hstack gap-2 flex-wrap">
-                        {% for i in '123456' %}
-                            <span class="badge text-bg-secondary rounded-pill">Especialização {{ i }}</span>
-                        {% endfor %}
-                            <span class="text-body-secondary">+3</span>
-                    </div>
-                </div>
+    <main class="row row-cols-1 row-cols-md-2 g-4">
+        {% for i in '1234' %}
+            <div class="col">
+                {% include 'componentes/pesquisa/card_profissional.html' %}
             </div>
-        </div>
+        {% endfor %}    
     </main>
 </div>
 {% endblock %}
