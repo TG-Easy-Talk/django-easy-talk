@@ -4,8 +4,11 @@ from django.views.generic import TemplateView
 class HomeView(TemplateView):
     template_name = "home.html"
 
-def perfil(request):
-    return render(request, "perfil.html")
-
 class ConsultaView(TemplateView):
     template_name = "consulta.html"
+
+class PerfilView(TemplateView):
+    template_name = "perfil.html"
+
+class PesquisaView(TemplateView):
+    template_name = "pesquisa.html"
