@@ -12,3 +12,6 @@ class PerfilView(TemplateView):
 
 class PesquisaView(TemplateView):
     template_name = "pesquisa.html"
+
+class MinhasConsultasView(TemplateView):
+    template_name = "minhas_consultas.html"

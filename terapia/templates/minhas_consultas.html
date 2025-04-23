@@ -1,0 +1,89 @@
+{% extends 'componentes/base.html' %}
+{% block titulo %} Minhas consultas {% endblock %}
+
+{% load static %}
+
+{% block conteudo %}
+<div class="container-xxl px-3 px-md-5 py-4 py-md-5 vstack gap-4">
+    <h4 class="fw-bold">Minhas consultas</h4>
+
+    <div class="hstack gap-5 align-items-start">
+        <section class="card text-bg-primary mb-3 text-white border border-primary-subtle shadow" style="min-width: 18rem;">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Filtros</h5>
+                
+                <div class="vstack gap-3">
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected>Estado</option>
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected>Profissional</option>
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+
+                    <div class="input-group">
+                        <span class="input-group-text text-bg-secondary border-0" id="ValorMinimo">De</span>
+                        <input type="date" step="1.00" class="form-control" placeholder="Data" aria-label="Valor mínimo" aria-describedby="ValorMinimo">
+                    </div>
+
+                    <div class="input-group">
+                        <span class="input-group-text text-bg-secondary border-0" id="ValorMaximo">Até</span>
+                        <input type="date" step="1.00" class="form-control" placeholder="Data" aria-label="Valor máximo" aria-describedby="ValorMaximo">
+                    </div>
+                    
+                    <button class="btn btn-secondary">Pesquisar profissionais</button>
+                </div>
+            </div>
+        </section>
+
+        <main class="flex-grow-1 shadow">
+            <div class="table-responsive rounded-3">
+                <table class="table table-borderless
+                text-center mb-0 text-nowrap">
+                    <thead class="table-primary">
+                        <tr>
+                            <th class="text-white" scope="col">Profissional</th>
+                            <th class="text-white" scope="col">Estado</th>
+                            <th class="text-white" scope="col">Data e horário</th>
+                            <th class="text-white" scope="col">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-start">
+                        <tr>
+                            <td>
+                                <img class="rounded-circle"
+                                style="width: 2.5em; height: 2.5em;"
+                                src="{% static 'img/foto_de_perfil.jpg' %}"
+                                alt="Foto de perfil">
+
+                                <span class="ms-2">Jéssica Simões</span>
+                            </td>
+                            <td>08:00 - 12:00</td>
+                            <td>08:00 - 12:00</td>
+                            <td>08:00 - 12:00</td>
+                        </tr>
+                        <tr>
+                            <td>-</td>
+                            <td>13:00 - 15:00</td>
+                            <td>13:00 - 15:00</td>
+                            <td>13:00 - 15:00</td>
+                        </tr>
+                        <tr>
+                            <td>-</td>  
+                            <td>-</td>
+                            <td>-</td>
+                            <td>17:00 - 19:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
