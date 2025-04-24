@@ -6,75 +6,18 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-
-
-def validar_cpf(cpf: str) -> bool:
-    """
-    Valida formato e dígitos verificadores do CPF.
-    Retorna True se válido, False caso contrário.
-    """
-    numeros = re.sub(r'\D', '', cpf)
-    if len(numeros) != 11:
-        return False
-    if numeros == numeros[0] * 11:
-        return False
-    for i in range(9, 11):
-        soma = sum(int(numeros[j]) * (i + 1 - j) for j in range(i))
-        resto = (soma * 10) % 11
-        if resto == 10:
-            resto = 0
-        if resto != int(numeros[i]):
-            return False
-    return True
-
-
-def validate_crp(value):
-    # Formato NN/NNNNN
-    if not re.fullmatch(r"\d{2}/\d{5}", value or ""):
-        raise ValidationError("Este CRP é inválido")
-    # Prefixo (UF) de 01 a 28
-    prefixo = int(value.split("/")[0])
-    if not (1 <= prefixo <= 28):
-        raise ValidationError("Este CRP é inválido")
-
-
-def validate_disponibilidade_json(disp):
-    """Valida estrutura de JSON de disponibilidade"""
-    if disp is None:
-        return
-    if not isinstance(disp, list):
-        raise ValidationError("O JSON de disponibilidade está em formato incorreto")
-    for item in disp:
-        if not isinstance(item, dict) or 'dia_semana' not in item or 'intervalos' not in item:
-            raise ValidationError("O JSON de disponibilidade está em formato incorreto")
-        if not isinstance(item['intervalos'], list):
-            raise ValidationError("O JSON de disponibilidade está em formato incorreto")
-        for intr in item['intervalos']:
-            if not isinstance(intr, dict) or 'horario_inicio' not in intr or 'horario_fim' not in intr:
-                raise ValidationError("O JSON de disponibilidade está em formato incorreto")
-
-
-def check_psicologo_disponibilidade(psicologo, data_hora_marcada):
-    """Verifica se o psicólogo está disponível no dia e horário especificados"""
-    disp = psicologo.disponibilidade or []
-    dia = data_hora_marcada.isoweekday()
-    current_time = data_hora_marcada.time()
-    for item in disp:
-        if item.get('dia_semana') != dia or not isinstance(item.get('intervalos'), list):
-            continue
-        for intr in item['intervalos']:
-            start_str = intr.get('horario_inicio')
-            end_str = intr.get('horario_fim')
-            if not all(isinstance(s, str) for s in (start_str, end_str)):
-                continue
-            try:
-                start = datetime.datetime.strptime(start_str, "%H:%M").time()
-                end = datetime.datetime.strptime(end_str, "%H:%M").time()
-            except ValueError:
-                continue
-            if start <= current_time <= end:
-                return True
-    return False
+from terapia.utils.crp import validate_crp
+from terapia.utils.cpf import validate_cpf
+from terapia.utils.availability import (
+    check_psicologo_disponibilidade,
+    validate_disponibilidade_json
+)
+from terapia.utils.validators import (
+    validate_future_datetime,
+    validate_duracao_range,
+    validate_estado_solicitada,
+    validate_valor_consulta,
+)
 
 
 class Paciente(models.Model):
@@ -84,7 +27,7 @@ class Paciente(models.Model):
         related_name='paciente'
     )
     nome = models.CharField("Nome", max_length=50)
-    cpf = models.CharField("CPF", max_length=14, unique=True)
+    cpf = models.CharField("CPF", max_length=14, unique=True, validators=[validate_cpf])
     foto = models.ImageField("Foto", upload_to='pacientes/fotos/', blank=True, null=True)
 
     class Meta:
@@ -96,9 +39,6 @@ class Paciente(models.Model):
         # Primeiro, verifica se o usuário já é psicólogo
         if hasattr(self.usuario, 'psicologo'):
             raise ValidationError("Este usuário já está relacionado a um psicólogo.")
-        # Depois, valida o formato e dígitos do CPF
-        if not validar_cpf(self.cpf):
-            raise ValidationError({'cpf': 'Este CPF é inválido'})
 
     def __str__(self):
         return self.nome
@@ -130,9 +70,13 @@ class Psicologo(models.Model):
         "Valor da Consulta",
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(0)],
         blank=True,
-        null=True
+        null=True,
+        validators=[
+            MinValueValidator(0),
+            validate_valor_consulta,
+        ],
+        help_text="Entre R$ 20,00 e R$ 4 999,99",
     )
     disponibilidade = models.JSONField(
         "Disponibilidade",
@@ -170,29 +114,25 @@ class EstadoConsulta(models.TextChoices):
 
 
 class Consulta(models.Model):
-    data_hora_marcada = models.DateTimeField("Data e Hora Marcada")
+    data_hora_marcada = models.DateTimeField(
+        "Data e Hora Marcada",
+        validators=[validate_future_datetime],
+    )
     duracao = models.IntegerField(
         "Duração (minutos)",
-        validators=[MinValueValidator(0)]
+        validators=[validate_duracao_range],
     )
     estado = models.CharField(
         "Estado",
         max_length=20,
         choices=EstadoConsulta.choices,
-        default=EstadoConsulta.SOLICITADA
+        default=EstadoConsulta.SOLICITADA,
+        validators=[validate_estado_solicitada],
     )
     anotacoes = models.TextField("Anotações", blank=True)
     checklist_tarefas = models.TextField("Checklist de Tarefas", blank=True)
-    paciente = models.ForeignKey(
-        Paciente,
-        on_delete=models.CASCADE,
-        related_name='consultas'
-    )
-    psicologo = models.ForeignKey(
-        Psicologo,
-        on_delete=models.CASCADE,
-        related_name='consultas'
-    )
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='consultas')
+    psicologo = models.ForeignKey(Psicologo, on_delete=models.CASCADE, related_name='consultas')
 
     class Meta:
         verbose_name = "Consulta"
@@ -200,27 +140,20 @@ class Consulta(models.Model):
 
     def clean(self):
         super().clean()
-        now = timezone.now()
-        # Valida data futura
-        if self.data_hora_marcada < now:
-            raise ValidationError("A consulta deve ser agendada para uma data futura")
-        # Valida disponibilidade usando função auxiliar
         if not check_psicologo_disponibilidade(self.psicologo, self.data_hora_marcada):
             raise ValidationError("O psicólogo não tem disponibilidade nessa data e horário")
-        # Estado inicial obrigatório
-        if self.estado != EstadoConsulta.SOLICITADA:
-            raise ValidationError("A consulta deve ser sempre instanciada como 'SOLICITADA'")
-        # Limites de duração
-        if self.duracao > 60:
-            raise ValidationError("A duração da consulta está muito longa; o tempo máximo permitido é de 1 hora.")
-        if self.duracao < 30:
-            raise ValidationError("A duração da consulta é muito curta. Há um mínimo é de 30 minutos")
+
+    def validate_unique(self, exclude=None):
+        super().validate_unique(exclude=exclude)
         # Conflito de horário
-        qs = Consulta.objects.filter(paciente=self.paciente, data_hora_marcada=self.data_hora_marcada)
-        if self.pk:
-            qs = qs.exclude(pk=self.pk)
+        qs = Consulta.objects.filter(
+            paciente=self.paciente,
+            data_hora_marcada=self.data_hora_marcada
+        ).exclude(pk=self.pk or None)
         if qs.exists():
-            raise ValidationError("Você já possui uma consulta agendada nesse horário")
+            raise ValidationError({
+                'data_hora_marcada': 'Você já possui uma consulta agendada nesse horário'
+            })
 
     def __str__(self):
-        return f"Consulta em {self.data_hora_marcada.strftime('%Y-%m-%d %H:%M')}"
+        return f"Consulta em {self.data_hora_marcada:%Y-%m-%d %H:%M'}"
