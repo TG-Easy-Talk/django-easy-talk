@@ -21,7 +21,7 @@ class PacienteModelTest(TestCase):
         self.assertEqual(paciente.nome, 'João da Silva')
         self.assertEqual(paciente.cpf, '123.456.789-00')
         self.assertEqual(paciente.usuario, self.usuario_paciente)
-        self.assertIsNone(paciente.foto)
+        self.assertIsNone(paciente.foto.name)
 
     def test_cpf_unico(self):
         Paciente.objects.create(
@@ -86,7 +86,7 @@ class PsicologoModelTest(TestCase):
         self.assertEqual(psicologo.nome_completo, 'Dra. Mariana Oliveira')
         self.assertEqual(psicologo.crp, '06/67890')
         self.assertEqual(psicologo.usuario, self.usuario_psicologo)
-        self.assertIsNone(psicologo.foto)
+        self.assertIsNone(psicologo.foto.name)
         self.assertEqual(psicologo.sobre_mim, '')
         self.assertIsNone(psicologo.valor_consulta)
         self.assertEqual(psicologo.disponibilidade, {})
