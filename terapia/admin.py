@@ -22,8 +22,12 @@ admin.site.unregister(Usuario)
 class UsuarioAdminComInlines(UsuarioAdmin):
     inlines = [PsicologoInline, PacienteInline]
 
+@admin.register(Psicologo)
+class PsicologoAdmin(admin.ModelAdmin):
+    list_display = ['nome_completo', 'crp', 'valor_consulta']
+    search_fields = ['nome_completo', 'crp']
+    filter_horizontal = ['especializacoes']
 
-admin.site.register(Psicologo)
 admin.site.register(Paciente)
 admin.site.register(Especializacao)
 admin.site.register(Consulta)

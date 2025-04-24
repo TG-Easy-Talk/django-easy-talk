@@ -28,6 +28,18 @@ class Paciente(models.Model):
         return self.nome
 
 
+class Especializacao(models.Model):
+    titulo = models.CharField("Título", max_length=100, unique=True)
+    descricao = models.TextField("Descrição")
+
+    class Meta:
+        verbose_name = "Especialização"
+        verbose_name_plural = "Especializações"
+
+    def __str__(self):
+        return self.titulo
+
+
 class Psicologo(models.Model):
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -52,6 +64,11 @@ class Psicologo(models.Model):
         blank=True,
         null=True
     )
+    especializacoes = models.ManyToManyField(
+        Especializacao,
+        related_name='psicologos',
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "Psicólogo"
@@ -73,23 +90,6 @@ class EstadoConsulta(models.TextChoices):
     CANCELADA = 'CANCELADA', 'Cancelada'
     EM_ANDAMENTO = 'EM_ANDAMENTO', 'Em andamento'
     FINALIZADA = 'FINALIZADA', 'Finalizada'
-
-
-class Especializacao(models.Model):
-    titulo = models.CharField("Título", max_length=100, unique=True)
-    descricao = models.TextField("Descrição")
-    psicologos = models.ManyToManyField(
-        Psicologo,
-        related_name='especializacoes',
-        blank=True,
-    )
-
-    class Meta:
-        verbose_name = "Especialização"
-        verbose_name_plural = "Especializações"
-
-    def __str__(self):
-        return self.titulo
 
 
 class Consulta(models.Model):
