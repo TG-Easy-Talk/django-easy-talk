@@ -56,10 +56,10 @@ class CustomLoginView(LoginView):
     Exibe o formulário de login e, em caso de sucesso,
     redireciona para a 'home'.
     """
-    template_name = 'registration/login.html'
+    template_name = 'login.html'
     authentication_form = EmailAuthenticationForm
-    redirect_authenticated_user = False
-    next_page = reverse_lazy('home')
+    # redirect_authenticated_user = False // O padrão já é False, então não precisa definir se não for True
+    # next_page = reverse_lazy('home') // O padrão já é redirecionar para a URL definida no LOGIN_REDIRECT_URL do settings.py
 
 
 def home(request):
