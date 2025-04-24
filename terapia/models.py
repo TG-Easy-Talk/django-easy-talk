@@ -1,7 +1,29 @@
+import re
+
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+
+
+def validar_cpf(cpf: str) -> bool:
+    """
+    Valida formato e dígitos verificadores do CPF.
+    Retorna True se válido, False caso contrário.
+    """
+    numeros = re.sub(r'\D', '', cpf)
+    if len(numeros) != 11:
+        return False
+    if numeros == numeros[0] * 11:
+        return False
+    for i in range(9, 11):
+        soma = sum(int(numeros[j]) * (i + 1 - j) for j in range(i))
+        resto = (soma * 10) % 11
+        if resto == 10:
+            resto = 0
+        if resto != int(numeros[i]):
+            return False
+    return True
 
 
 class Paciente(models.Model):
@@ -20,9 +42,12 @@ class Paciente(models.Model):
 
     def clean(self):
         super().clean()
-        # Checar se já há psicólogo relacionado
+        # Primeiro, verifica se o usuário já é psicólogo
         if hasattr(self.usuario, 'psicologo'):
             raise ValidationError("Este usuário já está relacionado a um psicólogo.")
+        # Depois, valida o formato e dígitos do CPF
+        if not validar_cpf(self.cpf):
+            raise ValidationError({'cpf': 'Este CPF é inválido'})
 
     def __str__(self):
         return self.nome

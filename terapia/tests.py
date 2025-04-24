@@ -38,6 +38,18 @@ class PacienteModelTest(TestCase):
             )
         self.assertIn('unique constraint failed', str(context.exception).lower())
 
+    def test_cpf_invalido(self):
+        # TU01-B: CPF inexistente/formato inválido deve gerar ValidationError
+        paciente = Paciente(
+            usuario=self.usuario_paciente,
+            nome='Teste Inválido',
+            cpf='123'
+        )
+        with self.assertRaises(ValidationError) as context:
+            paciente.full_clean()
+        # Espera mensagem de erro no campo 'cpf'
+        self.assertIn('Este CPF é inválido', context.exception.message_dict.get('cpf', []))
+
     def test_nome_verbose_name(self):
         self.assertEqual(Paciente._meta.get_field('nome').verbose_name, 'Nome')
 
@@ -115,7 +127,8 @@ class PsicologoModelTest(TestCase):
         )
         with self.assertRaises(ValidationError) as context:
             psicologo.full_clean()
-        self.assertIn('Ensure this value is greater than or equal to 0.', context.exception.message_dict['valor_consulta'])
+        self.assertIn('Ensure this value is greater than or equal to 0.',
+                      context.exception.message_dict['valor_consulta'])
 
     def test_nome_completo_verbose_name(self):
         self.assertEqual(Psicologo._meta.get_field('nome_completo').verbose_name, 'Nome Completo')
