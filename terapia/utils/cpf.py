@@ -10,7 +10,6 @@ _INVALID_KNOWN: Set[str] = {
 
 
 def validar_cpf(value: str) -> bool:
-    """Valida CPF (11 dígitos + DV) — retorna True se válido."""
     if not value:
         return False
     digits: str = _NON_DIGITS_RE.sub("", value)
@@ -27,6 +26,5 @@ def validar_cpf(value: str) -> bool:
 
 
 def validate_cpf(value: Optional[str]) -> None:
-    """Validator Django‐style (raise ValidationError)."""
     if not validar_cpf(value or ""):
         raise ValidationError("Este CPF é inválido")

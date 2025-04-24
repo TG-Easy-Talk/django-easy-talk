@@ -4,8 +4,12 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-
-from .models import Paciente, Psicologo, Consulta, EstadoConsulta
+from .models import (
+    Paciente,
+    Psicologo,
+    Consulta,
+    EstadoConsulta
+)
 
 User = get_user_model()
 
