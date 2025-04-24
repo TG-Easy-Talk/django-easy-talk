@@ -8,27 +8,6 @@ from django.urls import reverse_lazy
 from .forms import EmailAuthenticationForm
 
 
-# class PacienteCreateView(CreateView):
-#     model = Paciente
-#     form_class = PacienteForm
-#     template_name = 'paciente_form.html'
-#     success_url = 'paciente_criar'
-#
-#     def form_valid(self, form):
-#         form.instance.user = self.request.user
-#         return super().form_valid(form)
-#
-#
-# class PsicologoCreateView(CreateView):
-#     model = Psicologo
-#     form_class = PsicologoForm
-#     template_name = 'psicologo_form.html'
-#     success_url = 'psicologo_criar'
-#
-#     def form_valid(self, form):
-#         form.instance.user = self.request.user
-#         return super().form_valid(form)
-
 class PacienteSignupView(FormView):
     template_name = 'paciente_form.html'
     form_class = PacienteSignupForm
@@ -58,9 +37,6 @@ class CustomLoginView(LoginView):
     """
     template_name = 'login.html'
     authentication_form = EmailAuthenticationForm
-    # redirect_authenticated_user = False // O padrão já é False, então não precisa definir se não for True
-    # next_page = reverse_lazy('home') // O padrão já é redirecionar para a URL definida no LOGIN_REDIRECT_URL do settings.py
-
 
 def home(request):
     return render(request, 'base.html')
