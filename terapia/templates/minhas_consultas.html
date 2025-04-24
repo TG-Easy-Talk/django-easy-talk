@@ -44,8 +44,14 @@
 
         <main class="flex-grow-1 shadow">
             <div class="table-responsive rounded-3">
-                <table class="table table-borderless
+                <table class="table
                 text-center mb-0 text-nowrap">
+                    <colgroup>
+                        <col style="width: 25%;">
+                        <col style="width: 25%;">
+                        <col style="width: 25%;">
+                        <col style="width: 25%;">
+                    </colgroup>
                     <thead class="table-primary">
                         <tr>
                             <th class="text-white" scope="col">Profissional</th>
@@ -54,31 +60,66 @@
                             <th class="text-white" scope="col">Ação</th>
                         </tr>
                     </thead>
-                    <tbody class="text-start">
+                    <tbody class="small">
                         <tr>
-                            <td>
-                                <img class="rounded-circle"
-                                style="width: 2.5em; height: 2.5em;"
-                                src="{% static 'img/foto_de_perfil.jpg' %}"
-                                alt="Foto de perfil">
+                            <td class="text-start text-wrap">
+                                <div class="hstack gap-2">
+                                    <img class="rounded-circle"
+                                    style="width: 2.5em; height: 2.5em;"
+                                    src="{% static 'img/foto_de_perfil.jpg' %}"
+                                    alt="Foto de perfil">
 
-                                <span class="ms-2">Jéssica Simões</span>
+                                    <span class="ms-2">Jéssica Simões</span>
+                                </div>
                             </td>
-                            <td>08:00 - 12:00</td>
-                            <td>08:00 - 12:00</td>
-                            <td>08:00 - 12:00</td>
+                            <td>
+                                <span class="badge text-bg-success">Confirmada</span>
+                            </td>
+                            <td>27/04 - 18:00</td>
+                            <td>
+                                <a href="#" class="btn btn-danger w-100 btn-sm">Cancelar</a>
+                                {% comment %} <button class="btn btn-danger btn-sm text-white">Cancelar</button> {% endcomment %}
+                            </td>
                         </tr>
                         <tr>
-                            <td>-</td>
-                            <td>13:00 - 15:00</td>
-                            <td>13:00 - 15:00</td>
-                            <td>13:00 - 15:00</td>
+                            <td class="text-start text-wrap">
+                                <div class="hstack gap-2">
+                                    <img class="rounded-circle"
+                                    style="width: 2.5em; height: 2.5em;"
+                                    src="{% static 'img/foto_de_perfil.jpg' %}"
+                                    alt="Foto de perfil">
+
+                                    <span class="ms-2">Wanessa Vasconcelos Sampaio</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-success">Confirmada</span>
+                            </td>
+                            <td>27/04 - 18:00</td>
+                            <td>
+                                <a href="#" class="btn btn-danger w-100 btn-sm">Cancelar</a>
+                                {% comment %} <button class="btn btn-danger btn-sm text-white">Cancelar</button> {% endcomment %}
+                            </td>
                         </tr>
                         <tr>
-                            <td>-</td>  
-                            <td>-</td>
-                            <td>-</td>
-                            <td>17:00 - 19:00</td>
+                            <td class="text-start text-wrap">
+                                <div class="hstack gap-2">
+                                    <img class="rounded-circle"
+                                    style="width: 2.5em; height: 2.5em;"
+                                    src="{% static 'img/foto_de_perfil.jpg' %}"
+                                    alt="Foto de perfil">
+
+                                    <span class="ms-2">Wanessa Vasconcelos Sampaio</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-warning">Em andamento</span>
+                            </td>
+                            <td>27/04 - 18:00</td>
+                            <td>
+                                <a href="#" class="btn btn-warning w-100 btn-sm">Entrar</a>
+                                {% comment %} <button class="btn btn-danger btn-sm text-white">Cancelar</button> {% endcomment %}
+                            </td>
                         </tr>
                     </tbody>
                 </table>
