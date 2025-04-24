@@ -26,6 +26,31 @@ def validar_cpf(cpf: str) -> bool:
     return True
 
 
+def validate_crp(value):
+    """Valida o formato e prefixo do CRP (MM/NNNNN, MM entre 01 e 28)"""
+    if not re.fullmatch(r"\d{2}/\d{5}", value):
+        raise ValidationError("Este CRP é inválido")
+    prefixo = int(value.split('/')[0])
+    if not (1 <= prefixo <= 28):
+        raise ValidationError("Este CRP é inválido")
+
+
+def validate_disponibilidade_json(disp):
+    """Valida estrutura de JSON de disponibilidade"""
+    if disp is None:
+        return
+    if not isinstance(disp, list):
+        raise ValidationError("O JSON de disponibilidade está em formato incorreto")
+    for item in disp:
+        if not isinstance(item, dict) or 'dia_semana' not in item or 'intervalos' not in item:
+            raise ValidationError("O JSON de disponibilidade está em formato incorreto")
+        if not isinstance(item['intervalos'], list):
+            raise ValidationError("O JSON de disponibilidade está em formato incorreto")
+        for intr in item['intervalos']:
+            if not isinstance(intr, dict) or 'horario_inicio' not in intr or 'horario_fim' not in intr:
+                raise ValidationError("O JSON de disponibilidade está em formato incorreto")
+
+
 class Paciente(models.Model):
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -72,7 +97,10 @@ class Psicologo(models.Model):
         related_name='psicologo'
     )
     nome_completo = models.CharField("Nome Completo", max_length=50)
-    crp = models.CharField("CRP", max_length=20, unique=True)
+    crp = models.CharField(
+        "CRP", max_length=20, unique=True,
+        validators=[validate_crp]
+    )
     foto = models.ImageField("Foto", upload_to='psicologos/fotos/', blank=True, null=True)
     sobre_mim = models.TextField("Sobre Mim", blank=True)
     valor_consulta = models.DecimalField(
@@ -85,9 +113,10 @@ class Psicologo(models.Model):
     )
     disponibilidade = models.JSONField(
         "Disponibilidade",
-        default=dict,
+        default=list,
         blank=True,
-        null=True
+        null=True,
+        validators=[validate_disponibilidade_json]
     )
     especializacoes = models.ManyToManyField(
         Especializacao,
@@ -101,7 +130,7 @@ class Psicologo(models.Model):
 
     def clean(self):
         super().clean()
-        # Checar se já há paciente relacionado
+        # Impede usuário que já é paciente
         if hasattr(self.usuario, 'paciente'):
             raise ValidationError("Este usuário já está relacionado a um paciente.")
 
@@ -145,6 +174,23 @@ class Consulta(models.Model):
     class Meta:
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
+
+    def clean(self):
+        super().clean()
+        now = timezone.now()
+        if self.data_hora_marcada < now:
+            raise ValidationError("A consulta deve ser agendada para uma data futura")
+        if self.estado != EstadoConsulta.SOLICITADA:
+            raise ValidationError("A consulta deve ser sempre instanciada como 'SOLICITADA'")
+        if self.duracao > 60:
+            raise ValidationError("A duração da consulta está muito longa; o tempo máximo permitido é de 1 hora.")
+        if self.duracao < 30:
+            raise ValidationError("A duração da consulta é muito curta. Há um mínimo é de 30 minutos")
+        qs = Consulta.objects.filter(paciente=self.paciente, data_hora_marcada=self.data_hora_marcada)
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+        if qs.exists():
+            raise ValidationError("Você já possui uma consulta agendada nesse horário")
 
     def __str__(self):
         return f"Consulta em {self.data_hora_marcada.strftime('%Y-%m-%d %H:%M')}"

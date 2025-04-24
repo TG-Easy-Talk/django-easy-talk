@@ -101,7 +101,7 @@ class PsicologoModelTest(TestCase):
         self.assertIsNone(psicologo.foto.name)
         self.assertEqual(psicologo.sobre_mim, '')
         self.assertIsNone(psicologo.valor_consulta)
-        self.assertEqual(psicologo.disponibilidade, {})
+        self.assertEqual(psicologo.disponibilidade, [])  # em vez de {}
 
     def test_crp_unico(self):
         Psicologo.objects.create(
@@ -117,6 +117,21 @@ class PsicologoModelTest(TestCase):
                 crp='06/67890'
             )
         self.assertIn('unique constraint failed', str(context.exception).lower())
+
+    def test_crp_invalido(self):
+        # TU02-B: inserir CRP inexistente/formato inválido deve gerar ValidationError
+        psicologo = Psicologo(
+            usuario=self.usuario_psicologo,
+            nome_completo='Teste Inválido',
+            crp='99/99999'
+        )
+        with self.assertRaises(ValidationError) as context:
+            psicologo.full_clean()
+        # Verifica se a mensagem de erro aparece no campo 'crp'
+        self.assertIn(
+            'Este CRP é inválido',
+            context.exception.message_dict.get('crp', [])
+        )
 
     def test_valor_consulta_min_validator(self):
         psicologo = Psicologo(
