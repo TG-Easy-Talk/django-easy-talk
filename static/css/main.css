@@ -4249,8 +4249,8 @@ textarea.form-control-lg {
   --bs-badge-padding-x: 0.65em;
   --bs-badge-padding-y: 0.35em;
   --bs-badge-font-size: 1em;
-  --bs-badge-font-weight: 500;
-  --bs-badge-color: white;
+  --bs-badge-font-weight: 400;
+  --bs-badge-color: #fff;
   --bs-badge-border-radius: var(--bs-border-radius);
   display: inline-block;
   padding: var(--bs-badge-padding-y) var(--bs-badge-padding-x);

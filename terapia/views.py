@@ -15,3 +15,45 @@ class PesquisaView(TemplateView):
 
 class MinhasConsultasView(TemplateView):
     template_name = "minhas_consultas.html"
+
+    def get_context_data(self, **kwargs):
+        # Esse método é para teste do template por enquanto.
+        context = super().get_context_data(**kwargs)
+        context["minhas_consultas"] = [
+            {
+                "data": "2023-10-01",
+                "hora": "10:00",
+                "psicologo": "Dr. João Silva",
+                "status": "Confirmada",
+                "class": "success",
+            },
+            {
+                "data": "2023-10-05",
+                "hora": "14:00",
+                "psicologo": "Dra. Maria Oliveira",
+                "status": "Em andamento",
+                "class": "warning",
+            },
+            {
+                "data": "2023-10-10",
+                "hora": "16:00",
+                "psicologo": "Dr. Carlos Pereira",
+                "status": "Cancelada",
+                "class": "danger",
+            },
+            {
+                "data": "2023-10-15",
+                "hora": "11:00",
+                "psicologo": "Dra. Ana Costa",
+                "status": "Solicitada",
+                "class": "info",
+            },
+            {
+                "data": "2023-10-20",
+                "hora": "09:00",
+                "psicologo": "Dr. Lucas Almeida",
+                "status": "Concluída",
+                "class": "completed",
+            },
+        ]
+        return context
