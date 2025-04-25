@@ -1,6 +1,6 @@
 {# Esse if será mudado para checar se o usuário está logado #}
 <header id="cabecalho"
-class="navbar {% if True %}navbar-expand-md{% else %}navbar-expand-sm{% endif %} text-bg-dark fixed-top">
+class="navbar {% if False %} navbar-expand-md {% else %} navbar-expand-sm {% endif %} text-bg-dark fixed-top">
     <div class="container-fluid">
 
         <a class="navbar-brand font-family-easytalk-logo" href="#">EasyTalk</a>
@@ -13,8 +13,8 @@ class="navbar {% if True %}navbar-expand-md{% else %}navbar-expand-sm{% endif %}
             </div>
             <div class="offcanvas-body">
                 <ul class="navbar-nav my-2 justify-content-end flex-grow-1
-                {% if True %}align-items-md-center{% else %}align-items-sm-center{% endif %}">
-                    {% if True %} {# Esse if será mudado para checar se o usuário está logado #}
+                {% if False %}align-items-md-center{% else %}align-items-sm-center{% endif %}">
+                    {% if False %} {# Esse if será mudado para checar se o usuário está logado #}
                         <li class="nav-item">
                             <a class="nav-link" href="#">Home</a>
                         </li>
@@ -43,12 +43,12 @@ class="navbar {% if True %}navbar-expand-md{% else %}navbar-expand-sm{% endif %}
                         <li class="nav-item">
                             <a class="nav-link text-nowrap" href="#">Minhas consultas</a>
                         </li>
-                        <div class="d-none d-sm-block m-0 mx-sm-2 vr text-primary opacity-100"></div>
                     {% endif %}
+                        <li class="d-none d-sm-block m-0 mx-sm-2 vr text-primary opacity-100"></li>
                 </ul>
             </div>
         </div>
-        {% if True %} {# Esse if será mudado para checar se o usuário está logado #}
+        {% if False %} {# Esse if será mudado para checar se o usuário está logado #}
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                 aria-label="Toggle navigation">

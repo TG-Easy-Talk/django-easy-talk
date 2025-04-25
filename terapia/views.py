@@ -1,8 +1,11 @@
-from django.shortcuts import render
+from django.contrib.auth.views import LoginView
 from django.views.generic import TemplateView
 
 class HomeView(TemplateView):
     template_name = "home.html"
+
+class CustomLoginView(LoginView):
+    template_name = "login.html"
 
 class ConsultaView(TemplateView):
     template_name = "consulta.html"
