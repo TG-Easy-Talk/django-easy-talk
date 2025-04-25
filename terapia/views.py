@@ -7,6 +7,9 @@ class HomeView(TemplateView):
 class CustomLoginView(LoginView):
     template_name = "conta/login.html"
 
+class CadastroView(TemplateView):
+    template_name = "conta/cadastro.html"
+
 class ConsultaView(TemplateView):
     template_name = "consulta.html"
 
