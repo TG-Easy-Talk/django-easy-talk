@@ -1,60 +1,58 @@
 {% extends 'componentes/base.html' %}
-{% block titulo %} Home {% endblock %}
+{% block titulo %} Pesquisa {% endblock %}
 
 {% load static %}
 
 {% block conteudo %}
-<div class="container-xxl px-3 px-md-5 py-4 py-md-5 vstack gap-4">
-    <h4 class="fw-bold">Profissionais</h4>
+<h4 class="fw-bold">Profissionais</h4>
 
-    <section class="card text-bg-primary mb-3 text-white border border-primary-subtle shadow">
-        <div class="card-body">
-            <h5 class="card-title mb-3">Filtros</h5>
-            
-            <div class="row row-cols-1 row-cols-md-2 gy-3">
-                <div class="col">
-                    <div class="vstack gap-3">
-                        <select class="form-select" aria-label="Default select example">
-                            <option selected>Especialização</option>
-                            <option value="1">One</option>
-                            <option value="2">Two</option>
-                            <option value="3">Three</option>
-                        </select>
+<section class="card text-bg-primary mb-3 text-white border border-primary-subtle shadow">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Filtros</h5>
 
-                        <select class="form-select" aria-label="Default select example">
-                            <option selected>Disponibilidade</option>
-                            <option value="1">One</option>
-                            <option value="2">Two</option>
-                            <option value="3">Three</option>
-                        </select>
-                    </div>
+        <div class="row row-cols-1 row-cols-md-2 gy-3">
+            <div class="col">
+                <div class="vstack gap-3">
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected>Especialização</option>
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected>Disponibilidade</option>
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
                 </div>
-                <div class="col">
-                    <div class="vstack gap-3">
-                        <div class="hstack gap-3 flex-column flex-sm-row">
-                            <div class="input-group">
-                                <span class="input-group-text text-bg-secondary border-0" id="ValorMinimo">R$</span>
-                                <input type="number" step="1.00" class="form-control" placeholder="Mínimo" aria-label="Valor mínimo" aria-describedby="ValorMinimo">
-                            </div>
-                            <div class="d-none d-sm-block">até</div>
-                            <div class="input-group">
-                                <span class="input-group-text text-bg-secondary border-0" id="ValorMaximo">R$</span>
-                                <input type="number" step="1.00" class="form-control" placeholder="Máximo" aria-label="Valor máximo" aria-describedby="ValorMaximo">
-                            </div>
+            </div>
+            <div class="col">
+                <div class="vstack gap-3">
+                    <div class="hstack gap-3 flex-column flex-sm-row">
+                        <div class="input-group">
+                            <span class="input-group-text text-bg-secondary border-0" id="ValorMinimo">R$</span>
+                            <input type="number" step="1.00" class="form-control" placeholder="Mínimo" aria-label="Valor mínimo" aria-describedby="ValorMinimo">
                         </div>
-                        <button class="btn btn-secondary">Pesquisar profissionais</button>
+                        <div class="d-none d-sm-block">até</div>
+                        <div class="input-group">
+                            <span class="input-group-text text-bg-secondary border-0" id="ValorMaximo">R$</span>
+                            <input type="number" step="1.00" class="form-control" placeholder="Máximo" aria-label="Valor máximo" aria-describedby="ValorMaximo">
+                        </div>
                     </div>
+                    <button class="btn btn-secondary">Pesquisar profissionais</button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <main class="row row-cols-1 row-cols-md-2 g-4">
-        {% for i in '1234' %}
-            <div class="col">
-                {% include 'componentes/pesquisa/card_profissional.html' %}
-            </div>
-        {% endfor %}    
-    </main>
-</div>
+<main class="row row-cols-1 row-cols-md-2 g-4">
+    {% for i in '1234' %}
+        <div class="col">
+            {% include 'componentes/pesquisa/card_profissional.html' %}
+        </div>
+    {% endfor %}
+</main>
 {% endblock %}

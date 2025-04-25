@@ -7,75 +7,77 @@
 {% block cabecalho %}{% endblock %}
 {% block rodape %}{% endblock %}
 
+{% block atributos_div_conteudo %} class="container-fluid px-0 bg-body d-flex flex-column flex-sm-row" data-bs-theme="light" {% endblock %}
+
 {% block conteudo %}
-<div class="container-fluid px-0 bg-body d-flex flex-column flex-sm-row" data-bs-theme="light">
-    <main class="vstack vh-100 p-3">
+<main class="vstack vh-100 p-3">
 
-        <section class="rounded-3 consulta-camera-desligada-bg position-relative h-100 overflow-hidden">
+    <section class="rounded-3 consulta-camera-desligada-bg position-relative h-100 overflow-hidden">
 
-            {% if True %} {# Se a câmera estiver ligada #}
-                <img class="img-fluid object-fit-cover position-absolute top-50 start-50 translate-middle"
-                src="{% static 'img/psicologa_na_consulta.jpg' %}">
-            {% else %}
-                <img class="rounded-circle position-absolute top-50 start-50 translate-middle"
-                style="width: 6em; height: 6em;"
-                src="{% static 'img/foto_de_perfil.jpg' %}"
-                alt="Foto de perfil">
-            {% endif %}
+        {% if True %} {# Se a câmera estiver ligada #}
+            <img class="img-fluid object-fit-cover position-absolute top-50 start-50 translate-middle"
+            src="{% static 'img/psicologa_na_consulta.jpg' %}">
+        {% else %}
+            <img class="rounded-circle position-absolute top-50 start-50 translate-middle"
+            style="width: 6em; height: 6em;"
+            src="{% static 'img/foto_de_perfil.jpg' %}"
+            alt="Foto de perfil">
+        {% endif %}
 
-            {% include 'componentes/consulta/nome_canto.html' %}
+        {% include 'componentes/consulta/nome_canto.html' %}
 
-            <div class="d-block d-lg-none position-absolute bottom-0 end-0 p-2">
-                {% include 'componentes/consulta/frame_menor.html' with width_px='200' %}
-            </div>
-        </section>
-
-        <section class="hstack justify-content-end align-items-end gap-2 gap-md-3 mx-3 position-relative"
-        style="height: 55px;">
-            <div class="text-body mb-2 position-absolute bottom-0 start-0 d-none d-md-block fs-6">09:43</div>
-            
-            <button id="microfoneBotao" class="btn btn-primary rounded-circle position-relative fs-6"
-            style="width: 2.5em; aspect-ratio: 1;">
-                <i class="bi bi-mic-fill fs-6 text-white position-absolute start-50 top-50 translate-middle"></i>
-            </button>
-            <button id="cameraBotao" class="btn btn-danger rounded-circle position-relative fs-6"
-            style="width: 2.5em; aspect-ratio: 1;">
-                <i class="bi bi-camera-video-off-fill text-white position-absolute start-50 top-50 translate-middle"></i>
-            </button>
-            <button class="btn btn-danger rounded-circle position-relative fs-6"
-            style="width: 2.5em; aspect-ratio: 1; transform: rotate(135deg);">
-                <i class="bi bi-telephone-fill text-white position-absolute start-50 top-50 translate-middle"></i>
-            </button>
-            <button id="chatBotao" class="btn position-relative fs-6 text-body border-0" style="width: 2.5em; aspect-ratio: 1;"
-            data-bs-toggle="collapse" data-bs-target="#chatConsulta"
-            aria-expanded="false" aria-controls="chatConsulta">
-                <i class="bi bi-chat-right-text position-absolute start-50 top-50 translate-middle"></i>
-            </button>
-
-            <div class="d-none d-lg-block">
-                {% include 'componentes/consulta/frame_menor.html' with width_px='250' %}
-            </div>
-        </section>
-    </main>
-
-    <aside class="collapse collapse-horizontal" id="chatConsulta">
-        <div class="vh-100 bg-body-secondary text-body-secondary consulta-chat-tamanho vstack gap-3 py-3">
-            <header class="text-body hstack justify-content-between px-3">
-                <h6 class="mb-0">Chat da consulta</h6>
-                <i class="bi bi-x fs-4" role="button" data-bs-toggle="collapse" data-bs-target="#chatConsulta"></i>
-            </header>
-            <main class="vstack gap-3 overflow-y-auto px-3">
-                {% for i in '1234' %}
-                    {% include 'componentes/consulta/mensagem.html' %}
-                {% endfor %}
-            </main>
-            <form action="" class="hstack mx-3">
-                <input class="form-control form-control-sm rounded-pill" placeholder="Digite..." aria-label="Digitar">
-                <i class="bi bi-send-fill text-primary px-2" role="button" type="submit"></i>
-            </form>
+        <div class="d-block d-lg-none position-absolute bottom-0 end-0 p-2">
+            {% include 'componentes/consulta/frame_menor.html' with width_px='200' %}
         </div>
-    </aside>
-</div>
+    </section>
+
+    <section class="hstack justify-content-end align-items-end gap-2 gap-md-3 mx-3 position-relative"
+    style="height: 55px;">
+        <div class="text-body mb-2 position-absolute bottom-0 start-0 d-none d-md-block fs-6">09:43</div>
+
+        <button id="microfoneBotao" class="btn btn-primary rounded-circle position-relative fs-6"
+        style="width: 2.5em; aspect-ratio: 1;">
+            <i class="bi bi-mic-fill fs-6 text-white position-absolute start-50 top-50 translate-middle"></i>
+        </button>
+        <button id="cameraBotao" class="btn btn-danger rounded-circle position-relative fs-6"
+        style="width: 2.5em; aspect-ratio: 1;">
+            <i class="bi bi-camera-video-off-fill text-white position-absolute start-50 top-50 translate-middle"></i>
+        </button>
+        <button class="btn btn-danger rounded-circle position-relative fs-6"
+        style="width: 2.5em; aspect-ratio: 1; transform: rotate(135deg);">
+            <i class="bi bi-telephone-fill text-white position-absolute start-50 top-50 translate-middle"></i>
+        </button>
+        <button id="chatBotao" class="btn position-relative fs-6 text-body border-0" style="width: 2.5em; aspect-ratio: 1;"
+        data-bs-toggle="collapse" data-bs-target="#chatConsulta"
+        aria-expanded="false" aria-controls="chatConsulta">
+            <i class="bi bi-chat-right-text position-absolute start-50 top-50 translate-middle"></i>
+        </button>
+
+        <div class="d-none d-lg-block">
+            {% include 'componentes/consulta/frame_menor.html' with width_px='250' %}
+        </div>
+    </section>
+</main>
+
+<aside class="collapse collapse-horizontal" id="chatConsulta">
+    <div class="vh-100 bg-body-secondary text-body-secondary consulta-chat-tamanho vstack gap-3 py-3">
+        <header class="text-body hstack justify-content-between px-3">
+            <h6 class="mb-0">Chat da consulta</h6>
+            <i class="bi bi-x fs-4" role="button" data-bs-toggle="collapse" data-bs-target="#chatConsulta"></i>
+        </header>
+        <main class="vstack gap-3 overflow-y-auto px-3">
+            {% for i in '1234' %}
+                {% include 'componentes/consulta/mensagem.html' %}
+            {% endfor %}
+        </main>
+        <form action="" class="hstack mx-3">
+            <input class="form-control rounded-pill" placeholder="Digite..." aria-label="Digitar">
+            <button class="btn border-0" type="submit">
+                <i class="bi bi-send-fill text-primary px-2" role="button"></i>
+            </button>
+        </form>
+    </div>
+</aside>
 
 <script>
     const microfoneBotao = document.getElementById('microfoneBotao');

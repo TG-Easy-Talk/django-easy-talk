@@ -2,47 +2,45 @@
 {% block titulo %} Minhas consultas {% endblock %}
 
 {% block conteudo %}
-<div class="container-xxl px-3 px-md-5 py-4 py-md-5 vstack gap-4">
-    <h4 class="fw-bold">Minhas consultas</h4>
+<h4 class="fw-bold">Minhas consultas</h4>
 
-    <div class="row gap-5 align-items-start">
-        <section class="flex-grow-1 col-auto card text-bg-primary text-white border border-primary-subtle shadow" style="max-width: 18rem;">
-            <div class="card-body">
-                <h5 class="card-title mb-3">Filtros</h5>
-                
-                <div class="vstack gap-3">
-                    <select class="form-select" aria-label="Default select example">
-                        <option selected>Estado</option>
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
-                    </select>
+<div class="row gap-5 align-items-start m-0">
+    <section class="flex-grow-1 col-auto card text-bg-primary text-white border border-primary-subtle shadow" style="max-width: 18rem;">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Filtros</h5>
 
-                    <select class="form-select" aria-label="Default select example">
-                        <option selected>Profissional</option>
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
-                    </select>
+            <div class="vstack gap-3">
+                <select class="form-select" aria-label="Default select example">
+                    <option selected>Estado</option>
+                    <option value="1">One</option>
+                    <option value="2">Two</option>
+                    <option value="3">Three</option>
+                </select>
 
-                    <div class="input-group">
-                        <span class="input-group-text text-bg-secondary border-0" id="DataDe">De</span>
-                        <input type="date" class="form-control" aria-label="Data limite início" aria-describedby="DataDe">
-                    </div>
+                <select class="form-select" aria-label="Default select example">
+                    <option selected>Profissional</option>
+                    <option value="1">One</option>
+                    <option value="2">Two</option>
+                    <option value="3">Three</option>
+                </select>
 
-                    <div class="input-group">
-                        <span class="input-group-text text-bg-secondary border-0" id="DataAte">Até</span>
-                        <input type="date" class="form-control" aria-label="Data limite fim" aria-describedby="DataAte">
-                    </div>
-                    
-                    <button class="btn btn-secondary">Pesquisar profissionais</button>
+                <div class="input-group">
+                    <span class="input-group-text text-bg-secondary border-0" id="DataDe">De</span>
+                    <input type="date" class="form-control" aria-label="Data limite início" aria-describedby="DataDe">
                 </div>
-            </div>
-        </section>
 
-        <main class="col p-0">
-            {% include 'componentes/minhas_consultas/tabela_historico.html' %}
-        </main>
-    </div>
+                <div class="input-group">
+                    <span class="input-group-text text-bg-secondary border-0" id="DataAte">Até</span>
+                    <input type="date" class="form-control" aria-label="Data limite fim" aria-describedby="DataAte">
+                </div>
+
+                <button class="btn btn-secondary">Pesquisar profissionais</button>
+            </div>
+        </div>
+    </section>
+
+    <main class="col p-0">
+        {% include 'componentes/minhas_consultas/tabela_historico.html' %}
+    </main>
 </div>
 {% endblock %}
