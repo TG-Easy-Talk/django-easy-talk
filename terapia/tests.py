@@ -257,7 +257,7 @@ class ConsultaModelTest(TestCase):
 
         # garante disponibilidade ampla no dia da base_dt
         cls.base_dt = datetime.datetime(
-            2025, 4, 26, 13, 30,
+            2025, 12, 26, 13, 30,
             tzinfo=timezone.get_current_timezone()
         )
         dia_semana = cls.base_dt.isoweekday()
