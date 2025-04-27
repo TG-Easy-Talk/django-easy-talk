@@ -1,17 +1,16 @@
 from django.contrib.auth import login
-from django.shortcuts import render
+from django.contrib.auth.views import LoginView
+from django.views.generic import TemplateView
 from django.views.generic import FormView
-from django.urls import reverse_lazy
 from .forms import PacienteSignupForm, PsicologoSignupForm
 from django.contrib.auth.views import LoginView
-from django.urls import reverse_lazy
 from .forms import EmailAuthenticationForm
 
 
 class PacienteSignupView(FormView):
     template_name = 'paciente_form.html'
     form_class = PacienteSignupForm
-    success_url = reverse_lazy('home')  # quando for o momento, redireciona para a tela personalizada do paciente
+    success_url = 'home'
 
     def form_valid(self, form):
         user = form.save()
@@ -22,7 +21,7 @@ class PacienteSignupView(FormView):
 class PsicologoSignupView(FormView):
     template_name = 'psicologo_form.html'
     form_class = PsicologoSignupForm
-    success_url = reverse_lazy('home')  # quando for o momento, redireciona para a tela personalizada do psicólogo
+    success_url = 'home'
 
     def form_valid(self, form):
         user = form.save()
@@ -38,20 +37,18 @@ class CustomLoginView(LoginView):
     template_name = 'login.html'
     authentication_form = EmailAuthenticationForm
 
-def home(request):
-    return render(request, 'base.html')
-
-from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView
 
 class HomeView(TemplateView):
     template_name = "home.html"
 
+
 class CustomLoginView(LoginView):
     template_name = "conta/login.html"
 
+
 class CadastroView(TemplateView):
     template_name = "conta/cadastro.html"
+
 
 class ConsultaView(TemplateView):
     template_name = "consulta.html"
@@ -61,6 +58,7 @@ class PerfilView(TemplateView):
 
 class PesquisaView(TemplateView):
     template_name = "pesquisa.html"
+
 
 class MinhasConsultasView(TemplateView):
     template_name = "minhas_consultas.html"

@@ -127,7 +127,6 @@ class Consulta(models.Model):
         max_length=20,
         choices=EstadoConsulta.choices,
         default=EstadoConsulta.SOLICITADA,
-        validators=[validate_estado_solicitada],
     )
     anotacoes = models.TextField("Anotações", blank=True)
     checklist_tarefas = models.TextField("Checklist de Tarefas", blank=True)
