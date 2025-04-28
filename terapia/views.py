@@ -1,15 +1,12 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView
-from django.views.generic import FormView
-from .forms import PacienteSignupForm, PsicologoSignupForm
-from django.contrib.auth.views import LoginView
-from .forms import EmailAuthenticationForm
+from django.views.generic import TemplateView, FormView
+from .forms import PacienteCadastroForm, PsicologoCadastroForm, EmailAuthenticationForm
 
 
-class PacienteSignupView(FormView):
+class PacienteCadastroView(FormView):
     template_name = 'paciente_form.html'
-    form_class = PacienteSignupForm
+    form_class = PacienteCadastroForm
     success_url = 'home'
 
     def form_valid(self, form):
@@ -18,9 +15,9 @@ class PacienteSignupView(FormView):
         return super().form_valid(form)
 
 
-class PsicologoSignupView(FormView):
+class PsicologoCadastroView(FormView):
     template_name = 'psicologo_form.html'
-    form_class = PsicologoSignupForm
+    form_class = PsicologoCadastroForm
     success_url = 'home'
 
     def form_valid(self, form):

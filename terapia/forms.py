@@ -8,30 +8,7 @@ from terapia.models import Paciente, Psicologo
 from usuario.forms import UsuarioCreationForm
 
 
-class PacienteForm(forms.ModelForm):
-    class Meta:
-        model = Paciente
-        fields = ['nome', 'cpf', 'foto']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['cpf'].widget.attrs.update({'placeholder': '000.000.000-00'})
-
-
-class PsicologoForm(forms.ModelForm):
-    class Meta:
-        model = Psicologo
-        fields = [
-            'nome_completo',
-            'crp',
-            'foto',
-            'sobre_mim',
-            'valor_consulta',
-            'disponibilidade',
-        ]
-
-
-class PacienteSignupForm(UsuarioCreationForm):
+class PacienteCadastroForm(UsuarioCreationForm):
     """Herdamos apenas o email + senha do UsuarioCreationForm."""
     nome = forms.CharField(
         label="Nome",
@@ -60,7 +37,7 @@ class PacienteSignupForm(UsuarioCreationForm):
         return usuario
 
 
-class PsicologoSignupForm(UsuarioCreationForm):
+class PsicologoCadastroForm(UsuarioCreationForm):
     nome_completo = forms.CharField(
         label="Nome Completo",
         max_length=50,

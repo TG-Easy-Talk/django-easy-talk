@@ -1,62 +1,50 @@
-{# Esse if será mudado para checar se o usuário está logado #}
 <header id="cabecalho"
-class="navbar {% if False %} navbar-expand-md {% else %} navbar-expand-sm {% endif %} text-bg-dark fixed-top">
+class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} navbar-expand-sm {% endif %} text-bg-dark fixed-top">
     <div class="container-fluid">
 
-        <a class="navbar-brand font-family-easytalk-logo" href="#">EasyTalk</a>
+        <a class="navbar-brand font-family-easytalk-logo" href="{% url 'home' %}">EasyTalk</a>
         
-        <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="navbarSupportedContent"
-            aria-labelledby="navbarSupportedContentLabel">
+        <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="navbarCabecalho"
+            aria-labelledby="navbarCabecalhoLabel">
             <div class="offcanvas-header">
-                <a class="offcanvas-title navbar-brand font-family-easytalk-logo" href="#">EasyTalk</a>
+                <a class="offcanvas-title navbar-brand font-family-easytalk-logo" href="{% url 'pesquisa' %}">EasyTalk</a>
                 <i class="bi bi-x fs-2 ms-auto" role="button" data-bs-dismiss="offcanvas" aria-label="Fechar"></i>
             </div>
             <div class="offcanvas-body">
                 <ul class="navbar-nav my-2 justify-content-end flex-grow-1
-                {% if False %}align-items-md-center{% else %}align-items-sm-center{% endif %}">
-                    {% if False %} {# Esse if será mudado para checar se o usuário está logado #}
+                {% if request.user.is_anonymous %} align-items-md-center {% else %} align-items-sm-center {% endif %}">
+                    {% if request.user.is_anonymous %}
+                        {% include 'componentes/geral/nav_items_compartilhados.html' %}
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Sobre</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Profissionais</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link me-md-4" href="#">FAQ</a>
+                            <a type="button" class="btn btn-secondary text-white me-md-3 mt-3 mt-md-0 w-100 w-md-auto rounded-3"
+                                href="{% url 'login' %}">Entrar</a>
                         </li>
                         <li class="nav-item">
                             <a type="button"
-                                class="btn btn-primary text-white me-md-3 mt-3 mt-md-0 w-100 w-md-auto rounded-3"
-                                href="#">Acesso para profissionais</a>
-                        </li>
-                        <li class="nav-item">
-                            <a type="button" class="btn btn-secondary text-white mt-3 mt-md-0 w-100 w-md-auto rounded-3"
-                                href="#">Acesso para pacientes</a>
+                                class="btn btn-primary text-white mt-3 mt-md-0 w-100 w-md-auto rounded-3"
+                                href="{% url 'cadastro' %}">Cadastrar-se</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Profissionais</a>
+                            <a class="nav-link" href="{% url 'pesquisa' %}">Profissionais</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-nowrap" href="#">Minhas consultas</a>
+                            <a class="nav-link text-nowrap" href="{% url 'minhas_consultas' %}">Minhas consultas</a>
                         </li>
-                    {% endif %}
                         <li class="d-none d-sm-block m-0 mx-sm-2 vr text-primary opacity-100"></li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
-        {% if False %} {# Esse if será mudado para checar se o usuário está logado #}
+        {% if request.user.is_anonymous %}
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
-                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                aria-label="Toggle navigation">
+                data-bs-target="#navbarCabecalho" aria-controls="navbarCabecalho"
+                aria-label="Alternar navegação">
                 <span class="navbar-toggler-icon"></span>
             </button>
         {% else %}
             <div class="navbar-nav">
-                <div class="nav-item hstack d-sm-none" role="button" data-bs-toggle="offcanvas" data-bs-target="#navbarSupportedContent">
+                <div class="nav-item hstack d-sm-none" role="button" data-bs-toggle="offcanvas" data-bs-target="#navbarCabecalho">
                     {% include 'componentes/cabecalho/usuario.html' %}
                 </div>
 
@@ -68,7 +56,7 @@ class="navbar {% if False %} navbar-expand-md {% else %} navbar-expand-sm {% end
     </div>
 </header>
 
-<div id="cabecalhoEspaco" class=""></div>
+<div id="cabecalhoEspaco"></div>
 
 <script>
     const cabecalhoEspaco = document.getElementById('cabecalhoEspaco');
