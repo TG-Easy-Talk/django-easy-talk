@@ -14,7 +14,7 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
                 <ul class="navbar-nav my-2 justify-content-end flex-grow-1
                 {% if request.user.is_anonymous %} align-items-md-center {% else %} align-items-sm-center {% endif %}">
                     {% if request.user.is_anonymous %}
-                        {% include 'componentes/geral/nav_items_compartilhados.html' %}
+                        {% include 'geral/nav_items_compartilhados.html' %}
                         <li class="nav-item">
                             <a type="button" class="btn btn-secondary text-white me-md-3 mt-3 mt-md-0 w-100 w-md-auto rounded-3"
                                 href="{% url 'login' %}">Entrar</a>
@@ -45,11 +45,11 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
         {% else %}
             <div class="navbar-nav">
                 <div class="nav-item hstack d-sm-none" role="button" data-bs-toggle="offcanvas" data-bs-target="#navbarCabecalho">
-                    {% include 'componentes/cabecalho/usuario.html' %}
+                    {% include 'cabecalho/componentes/usuario.html' %}
                 </div>
 
                 <div class="nav-item hstack d-none d-sm-flex">
-                    {% include 'componentes/cabecalho/usuario.html' %}
+                    {% include 'cabecalho/componentes/usuario.html' %}
                 </div>
             </div>
         {% endif %}

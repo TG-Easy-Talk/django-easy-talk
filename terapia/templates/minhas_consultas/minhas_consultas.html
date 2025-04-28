@@ -1,4 +1,4 @@
-{% extends 'componentes/base.html' %}
+{% extends 'geral/base.html' %}
 {% block titulo %} Minhas consultas {% endblock %}
 
 {% block conteudo %}
@@ -40,7 +40,7 @@
     </section>
 
     <main class="col p-0">
-        {% include 'componentes/minhas_consultas/tabela_historico.html' %}
+        {% include 'minhas_consultas/componentes/tabela_historico.html' %}
     </main>
 </div>
 {% endblock %}

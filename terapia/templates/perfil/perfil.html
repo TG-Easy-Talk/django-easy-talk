@@ -1,4 +1,4 @@
-{% extends 'componentes/base.html' %}
+{% extends 'geral/base.html' %}
 {% block titulo %} Perfil {% endblock %}
 
 {% load static %}
@@ -45,12 +45,12 @@
 
         <div class="vstack gap-2">
             <h6>Disponibilidade</h6>
-            {% include 'componentes/perfil/tabela_disponibilidade.html' %}
+            {% include 'perfil/componentes/tabela_disponibilidade.html' %}
         </div>
 
         <div class="vstack gap-2">
             <h6>Sobre minhas especializações</h6>
-            {% include 'componentes/perfil/sobre_minhas_especializacoes.html' %}
+            {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
         </div>
 
 

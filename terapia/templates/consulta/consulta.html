@@ -1,4 +1,4 @@
-{% extends 'componentes/base.html' %}
+{% extends 'geral/base.html' %}
 {% block titulo %} Consulta {% endblock %}
 
 {% load static %}
@@ -24,10 +24,10 @@
             alt="Foto de perfil">
         {% endif %}
 
-        {% include 'componentes/consulta/nome_canto.html' %}
+        {% include 'consulta/componentes/nome_canto.html' %}
 
         <div class="d-block d-lg-none position-absolute bottom-0 end-0 p-2">
-            {% include 'componentes/consulta/frame_menor.html' with width_px='200' %}
+            {% include 'consulta/componentes/frame_menor.html' with width_px='200' %}
         </div>
     </section>
 
@@ -54,7 +54,7 @@
         </button>
 
         <div class="d-none d-lg-block">
-            {% include 'componentes/consulta/frame_menor.html' with width_px='250' %}
+            {% include 'consulta/componentes/frame_menor.html' with width_px='250' %}
         </div>
     </section>
 </main>
@@ -67,7 +67,7 @@
         </header>
         <main class="vstack gap-3 overflow-y-auto px-3">
             {% for i in '1234' %}
-                {% include 'componentes/consulta/mensagem.html' %}
+                {% include 'consulta/componentes/mensagem.html' %}
             {% endfor %}
         </main>
         <form action="" class="hstack mx-3">

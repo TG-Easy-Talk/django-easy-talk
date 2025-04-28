@@ -31,34 +31,30 @@ class CustomLoginView(LoginView):
     Exibe o formulário de login e, em caso de sucesso,
     redireciona para a 'home'.
     """
-    template_name = 'login.html'
+    template_name = 'conta/login.html'
     authentication_form = EmailAuthenticationForm
-
-
-class HomeView(TemplateView):
-    template_name = "home.html"
-
-
-class CustomLoginView(LoginView):
-    template_name = "conta/login.html"
 
 
 class CadastroView(TemplateView):
     template_name = "conta/cadastro.html"
 
 
+class HomeView(TemplateView):
+    template_name = "home.html"
+
+
 class ConsultaView(TemplateView):
-    template_name = "consulta.html"
+    template_name = "consulta/consulta.html"
 
 class PerfilView(TemplateView):
-    template_name = "perfil.html"
+    template_name = "perfil/perfil.html"
 
 class PesquisaView(TemplateView):
-    template_name = "pesquisa.html"
+    template_name = "pesquisa/pesquisa.html"
 
 
 class MinhasConsultasView(TemplateView):
-    template_name = "minhas_consultas.html"
+    template_name = "minhas_consultas/minhas_consultas.html"
 
     def get_context_data(self, **kwargs):
         # Esse método é para teste do template por enquanto.
