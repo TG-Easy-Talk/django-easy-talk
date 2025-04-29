@@ -6,7 +6,7 @@
 {% block atributos_div_conteudo %} class="container-fluid hstack justify-content-center flex-grow-1 p-0" {% endblock %}
 
 {% block conteudo %}
-<form method="post" style="max-width: 20rem;" class="vstack gap-2 justify-content-center text-center">
+<form method="post" style="max-width: 20rem;" class="vstack gap-2 justify-content-center">
     {% csrf_token %}
     {{ form }}
 

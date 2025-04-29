@@ -7,19 +7,6 @@
 
 
 
-<!--{% if field.help_text %}-->
-
-<!--    <div class="text-body-secondary small"-->
-<!--    {% if field.auto_id %} id="{{ field.auto_id }}_helptext"{% endif %}>-->
-
-<!--        {{ field.help_text|safe }}-->
-
-<!--    </div>-->
-
-<!--{% endif %}-->
-
-
-
 {{ field }}
 
 
@@ -34,7 +21,8 @@
     </div>
 {% endfor %}
 
-<!--{{ field.errors }}-->
+
+{{ field.errors }}
 
 
 
