@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField, AuthenticationForm
 from django.core.exceptions import ValidationError
-from easy_talk.renderers import CustomErrorList
 from .models import Usuario
 
 
@@ -42,5 +41,9 @@ class EmailAuthenticationForm(AuthenticationForm):
     """
     Formulário de autenticação que sobrescreve o username do AuthenticationForm para ser um email.
     """
-    username = forms.EmailField(label="E-mail")
-    error_class = CustomErrorList
+    username = forms.EmailField(label="Email")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Sobrescrever a mensagem padrão de login inválido
+        self.error_messages["invalid_login"] = ("Por favor, informe email e senha válidos.")

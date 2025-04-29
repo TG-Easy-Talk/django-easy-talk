@@ -1,11 +1,15 @@
-{{ errors }}
+{% for error in errors %}
+    <div class="text-danger">{{ error }}</div>
+{% endfor %}
 
-{# Campos ocultos (como next) #}
+
+
 {% for hidden in hidden_fields %}
     {{ hidden }}
 {% endfor %}
 
-{# Campos visíveis: email e senha #}
+
+
 {% for field, errors in fields %}
     <div class="form-floating">
         {{ field.as_field_group }}

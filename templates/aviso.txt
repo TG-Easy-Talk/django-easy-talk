@@ -1,0 +1,2 @@
+Essa pasta está sendo usada para sobrescrever templates padrão do Django.
+Para sobrescrevê-los, é necessário manter a estrutura de pastas e o nome do arquivo originais.

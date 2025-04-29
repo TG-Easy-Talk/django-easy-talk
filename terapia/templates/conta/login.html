@@ -6,28 +6,17 @@
 {% block atributos_div_conteudo %} class="container-fluid hstack justify-content-center flex-grow-1 p-0" {% endblock %}
 
 {% block conteudo %}
-<form method="post" style="max-width: 20rem;" class="vstack gap-2 justify-content-center">
+<form novalidate method="post" style="max-width: 20rem;" class="vstack gap-2 justify-content-center">
     {% csrf_token %}
+
+    <h1 class="font-family-easytalk-logo display-1 mb-5 text-center">
+        <span class="text-primary">Easy</span>Talk
+    </h1>
+    <h3>Bem-vindo(a)!</h3>
+
     {{ form }}
-
-    {% comment %} <h1 class="font-family-easytalk-logo display-1 mb-5"><span class="text-primary">Easy</span>Talk</h1>
-
-    <h3 class="">Bem-vindo(a)!</h3>
-
-    <div class="form-floating">
-        <input type="email" class="form-control border border-secondary-subtle" id="emailInput" placeholder="name@example.com">
-        <label for="emailInput">E-mail</label>
-    </div>
-    <div class="form-floating">
-        <input type="password" class="form-control border border-secondary-subtle" id="senhaInput" placeholder="Password">
-        <label for="senhaInput">Senha</label>
-    </div>
-
-    <p class="text-body-secondary">
-        Não tem uma conta? <a href="{% url 'cadastro' %}" class="fw-medium">Cadastre-se</a>
-    </p> {% endcomment %}
-    <button class="btn btn-primary w-100 py-2 text-white mb-2" type="submit">Entrar</button>
-
+    
+    <button class="btn btn-primary w-100 text-white" type="submit">Entrar</button>
 </form>
 
 {% endblock %}
