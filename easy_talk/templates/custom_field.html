@@ -7,16 +7,16 @@
 
 
 
-{% if field.help_text %}
+<!--{% if field.help_text %}-->
 
-    <div class="text-body-secondary small"
-    {% if field.auto_id %} id="{{ field.auto_id }}_helptext"{% endif %}>
+<!--    <div class="text-body-secondary small"-->
+<!--    {% if field.auto_id %} id="{{ field.auto_id }}_helptext"{% endif %}>-->
 
-        {{ field.help_text|safe }}
+<!--        {{ field.help_text|safe }}-->
 
-    </div>
+<!--    </div>-->
 
-{% endif %}
+<!--{% endif %}-->
 
 
 
@@ -28,11 +28,13 @@
 
 
 
-{% if field.errors %}
+{% for error in field.errors %}
     <div class="invalid-feedback">
-        {{ field.errors|striptags }}
+        {{ error }}
     </div>
-{% endif %}
+{% endfor %}
+
+<!--{{ field.errors }}-->
 
 
 
