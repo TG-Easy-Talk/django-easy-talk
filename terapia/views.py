@@ -1,13 +1,15 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
 from django.views.generic import TemplateView, FormView
-from .forms import PacienteCadastroForm, PsicologoCadastroForm, EmailAuthenticationForm
+from .forms import PacienteCadastroForm, PsicologoCadastroForm
+from django.urls import reverse_lazy
+from usuario.forms import EmailAuthenticationForm
 
 
 class PacienteCadastroView(FormView):
     template_name = 'paciente_form.html'
     form_class = PacienteCadastroForm
-    success_url = 'home'
+    success_url = reverse_lazy('home')
 
     def form_valid(self, form):
         user = form.save()
@@ -18,7 +20,7 @@ class PacienteCadastroView(FormView):
 class PsicologoCadastroView(FormView):
     template_name = 'psicologo_form.html'
     form_class = PsicologoCadastroForm
-    success_url = 'home'
+    success_url = reverse_lazy('home')
 
     def form_valid(self, form):
         user = form.save()
@@ -29,7 +31,7 @@ class PsicologoCadastroView(FormView):
 class CustomLoginView(LoginView):
     """
     Exibe o formulário de login e, em caso de sucesso,
-    redireciona para a 'home'.
+    redireciona para a reverse_lazy('home').
     """
     template_name = 'conta/login.html'
     authentication_form = EmailAuthenticationForm

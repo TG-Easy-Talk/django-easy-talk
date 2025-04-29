@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from django.contrib.auth.forms import ReadOnlyPasswordHashField, AuthenticationForm
 from django.core.exceptions import ValidationError
 
 from .models import Usuario
@@ -36,3 +36,10 @@ class UsuarioChangeForm(forms.ModelForm):
     class Meta:
         model = Usuario
         fields = ["email", "password", "is_active", "is_staff", "is_superuser"]
+
+
+class EmailAuthenticationForm(AuthenticationForm):
+    """
+    Formulário de autenticação que sobrescreve o username do AuthenticationForm para ser um email.
+    """
+    username = forms.EmailField(label="E-mail")

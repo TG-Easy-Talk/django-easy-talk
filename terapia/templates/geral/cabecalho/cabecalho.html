@@ -45,11 +45,11 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
         {% else %}
             <div class="navbar-nav">
                 <div class="nav-item hstack d-sm-none" role="button" data-bs-toggle="offcanvas" data-bs-target="#navbarCabecalho">
-                    {% include 'cabecalho/componentes/usuario.html' %}
+                    {% include 'geral/cabecalho/componentes/usuario.html' %}
                 </div>
 
                 <div class="nav-item hstack d-none d-sm-flex">
-                    {% include 'cabecalho/componentes/usuario.html' %}
+                    {% include 'geral/cabecalho/componentes/usuario.html' %}
                 </div>
             </div>
         {% endif %}

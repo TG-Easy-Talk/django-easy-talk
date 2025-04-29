@@ -1,11 +1,7 @@
-import datetime
-import re
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.utils import timezone
 from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
 from terapia.utils.availability import (
@@ -15,7 +11,6 @@ from terapia.utils.availability import (
 from terapia.utils.validators import (
     validate_future_datetime,
     validate_duracao_range,
-    validate_estado_solicitada,
     validate_valor_consulta,
 )
 
@@ -76,7 +71,7 @@ class Psicologo(models.Model):
             MinValueValidator(0),
             validate_valor_consulta,
         ],
-        help_text="Entre R$ 20,00 e R$ 4 999,99",
+        help_text="Entre R$ 20,00 e R$ 4.999,99",
     )
     disponibilidade = models.JSONField(
         "Disponibilidade",
@@ -155,4 +150,4 @@ class Consulta(models.Model):
             })
 
     def __str__(self):
-        return f"Consulta em {self.data_hora_marcada:%Y-%m-%d %H:%M'}"
+        return f"Consulta em {self.data_hora_marcada:%Y-%m-%d %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"

@@ -23,8 +23,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.forms',
     'usuario',
-    'terapia.apps.TerapiaConfig'
+    'terapia.apps.TerapiaConfig',
 ]
 
 AUTH_USER_MODEL = "usuario.Usuario"
@@ -44,7 +45,7 @@ ROOT_URLCONF = 'easy_talk.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'easy_talk/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -116,3 +117,5 @@ MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+FORM_RENDERER = 'easy_talk.renderers.CustomFormRenderer'

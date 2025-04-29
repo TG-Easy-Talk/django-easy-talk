@@ -1,15 +1,13 @@
 from django import forms
-from django.contrib.auth import login
-from django.views.generic import FormView
-from django.urls import reverse_lazy
-from django.contrib.auth.forms import AuthenticationForm
-from usuario.models import Usuario
+from django.contrib.auth import get_user_model
 from terapia.models import Paciente, Psicologo
 from usuario.forms import UsuarioCreationForm
 
 
+Usuario = get_user_model()
+
+
 class PacienteCadastroForm(UsuarioCreationForm):
-    """Herdamos apenas o email + senha do UsuarioCreationForm."""
     nome = forms.CharField(
         label="Nome",
         max_length=50,
@@ -53,9 +51,9 @@ class PsicologoCadastroForm(UsuarioCreationForm):
     class Meta(UsuarioCreationForm.Meta):
         model = Usuario
         fields = [
-            'email',
             'nome_completo',
-            'crp'
+            'crp',
+            'email',
         ]
 
     def save(self, commit=True):
@@ -66,15 +64,3 @@ class PsicologoCadastroForm(UsuarioCreationForm):
             crp=self.cleaned_data["crp"],
         )
         return usuario
-
-
-class EmailAuthenticationForm(AuthenticationForm):
-    username = forms.EmailField(
-        label="E‑mail",
-        widget=forms.EmailInput(attrs={'placeholder': 'seu@exemplo.com', 'autofocus': True})
-    )
-    password = forms.CharField(
-        label="Senha",
-        strip=False,
-        widget=forms.PasswordInput(attrs={'placeholder': '••••••••'})
-    )
