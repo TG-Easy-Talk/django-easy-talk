@@ -1,37 +1,57 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
 from django.views.generic import TemplateView, FormView
+from django.views.generic.base import ContextMixin
 from .forms import PacienteCadastroForm, PsicologoCadastroForm
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
 
 
-class PacienteCadastroView(FormView):
-    template_name = 'paciente_form.html'
+
+class CadastroEscolhaView(TemplateView):
+    template_name = 'conta/cadastro_escolha.html'
+
+
+class CadastroView(FormView, ContextMixin):
+    """
+    Superclasse para as views de cadastro de Paciente e Psicólogo. Não deve ser instanciada diretamente.
+    """
+    template_name = 'conta/cadastro.html'
+    success_url = reverse_lazy('home')
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["texto_submit"] = "Cadastrar-se"
+        return context
+
+
+class PacienteCadastroView(CadastroView):
     form_class = PacienteCadastroForm
-    success_url = reverse_lazy('home')
 
-    def form_valid(self, form):
-        user = form.save()
-        login(self.request, user)
-        return super().form_valid(form)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["heading_form"] = "Cadastro de Paciente"
+        return context
 
 
-class PsicologoCadastroView(FormView):
-    template_name = 'psicologo_form.html'
+class PsicologoCadastroView(CadastroView):
     form_class = PsicologoCadastroForm
-    success_url = reverse_lazy('home')
 
-    def form_valid(self, form):
-        user = form.save()
-        login(self.request, user)
-        return super().form_valid(form)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["heading_form"] = "Cadastro de Psicólogo"
+        return context
 
 
 class CustomLoginView(LoginView):
     """
     Exibe o formulário de login e, em caso de sucesso,
-    redireciona para a reverse_lazy('home').
+    redireciona para LOGIN_REDIRECT_URL.
     """
     template_name = 'conta/login.html'
     authentication_form = EmailAuthenticationForm

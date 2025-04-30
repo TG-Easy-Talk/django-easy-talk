@@ -1,39 +1,4 @@
-{% extends 'geral/base.html' %}
-{% block titulo %} Login {% endblock %}
-
-{% load static %}
-
-{# Excluir cabeçalho e rodapé #}
-{% block cabecalho %}{% endblock %}
-{% block rodape %}{% endblock %}
-
-{% block atributos_div_conteudo %} class="container-fluid hstack justify-content-center flex-grow-1 p-0" {% endblock %}
-
-{% block conteudo %}
-<form style="max-width: 20rem;" class="vstack gap-2 justify-content-center text-center">
-
-    <h1 class="font-family-easytalk-logo display-1 mb-5"><span class="text-primary">Easy</span>Talk</h1>
-
-    <h3>Cadastro</h3>
-
-    <div class="form-floating">
-        <input type="email" class="form-control border border-secondary-subtle" id="emailInput" placeholder="name@example.com">
-        <label for="emailInput">E-mail</label>
-    </div>
-    <div class="form-floating">
-        <input type="password" class="form-control border border-secondary-subtle" id="senhaInput" placeholder="Password">
-        <label for="senhaInput">Senha</label>
-    </div>
-    <div class="form-floating">
-        <input type="password" class="form-control border border-secondary-subtle" id="confirmacaoSenhaInput" placeholder="Password">
-        <label for="confirmacaoSenhaInput">Confirmar a senha</label>
-    </div>
-
-    <button class="btn btn-primary w-100 py-2 text-white mb-2" type="submit">Cadastrar</button>
-
-    <p class="text-body-secondary">
-        Já tem uma conta? <a href="{% url 'login' %}" class="fw-medium">Faça login</a>
-    </p>
-</form>
-
-{% endblock %}
+{% extends 'conta/acesso.html' %}
+{% block titulo %}{{ heading_form }}{% endblock %}
+{% block heading_form %}{{ heading_form }}{% endblock %}
+{% block texto_submit %}{{ texto_submit }}{% endblock %}

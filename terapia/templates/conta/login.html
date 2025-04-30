@@ -1,22 +1,4 @@
-{% extends 'geral/base.html' %}
+{% extends 'conta/acesso.html' %}
 {% block titulo %} Login {% endblock %}
-
-{% load static %}
-
-{% block atributos_div_conteudo %} class="container-fluid hstack justify-content-center flex-grow-1 p-0" {% endblock %}
-
-{% block conteudo %}
-<form novalidate method="post" style="max-width: 20rem;" class="vstack gap-2 justify-content-center">
-    {% csrf_token %}
-
-    <h1 class="font-family-easytalk-logo display-1 mb-5 text-center">
-        <span class="text-primary">Easy</span>Talk
-    </h1>
-    <h3>Bem-vindo(a)!</h3>
-
-    {{ form }}
-    
-    <button class="btn btn-primary w-100 text-white" type="submit">Entrar</button>
-</form>
-
-{% endblock %}
+{% block heading_form %}Bem-vindo(a)!{% endblock %}
+{% block texto_submit %}Entrar{% endblock %}

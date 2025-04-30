@@ -23,7 +23,7 @@ class CustomFormRenderer(TemplatesSetting):
 
                     if bound_field.errors:
                         classes += ' is-invalid'
-                    elif form.is_bound and bound_field.name not in ['username', 'password']:
+                    elif form.is_bound and bound_field.field.widget.input_type not in ['email', 'password']:
                         classes += ' is-valid'
                         
                     bound_field.field.widget.attrs.setdefault('class', classes)

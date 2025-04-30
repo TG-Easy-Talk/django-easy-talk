@@ -1,0 +1,12 @@
+{% extends 'conta/acesso.html' %}
+{% block classes_adicionais_submit %}d-none{% endblock %}
+
+{% block titulo %}Cadastro{% endblock %}
+{% block heading_form %}Qual seu tipo de cadastro?{% endblock %}
+
+{% block form %}
+    <a class="btn btn-primary text-white" href="{% url 'cadastro_paciente' %}">Paciente</a>
+    <a class="btn btn-primary text-white" href="{% url 'cadastro_psicologo' %}">Profissional</a>
+{% endblock %}
+
+{% block outros_fluxos_form %}{% endblock %}
