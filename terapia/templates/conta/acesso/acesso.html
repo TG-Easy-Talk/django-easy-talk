@@ -17,11 +17,7 @@
 
     <button class="btn btn-primary text-white {% block classes_adicionais_submit %}{% endblock %}" type="submit">{% block texto_submit %}{% endblock %}</button>
 
-    {% block outros_fluxos_form %}
-        <p class="text-body-secondary">
-            Já tem uma conta? <a href="{% url 'login' %}" class="fw-medium">Faça login</a>
-        </p>
-    {% endblock %}
+    {% include }
 </form>
 
 {% endblock %}

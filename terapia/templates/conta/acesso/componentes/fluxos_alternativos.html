@@ -1,0 +1,8 @@
+{% for url in fluxo_urls %}
+    <p class="text-body-secondary">
+        {{ fluxo_pergunta }}
+        <a href="{{ url }}" class="fw-medium">
+            {{ fluxo_link_texto }}
+        </a>
+    </p>
+{% endfor %}

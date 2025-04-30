@@ -1,4 +1,4 @@
-{% extends 'conta/acesso.html' %}
+{% extends 'conta/acesso/acesso.html' %}
 {% block classes_adicionais_submit %}d-none{% endblock %}
 
 {% block titulo %}Cadastro{% endblock %}
@@ -8,5 +8,3 @@
     <a class="btn btn-primary text-white" href="{% url 'cadastro_paciente' %}">Paciente</a>
     <a class="btn btn-primary text-white" href="{% url 'cadastro_psicologo' %}">Profissional</a>
 {% endblock %}
-
-{% block outros_fluxos_form %}{% endblock %}

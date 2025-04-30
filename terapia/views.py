@@ -9,14 +9,14 @@ from usuario.forms import EmailAuthenticationForm
 
 
 class CadastroEscolhaView(TemplateView):
-    template_name = 'conta/cadastro_escolha.html'
+    template_name = 'conta/acesso/cadastro_escolha.html'
 
 
 class CadastroView(FormView, ContextMixin):
     """
     Superclasse para as views de cadastro de Paciente e Psicólogo. Não deve ser instanciada diretamente.
     """
-    template_name = 'conta/cadastro.html'
+    template_name = 'conta/acesso/cadastro.html'
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
@@ -26,7 +26,9 @@ class CadastroView(FormView, ContextMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["texto_submit"] = "Cadastrar-se"
+        context["fluxos_alternativos"] = [
+            {'url': reverse_lazy('login'), }
+        ]
         return context
 
 
@@ -48,17 +50,22 @@ class PsicologoCadastroView(CadastroView):
         return context
 
 
-class CustomLoginView(LoginView):
+class CustomLoginView(LoginView, ContextMixin):
     """
     Exibe o formulário de login e, em caso de sucesso,
     redireciona para LOGIN_REDIRECT_URL.
     """
-    template_name = 'conta/login.html'
+    template_name = 'conta/acesso/login.html'
     authentication_form = EmailAuthenticationForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["fluxo_url"] = reverse_lazy('cadastro_escolha')
+        return context
 
 
 class CadastroView(TemplateView):
-    template_name = "conta/cadastro.html"
+    template_name = "conta/acesso/cadastro.html"
 
 
 class HomeView(TemplateView):
