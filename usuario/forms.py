@@ -41,9 +41,9 @@ class EmailAuthenticationForm(AuthenticationForm):
     """
     Formulário de autenticação que sobrescreve o username do AuthenticationForm para ser um email.
     """
-    username = forms.EmailField(label="Email")
+    username = forms.EmailField(label="E-mail")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Sobrescrever a mensagem padrão de login inválido
-        self.error_messages["invalid_login"] = ("Por favor, informe email e senha válidos.")
+        self.error_messages["invalid_login"] = ("Por favor, informe e-mail e senha válidos.")
