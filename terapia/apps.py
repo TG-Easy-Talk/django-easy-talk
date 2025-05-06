@@ -44,6 +44,64 @@ def popular_especializacoes(sender, **kwargs):
         )
 
 
+def popular_usuarios(sender, **kwargs):
+    from django.contrib.auth import get_user_model
+
+    Usuario = get_user_model()
+
+    dados = [
+        {"email": "joao.silva@gmail.com", "password": "joao.silva"},
+        {"email": "maria.oliveira@gmail.com", "password": "maria.oliveira"},
+        {"email": "pedro.santos@gmail.com", "password": "pedro.santos"},
+        {"email": "ana.costa@gmail.com", "password": "ana.costa"},
+        {"email": "lucas.almeida@gmail.com", "password": "lucas.almeida"},
+        {"email": "paciente.teste@gmail.com", "password": "paciente.teste"},
+    ]
+
+    for item in dados:
+        Usuario.objects.get_or_create(
+            email=item["email"],
+            defaults={"password": item["password"]}
+        )
+
+
+def popular_psicologos(sender, **kwargs):
+    from .models import Psicologo
+    from django.contrib.auth import get_user_model
+
+    Usuario = get_user_model()
+
+    dados = [
+        {"nome_completo": "João Silva", "crp": "01/12345", "usuario": Usuario.objects.get(email="joao.silva@gmail.com")},
+        {"nome_completo": "Maria Oliveira", "crp": "02/67890", "usuario": Usuario.objects.get(email="maria.oliveira@gmail.com")},
+        {"nome_completo": "Pedro Santos", "crp": "03/11223", "usuario": Usuario.objects.get(email="pedro.santos@gmail.com")},
+        {"nome_completo": "Ana Costa", "crp": "04/44556", "usuario": Usuario.objects.get(email="ana.costa@gmail.com")},
+        {"nome_completo": "Lucas Almeida", "crp": "05/77889", "usuario": Usuario.objects.get(email="lucas.almeida@gmail.com")},
+    ]
+
+    for item in dados:
+        Psicologo.objects.get_or_create(
+            crp=item["crp"],
+            defaults={"nome_completo": item["nome_completo"], "usuario": item["usuario"]}
+        )
+
+def popular_pacientes(sender, **kwargs):
+    from .models import Paciente
+    from django.contrib.auth import get_user_model
+
+    Usuario = get_user_model()
+
+    dados = [
+        {"nome": "Paciente Teste", "cpf": "482.763.280-40", "usuario": Usuario.objects.get(email="paciente.teste@gmail.com")},
+    ]
+
+    for item in dados:
+        Paciente.objects.get_or_create(
+            cpf=item["cpf"],
+            defaults={"nome": item["nome"], "usuario": item["usuario"]}
+        )
+
+
 class TerapiaConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'terapia'
@@ -51,4 +109,7 @@ class TerapiaConfig(AppConfig):
 
     def ready(self):
         import terapia.signals
-        post_migrate.connect(popular_especializacoes, sender=self)
+        funcoes_popular = [popular_usuarios, popular_especializacoes, popular_psicologos, popular_pacientes]
+
+        for funcao in funcoes_popular:
+            post_migrate.connect(funcao, sender=self)
