@@ -1,0 +1,8 @@
+{% for fluxo in fluxos_alternativos %}
+    <div class="text-body-secondary">
+        {{ fluxo.pergunta }}?
+        <a href="{{ fluxo.url }}" class="fw-medium">
+            {{ fluxo.link_texto }}
+        </a>
+    </div>
+{% endfor %}

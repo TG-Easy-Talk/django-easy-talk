@@ -1,0 +1,17 @@
+{% for error in errors %}
+    <div class="text-danger">{{ error }}</div>
+{% endfor %}
+
+
+
+{% for hidden in hidden_fields %}
+    {{ hidden }}
+{% endfor %}
+
+
+
+{% for field, errors in fields %}
+    <div class="form-floating">
+        {{ field.as_field_group }}
+    </div>
+{% endfor %}

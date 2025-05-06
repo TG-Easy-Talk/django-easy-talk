@@ -1,4 +1,5 @@
 import datetime
+from django.utils.translation import gettext as _
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -194,7 +195,7 @@ class PsicologoModelTest(TestCase):
         )
         with self.assertRaises(ValidationError) as context:
             psicologo.full_clean()
-        self.assertIn('Ensure this value is greater than or equal to 0.',
+        self.assertIn(_('Certifique-se que este valor seja maior ou igual a 0.'),
                       context.exception.message_dict['valor_consulta'])
 
     def test_nome_completo_verbose_name(self):

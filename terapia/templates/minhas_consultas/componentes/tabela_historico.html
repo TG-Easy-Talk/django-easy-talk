@@ -1,0 +1,43 @@
+{% load static %}
+
+<div class="table-responsive shadow rounded-3 border border-primary">
+    <table class="table table-borderless text-center mb-0">
+        {% comment %} <colgroup>
+            <col style="width: 25%;">
+            <col style="width: 25%;">
+            <col style="width: 25%;">
+            <col style="width: 25%;">
+        </colgroup> {% endcomment %}
+        <thead class="table-primary">
+            <tr>
+                <th class="text-white border-0" scope="col">Profissional</th>
+                <th class="text-white border-0" scope="col">Estado</th>
+                <th class="text-white border-0" scope="col">Data e horário</th>
+                <th class="text-white border-0" scope="col">Ação</th>
+            </tr>
+        </thead>
+        <tbody class="text-nowrap">
+            {% for consulta in minhas_consultas %}
+                <tr class="{% if not forloop.last %}border-bottom{% endif %}">
+                    <td class="text-start">
+                        <div class="hstack gap-2">
+                            <img class="rounded-circle"
+                            style="width: 2.5em; height: 2.5em;"
+                            src="{% static 'img/foto_de_perfil.jpg' %}"
+                            alt="Foto de perfil">
+
+                            <span class="ms-2 text-wrap">{{ consulta.psicologo }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge text-bg-{{ consulta.class }}">{{ consulta.status }}</span>
+                    </td>
+                    <td>{{ consulta.data }}, {{ consulta.hora }}</td>
+                    <td>
+                        <a href="#" class="link-info">Cancelar</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

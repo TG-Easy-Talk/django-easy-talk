@@ -1,0 +1,61 @@
+{% extends 'geral/base.html' %}
+{% block titulo %} Perfil {% endblock %}
+
+{% load static %}
+
+{% block conteudo %}
+<div class="row gap-4 flex-nowrap">
+    <section class="col vstack gap-5">
+        <div class="hstack gap-4">
+            <img class="rounded-circle mx-auto"
+            style="width: 7.5rem; height: 7.5rem;"
+            src="{% static 'img/foto_de_perfil.jpg' %}"
+            alt="Foto de perfil">
+
+            <div class="flex-grow-1">
+                <h4 class="fw-bold">Wanessa Vasconcelos Sampaio</h4>
+                <hr class="border border-primary opacity-100">
+
+                <div class="hstack gap-5">
+                    <div>
+                        <h6 class="text-body-secondary">Valor da consulta</h6>
+                        <h6 class="fw-semibold">R$150,00</h6>
+                    </div>
+                    <div>
+                        <h6 class="text-body-secondary">CRP</h6>
+                        <h6 class="fw-semibold">03/12345</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="vstack gap-2">
+            <h6>Especializações</h6>
+            <div class="hstack gap-2 flex-wrap">
+                {% for i in '123456789' %}
+                    <span class="badge text-bg-secondary text-white">Especialização {{ i }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="vstack gap-2">
+            <h6>Sobre mim</h6>
+            <div class="text-body-secondary">Atuo na promoção do autoconhecimento, acolhendo cada pessoa em sua singularidade para desenvolver saúde mental. Possuo pós-graduação em Neuropsicologia. Trabalho com a Terapia Cognitivo-Comportamental (TCC) e a integração com EMDR, uma abordagem específica para o tratamento de traumas psicológicos. Atendo jovens e adultos, sempre buscando oferecer um cuidado atento e personalizado.</div>
+        </div>
+
+        <div class="vstack gap-2">
+            <h6>Disponibilidade</h6>
+            {% include 'perfil/componentes/tabela_disponibilidade.html' %}
+        </div>
+
+        <div class="vstack gap-2">
+            <h6>Sobre minhas especializações</h6>
+            {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
+        </div>
+
+
+    </section>
+
+    <aside class="col-auto bg-primary rounded-3" style="width: 250px;"></aside>
+</div>
+{% endblock %}
