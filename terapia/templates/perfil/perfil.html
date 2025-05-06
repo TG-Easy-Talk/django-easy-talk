@@ -1,5 +1,5 @@
 {% extends 'geral/base.html' %}
-{% block titulo %} Perfil {% endblock %}
+{% block titulo %} {{ psicologo.nome_completo }} {% endblock %}
 
 {% load static %}
 
@@ -9,21 +9,21 @@
         <div class="hstack gap-4">
             <img class="rounded-circle mx-auto"
             style="width: 7.5rem; height: 7.5rem;"
-            src="{% static 'img/foto_de_perfil.jpg' %}"
+            src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
             alt="Foto de perfil">
 
             <div class="flex-grow-1">
-                <h4 class="fw-bold">Wanessa Vasconcelos Sampaio</h4>
+                <h4 class="fw-bold">{{ psicologo.nome_completo }}</h4>
                 <hr class="border border-primary opacity-100">
 
                 <div class="hstack gap-5">
                     <div>
                         <h6 class="text-body-secondary">Valor da consulta</h6>
-                        <h6 class="fw-semibold">R$150,00</h6>
+                        <h6 class="fw-semibold">R${{ psicologo.valor_consulta }}</h6>
                     </div>
                     <div>
                         <h6 class="text-body-secondary">CRP</h6>
-                        <h6 class="fw-semibold">03/12345</h6>
+                        <h6 class="fw-semibold">{{ psicologo.crp }}</h6>
                     </div>
                 </div>
             </div>
@@ -32,15 +32,15 @@
         <div class="vstack gap-2">
             <h6>Especializações</h6>
             <div class="hstack gap-2 flex-wrap">
-                {% for i in '123456789' %}
-                    <span class="badge text-bg-secondary text-white">Especialização {{ i }}</span>
+                {% for especializacao in psicologo.especializacoes.all %}
+                    <span class="badge text-bg-secondary text-white">{{ especializacao.titulo }}</span>
                 {% endfor %}
             </div>
         </div>
 
         <div class="vstack gap-2">
             <h6>Sobre mim</h6>
-            <div class="text-body-secondary">Atuo na promoção do autoconhecimento, acolhendo cada pessoa em sua singularidade para desenvolver saúde mental. Possuo pós-graduação em Neuropsicologia. Trabalho com a Terapia Cognitivo-Comportamental (TCC) e a integração com EMDR, uma abordagem específica para o tratamento de traumas psicológicos. Atendo jovens e adultos, sempre buscando oferecer um cuidado atento e personalizado.</div>
+            <div class="text-body-secondary">{{ psicologo.sobre_mim }}</div>
         </div>
 
         <div class="vstack gap-2">

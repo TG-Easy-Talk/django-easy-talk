@@ -56,34 +56,99 @@ def popular_usuarios(sender, **kwargs):
         {"email": "ana.costa@gmail.com", "password": "ana.costa"},
         {"email": "lucas.almeida@gmail.com", "password": "lucas.almeida"},
         {"email": "paciente.teste@gmail.com", "password": "paciente.teste"},
+        {"email": "admin@gmail.com", "password": "admin", "is_staff": True, "is_superuser": True},
     ]
 
     for item in dados:
-        Usuario.objects.get_or_create(
+        user, created = Usuario.objects.get_or_create(
             email=item["email"],
-            defaults={"password": item["password"]}
+            defaults={
+                "is_active": item.get("is_active", True),
+                "is_staff": item.get("is_staff", False),
+                "is_superuser": item.get("is_superuser", False),
+            }
         )
+        if created:
+            user.set_password(item["password"])
+            user.save()
 
 
 def popular_psicologos(sender, **kwargs):
     from .models import Psicologo
     from django.contrib.auth import get_user_model
+    import random
 
     Usuario = get_user_model()
 
     dados = [
-        {"nome_completo": "João Silva", "crp": "01/12345", "usuario": Usuario.objects.get(email="joao.silva@gmail.com")},
-        {"nome_completo": "Maria Oliveira", "crp": "02/67890", "usuario": Usuario.objects.get(email="maria.oliveira@gmail.com")},
-        {"nome_completo": "Pedro Santos", "crp": "03/11223", "usuario": Usuario.objects.get(email="pedro.santos@gmail.com")},
-        {"nome_completo": "Ana Costa", "crp": "04/44556", "usuario": Usuario.objects.get(email="ana.costa@gmail.com")},
-        {"nome_completo": "Lucas Almeida", "crp": "05/77889", "usuario": Usuario.objects.get(email="lucas.almeida@gmail.com")},
+        {
+            "nome_completo": "João Silva",
+            "crp": "01/12345",
+            "usuario": Usuario.objects.get(email="joao.silva@gmail.com"),
+            "valor_consulta": round(random.uniform(100, 300), 2),
+            "sobre_mim": "Tenho ampla experiência em diversas áreas da psicologia e estou aqui para ajudar você a superar seus desafios.",
+            "especializacoes": [1, 2, 3, 4, 5]  # IDs das especializações
+        },
+        {
+            "nome_completo": "Maria Oliveira",
+            "crp": "02/67890",
+            "usuario": Usuario.objects.get(email="maria.oliveira@gmail.com"),
+            "valor_consulta": round(random.uniform(100, 300), 2),
+            "sobre_mim": "Sou especialista em terapia familiar e de casal, e meu objetivo é fortalecer os laços e resolver conflitos.",
+            "especializacoes": [6, 7, 8, 9, 10],  # IDs das especializações
+            "foto": "psicologos/fotos/maria.oliveira.jpg",
+        },
+        {
+            "nome_completo": "Pedro Santos",
+            "crp": "03/11223",
+            "usuario": Usuario.objects.get(email="pedro.santos@gmail.com"),
+            "valor_consulta": round(random.uniform(100, 300), 2),
+            "sobre_mim": "Trabalho com psicologia organizacional e do trabalho, ajudando pessoas a alcançarem seu potencial no ambiente profissional.",
+            "especializacoes": [11, 12, 13, 14, 15]  # IDs das especializações
+        },
+        {
+            "nome_completo": "Ana Costa",
+            "crp": "04/44556",
+            "usuario": Usuario.objects.get(email="ana.costa@gmail.com"),
+            "valor_consulta": round(random.uniform(100, 300), 2),
+            "sobre_mim": "Atuo com psicologia infantil e desenvolvimento pessoal, ajudando crianças e adultos a crescerem emocionalmente.",
+            "especializacoes": [16, 17, 18, 19, 20]  # IDs das especializações
+        },
+        {
+            "nome_completo": "Lucas Almeida",
+            "crp": "05/77889",
+            "usuario": Usuario.objects.get(email="lucas.almeida@gmail.com"),
+            "valor_consulta": round(random.uniform(100, 300), 2),
+            "sobre_mim": "Tenho experiência no tratamento de transtornos de ansiedade e estou aqui para oferecer suporte e acolhimento.",
+            "especializacoes": [21, 22, 23, 24, 25]  # IDs das especializações
+        },
     ]
+
+    for item in dados:
+        psicologo, created = Psicologo.objects.get_or_create(
+            crp=item["crp"],
+            defaults={
+                "nome_completo": item["nome_completo"],
+                "usuario": item["usuario"],
+                "valor_consulta": item["valor_consulta"],
+                "sobre_mim": item["sobre_mim"],
+                "foto": item.get("foto", None),
+            }
+        )
+        if created:
+            psicologo.especializacoes.set(item["especializacoes"])
 
     for item in dados:
         Psicologo.objects.get_or_create(
             crp=item["crp"],
-            defaults={"nome_completo": item["nome_completo"], "usuario": item["usuario"]}
+            defaults={
+                "nome_completo": item["nome_completo"],
+                "usuario": item["usuario"],
+                "valor_consulta": item["valor_consulta"],
+                "sobre_mim": item["sobre_mim"],
+            }
         )
+
 
 def popular_pacientes(sender, **kwargs):
     from .models import Paciente

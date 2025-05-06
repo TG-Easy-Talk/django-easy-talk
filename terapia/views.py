@@ -1,11 +1,12 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView, FormView
+from django.views.generic import TemplateView, FormView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import PacienteCadastroForm, PsicologoCadastroForm
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
 from django.views.generic.edit import ContextMixin
+from .models import Psicologo
 
 
 class FluxoAlternativoLoginContextMixin(ContextMixin):
@@ -97,11 +98,15 @@ class HomeView(TemplateView):
 class ConsultaView(LoginRequiredMixin, TemplateView):
     template_name = "consulta/consulta.html"
 
-class PerfilView(TemplateView):
+class PerfilView(DetailView):
+    model = Psicologo
+    context_object_name = "psicologo"
     template_name = "perfil/perfil.html"
 
-class PesquisaView(TemplateView):
+class PesquisaView(ListView):
+    model = Psicologo
     template_name = "pesquisa/pesquisa.html"
+    context_object_name = "psicologos"
 
 
 class MinhasConsultasView(LoginRequiredMixin, TemplateView):

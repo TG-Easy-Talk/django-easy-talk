@@ -1,33 +1,33 @@
 {% load static %}
-<div class="card text-bg-body-secondary border shadow">
-    <div class="card-body vstack gap-4 p-4">
+<div class="card bg-body-secondary border-0 shadow-sm h-100">
+    <div class="card-body vstack gap-4 p-4 justify-content-between">
         <div class="hstack gap-4 flex-column flex-sm-row flex-md-column flex-lg-row">
             <img class="rounded-circle mx-auto"
             style="width: 5rem; height: 5rem;"
-            src="{% static 'img/foto_de_perfil.jpg' %}"
+            src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
             alt="Foto de perfil">
 
             <div class="flex-grow-1">
-                <h5 class="fw-bold">Wanessa Vasconcelos Sampaio</h5>
-                <div class="d-block text-body-secondary">Atuo na promoção do autoconhecimento, acolhendo cada pessoa em sua singularidade para desenvolver saúde mental.</div>
+                <h5 class="fw-bold">{{ psicologo.nome_completo }}</h5>
+                <div class="d-block text-body-secondary">{{ psicologo.sobre_mim }}</div>
             </div>
         </div>
 
         <div class="hstack gap-2 flex-wrap">
-            {% for i in '123456' %}
-                <span class="badge text-bg-secondary text-white">Especialização {{ i }}</span>
+            {% for especializacao in psicologo.especializacoes.all %}
+                <span class="badge text-bg-secondary text-white">{{ especializacao.titulo }}</span>
             {% endfor %}
             <span class="text-body-secondary ms-2">+3</span>
         </div>
 
         <div class="hstack justify-content-between gap-3 flex-wrap">
             <div class="hstack gap-3 flex-wrap flex-grow-1">
-                <h6 class="fw-semibold mb-0">R$85,00</h6>
+                <h6 class="fw-semibold mb-0">R${{ psicologo.valor_consulta }}</h6>
                 <div>Disponível em <span class="text-primary fw-medium text-wrap text-nowrap">06/04/2025, 15:00</span></div>
             </div>
         
             <div class="flex-grow-1">
-                <a class="btn btn-primary text-white w-100" href="{% url 'perfil' %}">Visualizar</a>
+                <a class="btn btn-primary text-white w-100" href="{{ psicologo.get_absolute_url }}">Visualizar</a>
             </div>
         </div>
     </div>

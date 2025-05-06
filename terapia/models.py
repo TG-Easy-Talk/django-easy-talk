@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.urls import reverse
 from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
 from terapia.utils.availability import (
@@ -37,6 +38,11 @@ class Paciente(models.Model):
 
     def __str__(self):
         return self.nome
+    
+    def get_url_foto_propria_ou_padrao(self):
+        if self.foto:
+            return self.foto.url
+        return settings.STATIC_URL + "img/foto_de_perfil.jpg"
 
 
 class Especializacao(models.Model):
@@ -86,6 +92,10 @@ class Psicologo(models.Model):
         blank=True,
     )
 
+    @property
+    def primeiro_nome(self):
+        return self.nome_completo.split()[0]
+
     class Meta:
         verbose_name = "Psicólogo"
         verbose_name_plural = "Psicólogos"
@@ -99,9 +109,13 @@ class Psicologo(models.Model):
     def __str__(self):
         return self.nome_completo
     
-    @property
-    def primeiro_nome(self):
-        return self.nome_completo.split()[0]
+    def get_absolute_url(self):
+        return reverse("perfil", kwargs={"pk": self.pk})
+    
+    def get_url_foto_propria_ou_padrao(self):
+        if self.foto:
+            return self.foto.url
+        return settings.STATIC_URL + "img/foto_de_perfil.jpg"
 
 
 class EstadoConsulta(models.TextChoices):
