@@ -1,3 +1,11 @@
 {% load static %}
-<div class="nav-link pe-2">Usuário</div>
+<div class="nav-link pe-2">
+    {% if request.user.paciente %}
+        {{ request.user.paciente.nome }}
+    {% elif request.user.psicologo %}
+        {{ request.user.psicologo.primeiro_nome }}
+    {% else %}
+        {{ request.user.email }}
+    {% endif %}
+</div>
 <img class="rounded-circle" style="width: 2em; height: 2em;" src="{% static 'img/foto_de_perfil.jpg' %}" alt="Foto de perfil">

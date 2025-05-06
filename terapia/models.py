@@ -98,6 +98,10 @@ class Psicologo(models.Model):
 
     def __str__(self):
         return self.nome_completo
+    
+    @property
+    def primeiro_nome(self):
+        return self.nome_completo.split()[0]
 
 
 class EstadoConsulta(models.TextChoices):
