@@ -96,16 +96,16 @@ $body-secondary-bg-dark:     #222427;
 // Navegação (navbar)
 //
 
-$navbar-padding-y:               0.25rem;
-$navbar-brand-font-size:         1.75rem;
-$navbar-nav-link-padding-x:      1rem;
-$navbar-light-active-color:       white;
-$navbar-light-color:              $navbar-light-active-color;
+$navbar-padding-y:                0.25rem;
+$navbar-brand-font-size:          1.75rem;
+$navbar-nav-link-padding-x:       1rem;
+$navbar-light-color:              white;
+$navbar-light-active-color:       $secondary;
+$navbar-light-icon-color:         $navbar-light-color;
 $navbar-light-hover-color:        $navbar-light-active-color;
-$navbar-light-icon-color:         $navbar-light-active-color;
-$navbar-light-brand-color:        $navbar-light-active-color;
-$navbar-light-brand-hover-color:  $navbar-light-active-color;
-$navbar-toggler-focus-width:     0;
+$navbar-light-brand-color:        $navbar-light-color;
+$navbar-light-brand-hover-color:  $navbar-light-color;
+$navbar-toggler-focus-width:      0;
 
 //
 // Botões (buttons)

@@ -1,12 +1,29 @@
 {% load static %}
 
-<div class="nav-link p-0 pe-2">
-    {% if request.user.paciente %}
-        {{ request.user.paciente.nome }}
-    {% elif request.user.psicologo %}
-        {{ request.user.psicologo.primeiro_nome }}
-    {% else %}
-        {{ request.user.email }}
-    {% endif %}
-</div>
-<img class="rounded-circle" style="width: 2em; height: 2em;" src="{% static 'img/foto_de_perfil.jpg' %}" alt="Foto de perfil">
+{% with u=request.user %}
+
+    <div class="nav-link p-0 pe-2" style="color: inherit;">
+        {% if u.paciente %}
+            {{ u.paciente.nome }}
+        {% elif u.psicologo %}
+            {{ u.psicologo.primeiro_nome }}
+        {% else %}
+            {{ u.email }}
+        {% endif %}
+    </div>
+
+    <img
+        class="rounded-circle"
+        style="width: 2em; height: 2em;"
+        alt="Foto de perfil"
+
+        {% if u.paciente and u.paciente.foto %}
+            src="{{ u.paciente.foto.url }}"
+        {% elif u.psicologo and u.psicologo.foto %}
+            src="{{ u.psicologo.foto.url }}"
+        {% else %}
+            src="{% static 'img/foto_de_perfil.jpg' %}"
+        {% endif %}
+    >
+
+{% endwith %}

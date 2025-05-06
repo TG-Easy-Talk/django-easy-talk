@@ -53,11 +53,14 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
 
                 <div class="nav-item d-none d-sm-block dropdown">
                     <button class="btn btn-dark hstack fw-normal border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                    style="--bs-btn-hover-bg: null; --bs-btn-active-bg: null;">
+                    style="--bs-btn-hover-bg: null; --bs-btn-active-bg: null;
+                    --bs-btn-hover-color: var(--bs-secondary); --bs-btn-active-color: var(--bs-secondary);">
+
                         {% include 'geral/cabecalho/componentes/usuario.html' %}
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#" onclick="logout()">Encerrar sessão</a></li>
                         </ul>
+                        
                     </button>
                 </div>
             </div>

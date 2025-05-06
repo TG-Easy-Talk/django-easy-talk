@@ -1,6 +1,7 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
 from django.views.generic import TemplateView, FormView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import PacienteCadastroForm, PsicologoCadastroForm
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
@@ -93,7 +94,7 @@ class HomeView(TemplateView):
     template_name = "home.html"
 
 
-class ConsultaView(TemplateView):
+class ConsultaView(LoginRequiredMixin, TemplateView):
     template_name = "consulta/consulta.html"
 
 class PerfilView(TemplateView):
@@ -103,7 +104,7 @@ class PesquisaView(TemplateView):
     template_name = "pesquisa/pesquisa.html"
 
 
-class MinhasConsultasView(TemplateView):
+class MinhasConsultasView(LoginRequiredMixin, TemplateView):
     template_name = "minhas_consultas/minhas_consultas.html"
 
     def get_context_data(self, **kwargs):

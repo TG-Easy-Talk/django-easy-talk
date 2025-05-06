@@ -3815,9 +3815,9 @@ textarea.form-control-lg {
   --bs-navbar-padding-x: 0;
   --bs-navbar-padding-y: 0.25rem;
   --bs-navbar-color: white;
-  --bs-navbar-hover-color: white;
+  --bs-navbar-hover-color: #1CDE61;
   --bs-navbar-disabled-color: rgba(var(--bs-emphasis-color-rgb), 0.3);
-  --bs-navbar-active-color: white;
+  --bs-navbar-active-color: #1CDE61;
   --bs-navbar-brand-padding-y: -0.15625rem;
   --bs-navbar-brand-margin-end: 1rem;
   --bs-navbar-brand-font-size: 1.75rem;
