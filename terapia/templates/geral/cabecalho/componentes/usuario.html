@@ -1,5 +1,6 @@
 {% load static %}
-<div class="nav-link pe-2">
+
+<div class="nav-link p-0 pe-2">
     {% if request.user.paciente %}
         {{ request.user.paciente.nome }}
     {% elif request.user.psicologo %}

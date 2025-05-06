@@ -26,10 +26,13 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'pesquisa' %}">Profissionais</a>
+                            <a class="nav-link text-nowrap" href="{% url 'pesquisa' %}">Profissionais</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-nowrap" href="{% url 'minhas_consultas' %}">Minhas consultas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="d-block d-sm-none nav-link text-nowrap text-warning" href="#" onclick="logout()">Encerrar sessão</a>
                         </li>
                         <li class="d-none d-sm-block m-0 mx-sm-2 vr text-primary opacity-100"></li>
                     {% endif %}
@@ -48,14 +51,37 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
                     {% include 'geral/cabecalho/componentes/usuario.html' %}
                 </div>
 
-                <div class="nav-item hstack d-none d-sm-flex">
-                    {% include 'geral/cabecalho/componentes/usuario.html' %}
+                <div class="nav-item d-none d-sm-block dropdown">
+                    <button class="btn btn-dark hstack fw-normal border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                    style="--bs-btn-hover-bg: null; --bs-btn-active-bg: null;">
+                        {% include 'geral/cabecalho/componentes/usuario.html' %}
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="logout()">Encerrar sessão</a></li>
+                        </ul>
+                    </button>
                 </div>
             </div>
         {% endif %}
     </div>
 </header>
 
+
+
+<!-- Formulário para fazer logout do usuário (é necessário porque a LogoutView do Django só aceita POST) -->
+<form id="logout-form" action="{% url 'logout' %}" method="post" class="d-none">
+    {% csrf_token %}
+</form>
+
+<script>
+    function logout() {
+        document.getElementById('logout-form').submit();
+        return false; // Assegurar que o navegador não siga o href da tag <a>
+    }
+</script>
+
+
+
+<!-- Espaço para o cabeçalho fixo -->
 <div id="cabecalhoEspaco"></div>
 
 <script>

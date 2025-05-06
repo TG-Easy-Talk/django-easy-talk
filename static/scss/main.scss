@@ -112,7 +112,6 @@ $navbar-toggler-focus-width:     0;
 //
 
 $btn-font-weight:            500;
-// $btn-hover-bg-shade-amount:  100%;
 
 //
 // Offcanvas
@@ -194,7 +193,7 @@ $input-bg:  $body-secondary-bg;
 @import "../../node_modules/bootstrap/scss/forms";
 @import "../../node_modules/bootstrap/scss/buttons";
 @import "../../node_modules/bootstrap/scss/transitions";
-// @import "../../node_modules/bootstrap/scss/dropdown";
+@import "../../node_modules/bootstrap/scss/dropdown";
 // @import "../../node_modules/bootstrap/scss/button-group";
 @import "../../node_modules/bootstrap/scss/nav";
 @import "../../node_modules/bootstrap/scss/navbar";
