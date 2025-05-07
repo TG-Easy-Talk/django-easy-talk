@@ -8,12 +8,22 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
 import os
-from channels.routing import ProtocolTypeRouter, URLRouter
-from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'easy_talk.settings')
+from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from chat.routing import websocket_urlpatterns
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "easy_talk.settings")
+
+# ASGI app padrão do Django para requisições HTTP
+django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter({
+    # Roteamento das requisições HTTP
     "http": django_asgi_app,
-    # Just HTTP for now. (We can add other protocols later.)
+    # Roteamento das conexões WebSocket com suporte a sessions/auth
+    "websocket": AuthMiddlewareStack(
+        URLRouter(websocket_urlpatterns)
+    ),
 })
