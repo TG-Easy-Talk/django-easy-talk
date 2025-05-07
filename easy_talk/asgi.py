@@ -14,16 +14,19 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from chat.routing import websocket_urlpatterns
 
+# 1) Define a variável antes de qualquer uso
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "easy_talk.settings")
-
-# ASGI app padrão do Django para requisições HTTP
 django_asgi_app = get_asgi_application()
 
+# 2) Importe seu roteamento de WebSocket
+import chat.routing
+
+# 3) Combine HTTP e WebSocket
 application = ProtocolTypeRouter({
-    # Roteamento das requisições HTTP
-    "http": django_asgi_app,
-    # Roteamento das conexões WebSocket com suporte a sessions/auth
+    "http": django_asgi_app,  # aplica Django padrão
     "websocket": AuthMiddlewareStack(
-        URLRouter(websocket_urlpatterns)
+        URLRouter(
+            chat.routing.websocket_urlpatterns
+        )
     ),
 })

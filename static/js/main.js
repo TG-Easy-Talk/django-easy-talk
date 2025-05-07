@@ -1,317 +1,233 @@
 console.log('In main.js!');
 
-var usernameInput = document.querySelector('#username');
-var btnJoin = document.querySelector('#btn-join');
+let usernameInput = document.querySelector('#username');
+let btnJoin = document.querySelector('#btn-join');
 
-var username;
-var webSocket;
-var mapPeers = {};
-
+let username;
+let webSocket;
+let mapPeers = {};
 
 function webSocketOnMessage(event) {
-    var parsedData = JSON.parse(event.data);
-    var peerUsername = parsedData['peer'];
-    var action = parsedData['action'];
+    let parsedData = JSON.parse(event.data);
+    let peerUsername = parsedData.peer;
+    let action = parsedData.action;
 
     if (username === peerUsername) {
         return;
     }
 
-    var receiver_channel_name = parsedData['message']['receiver_channel_name'];
-
+    let receiver_channel_name = parsedData.message.receiver_channel_name;
 
     if (action === 'new-peer') {
         createOfferer(peerUsername, receiver_channel_name);
-
-        return
+        return;
     }
 
     if (action === 'new-offer') {
-        var offer = parsedData['message']['sdp'];
-
-        createAnswerer(peerUsername, offer, receiver_channel_name);
+        let offer = parsedData.message.sdp;
+        createAnswerer(offer, peerUsername, receiver_channel_name);
         return;
     }
 
     if (action === 'new-answer') {
-        var answer = parsedData['message']['sdp'];
-        var peer = mapPeers[peerUsername][0];
+        let answer = parsedData.message.sdp;
+        let peer = mapPeers[peerUsername][0];
         peer.setRemoteDescription(answer);
     }
 }
 
 btnJoin.addEventListener('click', () => {
-    username = usernameInput.value;
-
-    console.log('username: ', username);
-
-    if (username === '') {
-        return;
-    }
+    username = usernameInput.value.trim();
+    if (username === '') return;
 
     usernameInput.value = '';
     usernameInput.disabled = true;
     usernameInput.style.visibility = 'hidden';
-
     btnJoin.disabled = true;
     btnJoin.style.visibility = 'hidden';
 
-    var labelUsername = document.querySelector('#label-username');
-    labelUsername.innerHTML = username;
+    document.querySelector('#label-username').innerText = username;
 
-    var loc = window.location;
-    var wsStart = 'ws://';
+    let loc = window.location;
+    let wsStart = loc.protocol === 'https:' ? 'wss://' : 'ws://';
+    let endPoint = wsStart + loc.host + '/ws/';
 
-    if (loc.protocol === 'https:') {
-        wsStart = 'wss://';
-    }
-
-    var endPoint = wsStart + loc.host + '/ws/';
-
-    console.log('endPoint: ', endPoint);
-
+    console.log('Connecting to', endPoint);
     webSocket = new WebSocket(endPoint);
 
-    webSocket.addEventListener('open', (e) => {
-        console.log('WebSocket connection opened');
-
+    webSocket.addEventListener('open', () => {
+        console.log('WebSocket opened');
         sendSignal('new-peer', {});
+    });
 
-    })
-    webSocket.addEventListener('message', (e) => {
-        webSocketOnMessage(e);
-    });
-    webSocket.addEventListener('close', (e) => {
-        console.log('WebSocket connection closed');
-    });
-    webSocket.addEventListener('error', (e) => {
-        console.log('WebSocket error: ', e);
-    })
+    webSocket.addEventListener('message', webSocketOnMessage);
+    webSocket.addEventListener('close', () => console.log('WebSocket closed'));
+    webSocket.addEventListener('error', e => console.error('WebSocket error', e));
 });
 
-
-var localStream = new MediaStream();
-
-const constraint = {
-    'video': true,
-    'audio': true
-}
-
+let localStream = new MediaStream();
+const constraints = {video: true, audio: true};
 const localVideo = document.querySelector('#local-video');
 const btnToggleAudio = document.querySelector('#btn-toggle-audio');
 const btnToggleVideo = document.querySelector('#btn-toggle-video');
 
-
-var userMedia = navigator.mediaDevices.getUserMedia(constraint)
+navigator.mediaDevices.getUserMedia(constraints)
     .then(stream => {
-        console.log('Got MediaStream: ', stream);
+        console.log('Got MediaStream', stream);
         localStream = stream;
-        localVideo.srcObject = localStream;
+        localVideo.srcObject = stream;
         localVideo.muted = true;
 
-        var audioTracks = localStream.getAudioTracks();
-        var videoTracks = localStream.getVideoTracks();
+        let audioTrack = stream.getAudioTracks()[0];
+        let videoTrack = stream.getVideoTracks()[0];
 
-        audioTracks[0].enabled = true;
-        videoTracks[0].enabled = true;
+        audioTrack.enabled = true;
+        videoTrack.enabled = true;
 
         btnToggleAudio.addEventListener('click', () => {
-            audioTracks[0].enabled = !audioTracks[0].enabled;
-            if (audioTracks[0].enabled) {
-                btnToggleAudio.innerHTML = 'Mute';
-                return;
-            }
-
-            btnToggleAudio.innerHTML = 'Unmute';
+            audioTrack.enabled = !audioTrack.enabled;
+            btnToggleAudio.innerText = audioTrack.enabled ? 'Mute' : 'Unmute';
         });
 
         btnToggleVideo.addEventListener('click', () => {
-            videoTracks[0].enabled = !videoTracks[0].enabled;
-            if (videoTracks[0].enabled) {
-                btnToggleVideo.innerHTML = 'Stop Video';
-                return;
-            }
-
-            btnToggleVideo.innerHTML = 'Start Video';
+            videoTrack.enabled = !videoTrack.enabled;
+            btnToggleVideo.innerText = videoTrack.enabled ? 'Stop Video' : 'Start Video';
         });
-
     })
-    .catch(err => {
-        console.log('Error getting MediaStream: ', err);
-    });
+    .catch(err => console.error('Error getting MediaStream', err));
 
 function sendSignal(action, message) {
-    var jsonStr = JSON.stringify({
-        'peer': username,
-        'action': action,
-        'message': message
-    })
-
-    webSocket.send(jsonStr);
+    webSocket.send(JSON.stringify({
+        peer: username,
+        action: action,
+        message: message
+    }));
 }
 
 function createOfferer(peerUsername, receiver_channel_name) {
-    var peer = new RTCPeerConnection(null)
+    const peer = new RTCPeerConnection();
 
+    // 1) Adiciona tracks locais
     addLocalTracks(peer, localStream);
 
-    var dc = peer.createDataChannel('channel')
-    dc.addEventListener('open', () => {
-        console.log('Data channel opened');
-    })
-    dc.addEventListener('message', dcOnMessage)
+    // 2) Prepara vídeo remoto e listener de tracks
+    const remoteVideo = createVideo(peerUsername);
+    setOnTrack(peer, remoteVideo);
 
-    var remoteVideo = createVideo(peerUsername);
-    setOnTrack(peer, peerUsername);
+    // 3) Gera e envia offer após ICE gathering final
+    peer.addEventListener('icecandidate', event => {
+        if (!event.candidate) {
+            sendSignal('new-offer', {
+                sdp: peer.localDescription,
+                receiver_channel_name
+            });
+        }
+    });
 
-    mapPeers[peerUsername] = [peer, dc]
-    peer.addEventListener('iceconnectionstatechange', (event) => {
-        var iceConnectionState = peer.iceConnectionState;
+    peer.createOffer()
+        .then(offer => peer.setLocalDescription(offer))
+        .catch(console.error);
 
-        if (iceConnectionState === 'failed' || iceConnectionState === 'disconnected' || iceConnectionState === 'closed') {
+    // 4) Data channel
+    const dc = peer.createDataChannel('channel');
+    dc.addEventListener('open', () => console.log('Data channel opened'));
+    dc.addEventListener('message', dcOnMessage);
+
+    // 5) Mapeia peer + canal
+    mapPeers[peerUsername] = [peer, dc];
+
+    // 6) Cleanup de desconexões
+    peer.addEventListener('iceconnectionstatechange', () => {
+        let state = peer.iceConnectionState;
+        if (['failed', 'disconnected', 'closed'].includes(state)) {
             delete mapPeers[peerUsername];
-
-            if (iceConnectionState !== 'closed') {
-                peer.close();
-            }
-
+            if (state !== 'closed') peer.close();
             removeVideo(remoteVideo);
         }
-    })
-
-    peer.addEventListener('icecandidate', (event) => {
-        if (event.candidate) {
-            console.log('New ice candidate: ', JSON.stringify(event.candidate));
-            return;
-        }
-
-        sendSignal('new-offer', {
-            'sdp': peer.localDescription,
-            'receiver_channel_name': receiver_channel_name
-        })
-
-        // 1. Cria offer e seta
-        peer.createOffer()
-            .then(offer => peer.setLocalDescription(offer))
-            .then(() => {
-                console.log('Offer created: ', peer.localDescription);
-
-                // 2. Aguarda ICE gathering completo
-                peer.addEventListener('icecandidate', event => {
-                    if (!event.candidate) {
-                        // envio só após gathering final
-                        sendSignal('new-offer', {
-                            sdp: peer.localDescription,
-                            receiver_channel_name: receiver_channel_name
-                        });
-                    }
-                });
-            });
-    })
+    });
 }
 
 function createAnswerer(offer, peerUsername, receiver_channel_name) {
-    var peer = new RTCPeerConnection(null)
+    const peer = new RTCPeerConnection();
 
+    // 1) Adiciona tracks locais
     addLocalTracks(peer, localStream);
 
-    var remoteVideo = createVideo(peerUsername);
-    setOnTrack(peer, peerUsername);
+    // 2) Prepara vídeo remoto e listener de tracks
+    const remoteVideo = createVideo(peerUsername);
+    setOnTrack(peer, remoteVideo);
 
+    // 3) Data channel handler
     peer.addEventListener('datachannel', e => {
-        peer.dc = e.channel;
-        peer.dc.addEventListener('open', () => {
-            console.log('Data channel opened');
-        })
-        peer.dc.addEventListener('message', dcOnMessage)
-        mapPeers[peerUsername] = [peer, dc]
+        const dc = e.channel;
+        dc.addEventListener('open', () => console.log('Data channel opened'));
+        dc.addEventListener('message', dcOnMessage);
+        mapPeers[peerUsername] = [peer, dc];
+    });
 
-    })
-
-    peer.addEventListener('iceconnectionstatechange', (event) => {
-        var iceConnectionState = peer.iceConnectionState;
-
-        if (iceConnectionState === 'failed' || iceConnectionState === 'disconnected' || iceConnectionState === 'closed') {
+    // 4) Cleanup de estados de ICE
+    peer.addEventListener('iceconnectionstatechange', () => {
+        let state = peer.iceConnectionState;
+        if (['failed', 'disconnected', 'closed'].includes(state)) {
             delete mapPeers[peerUsername];
-
-            if (iceConnectionState !== 'closed') {
-                peer.close();
-            }
-
+            if (state !== 'closed') peer.close();
             removeVideo(remoteVideo);
         }
-    })
+    });
 
-    peer.addEventListener('icecandidate', (event) => {
-        if (event.candidate) {
-            console.log('New ice candidate: ', JSON.stringify(event.localDescription));
-            return;
+    // 5) Gera e envia answer após ICE gathering final
+    peer.addEventListener('icecandidate', event => {
+        if (!event.candidate) {
+            sendSignal('new-answer', {
+                sdp: peer.localDescription,
+                receiver_channel_name
+            });
         }
+    });
 
-        sendSignal('new-answer', {
-            'sdp': peer.localDescription,
-            'receiver_channel_name': receiver_channel_name
-        })
-    })
-
+    // 6) Aplica offer e cria answer
     peer.setRemoteDescription(offer)
-        .then(() => {
-            console.log('Set remote description set successfully for: ', peerUsername);
-            return peer.createAnswer();
-        })
-        .then(answer => {
-            console.log('Answer created: ', answer);
-            return peer.setLocalDescription(answer);
-        })
-
+        .then(() => peer.createAnswer())
+        .then(ans => peer.setLocalDescription(ans))
+        .catch(console.error);
 }
 
-function addLocalTracks(peer) {
-    localStream.getTracks().forEach(track => {
-        peer.addTrack(track, localStream);
-    })
-    return;
+function addLocalTracks(peer, stream) {
+    stream.getTracks().forEach(track => peer.addTrack(track, stream));
 }
 
-var messageList = document.querySelector('#message-list');
+let messageList = document.querySelector('#message-list');
 
 function dcOnMessage(event) {
-    var message = event.data;
-
-    var li = document.createElement('li');
-    li.appendChild(document.createTextNode(message));
+    let li = document.createElement('li');
+    li.textContent = event.data;
     messageList.appendChild(li);
 }
 
 function createVideo(peerUsername) {
-    var videoContainer = document.querySelector('#video-container');
+    let container = document.querySelector('#video-container');
+    let wrapper = document.createElement('div');
+    let video = document.createElement('video');
 
-    var remoteVideo = document.createElement('video');
+    video.id = `${peerUsername}-video`;
+    video.autoplay = true;
+    video.playsInline = true;
 
-    remoteVideo.id = peerUsername + '-video';
-    remoteVideo.autoplay = true;
-    remoteVideo.playsInline = true;
-
-    var videoWrapper = document.createElement('div');
-
-    videoContainer.appendChild(videoWrapper);
-
-    videoWrapper.appendChild(remoteVideo);
-
-    return remoteVideo;
+    wrapper.appendChild(video);
+    container.appendChild(wrapper);
+    return video;
 }
 
 function setOnTrack(peer, remoteVideo) {
-    var remoteStream = new MediaStream();
-
+    let remoteStream = new MediaStream();
     remoteVideo.srcObject = remoteStream;
 
-    peer.addEventListener('track', async (event) => {
-        remoteStream.addTrack(event.track, remoteStream);
+    peer.addEventListener('track', event => {
+        remoteStream.addTrack(event.track);
     });
 }
 
 function removeVideo(remoteVideo) {
-    var videoWrapper = remoteVideo.parentNode;
-    videoWrapper.parentNode.removeChild(videoWrapper);
+    let wrapper = remoteVideo.parentNode;
+    wrapper.parentNode.removeChild(wrapper);
 }
