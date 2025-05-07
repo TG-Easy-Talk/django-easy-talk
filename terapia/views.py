@@ -104,10 +104,34 @@ class PerfilView(DetailView):
     template_name = "perfil/perfil.html"
 
 class PesquisaView(ListView, FormMixin):
-    model = Psicologo
     template_name = "pesquisa/pesquisa.html"
     context_object_name = "psicologos"
     form_class = PsicologoFiltrosForm
+
+    def get_queryset(self):
+        queryset = Psicologo.objects.all()
+        form = self.form_class(self.request.GET)
+
+        if form.is_valid():
+            especializacao = form.cleaned_data.get("especializacao")
+            valor_minimo = form.cleaned_data.get("valor_minimo")
+            valor_maximo = form.cleaned_data.get("valor_maximo")
+
+            if especializacao:
+                queryset = queryset.filter(especializacoes=especializacao)
+
+            if valor_minimo is not None:
+                queryset = queryset.filter(valor_consulta__gte=valor_minimo)
+
+            if valor_maximo is not None:
+                queryset = queryset.filter(valor_consulta__lte=valor_maximo)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.form_class(self.request.GET)
+        return context
 
 
 class MinhasConsultasView(LoginRequiredMixin, TemplateView):
