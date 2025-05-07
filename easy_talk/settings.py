@@ -24,7 +24,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'usuario',
-    'terapia.apps.TerapiaConfig'
+    'terapia.apps.TerapiaConfig',
+
+    'chat',
+    'channels'
 ]
 
 AUTH_USER_MODEL = "usuario.Usuario"
@@ -116,3 +119,5 @@ MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ASGI_APPLICATION = "easy_talk.asgi.application"

@@ -1,0 +1,8 @@
+1 - Session Description Protocol (SDP): Information about a peer that the other peer needs in order to make p2p connection.
+2 - Signalling (using Django server) required to exchange SDPs.
+3 - Both peers connect to signalling server using WebSocket.
+4 - After SDPs are exchanged from both sides, p2p connection can be established.
+5 - Signalling (Django) server not required afterwards.
+
+
+doc: https://channels.readthedocs.io/en/3.x/installation.html

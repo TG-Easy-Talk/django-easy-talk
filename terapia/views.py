@@ -38,5 +38,6 @@ class CustomLoginView(LoginView):
     template_name = 'login.html'
     authentication_form = EmailAuthenticationForm
 
+
 def home(request):
     return render(request, 'base.html')
