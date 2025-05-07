@@ -17,6 +17,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",  # permite que runserver use Daphne/ASGI
+    "channels",  # habilita o roteamento ASGI
+    "chat",  # seu app de chat
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -25,9 +28,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'usuario',
     'terapia.apps.TerapiaConfig',
-
-    'chat',
-    'channels'
 ]
 
 AUTH_USER_MODEL = "usuario.Usuario"
