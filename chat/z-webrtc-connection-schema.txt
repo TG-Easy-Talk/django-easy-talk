@@ -5,4 +5,6 @@
 5 - Signalling (Django) server not required afterwards.
 
 
-doc: https://channels.readthedocs.io/en/3.x/installation.html
+doc:
+1 - https://channels.readthedocs.io/en/3.x/installation.html
+2 - https://channels.readthedocs.io/en/stable/topics/channel_layers.html
