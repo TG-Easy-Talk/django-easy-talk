@@ -2,10 +2,10 @@ from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
 from django.views.generic import TemplateView, FormView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import PacienteCadastroForm, PsicologoCadastroForm
+from .forms import PacienteCadastroForm, PsicologoCadastroForm, PsicologoFiltrosForm
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
-from django.views.generic.edit import ContextMixin
+from django.views.generic.edit import ContextMixin, FormMixin
 from .models import Psicologo
 
 
@@ -103,10 +103,11 @@ class PerfilView(DetailView):
     context_object_name = "psicologo"
     template_name = "perfil/perfil.html"
 
-class PesquisaView(ListView):
+class PesquisaView(ListView, FormMixin):
     model = Psicologo
     template_name = "pesquisa/pesquisa.html"
     context_object_name = "psicologos"
+    form_class = PsicologoFiltrosForm
 
 
 class MinhasConsultasView(LoginRequiredMixin, TemplateView):

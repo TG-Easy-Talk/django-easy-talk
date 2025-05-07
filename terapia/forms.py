@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from terapia.models import Paciente, Psicologo
+from .models import Paciente, Psicologo, Especializacao
 from usuario.forms import UsuarioCreationForm
+from django.forms.widgets import Select
 
 
 Usuario = get_user_model()
@@ -51,3 +52,22 @@ class PsicologoCadastroForm(UsuarioCreationForm):
             crp=self.cleaned_data["crp"],
         )
         return usuario
+
+
+class PsicologoFiltrosForm(forms.Form):
+    especializacao = forms.ModelChoiceField(
+        queryset=Especializacao.objects.all(),
+        required=False,
+        label="Especialização",
+        widget=Select,
+    )
+    valor_minimo = forms.DecimalField(
+        required=False,
+        min_value=0,
+        label="Mínimo",
+    )
+    valor_maximo = forms.DecimalField(
+        required=False,
+        min_value=0,
+        label="Máximo",
+    )
