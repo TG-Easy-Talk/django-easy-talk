@@ -1,14 +1,16 @@
 from django import forms
 from django.contrib.auth import get_user_model
+
+from easy_talk.renderers import ValidationFormRenderer
 from .models import Paciente, Psicologo, Especializacao
 from usuario.forms import UsuarioCreationForm
-from django.forms.widgets import Select
 
 
 Usuario = get_user_model()
 
 
 class PacienteCadastroForm(UsuarioCreationForm):
+    default_renderer = ValidationFormRenderer
     nome = forms.CharField(
         max_length=50,
     )
@@ -32,6 +34,7 @@ class PacienteCadastroForm(UsuarioCreationForm):
 
 
 class PsicologoCadastroForm(UsuarioCreationForm):
+    default_renderer = ValidationFormRenderer
     nome_completo = forms.CharField(
         max_length=50,
     )
@@ -55,11 +58,11 @@ class PsicologoCadastroForm(UsuarioCreationForm):
 
 
 class PsicologoFiltrosForm(forms.Form):
+    default_renderer = ValidationFormRenderer
     especializacao = forms.ModelChoiceField(
         queryset=Especializacao.objects.all(),
         required=False,
         label="Especialização",
-        widget=Select,
     )
     valor_minimo = forms.DecimalField(
         required=False,

@@ -69,8 +69,7 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
 </header>
 
 
-
-<!-- Formulário para fazer logout do usuário (é necessário porque a LogoutView do Django só aceita POST) -->
+{% comment %} Formulário para fazer logout do usuário (é necessário porque a LogoutView do Django só aceita POST) {% endcomment %}
 <form id="logout-form" action="{% url 'logout' %}" method="post" class="d-none">
     {% csrf_token %}
 </form>

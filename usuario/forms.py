@@ -1,10 +1,13 @@
 from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField, AuthenticationForm
 from django.core.exceptions import ValidationError
+
+from easy_talk.renderers import ValidationFormRenderer
 from .models import Usuario
 
 
 class UsuarioCreationForm(forms.ModelForm):
+    default_renderer = ValidationFormRenderer
     password1 = forms.CharField(label="Senha", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Confirmar senha", widget=forms.PasswordInput)
 
@@ -30,6 +33,7 @@ class UsuarioCreationForm(forms.ModelForm):
 
 
 class UsuarioChangeForm(forms.ModelForm):
+    default_renderer = ValidationFormRenderer
     password = ReadOnlyPasswordHashField()
 
     class Meta:
@@ -41,6 +45,7 @@ class EmailAuthenticationForm(AuthenticationForm):
     """
     Formulário de autenticação que sobrescreve o username do AuthenticationForm para ser um email.
     """
+    default_renderer = ValidationFormRenderer
     username = forms.EmailField(label="E-mail")
 
     def __init__(self, *args, **kwargs):
