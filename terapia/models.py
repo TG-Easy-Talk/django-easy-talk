@@ -88,6 +88,7 @@ class Psicologo(models.Model):
     )
     especializacoes = models.ManyToManyField(
         Especializacao,
+        verbose_name="Especializações",
         related_name='psicologos',
         blank=True,
     )

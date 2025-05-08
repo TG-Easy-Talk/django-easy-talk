@@ -25,7 +25,7 @@ class UsuarioAdminComInlines(UsuarioAdmin):
 
 @admin.register(Psicologo)
 class PsicologoAdmin(admin.ModelAdmin):
-    list_display = ['nome_completo', 'crp', 'valor_consulta']
+    list_display = ['nome_completo', 'crp', 'valor_consulta', 'usuario']
     search_fields = ['nome_completo', 'crp']
     filter_horizontal = ['especializacoes']
 

@@ -1,7 +1,7 @@
 from django import forms
+from django.forms import widgets
 from django.contrib.auth import get_user_model
-
-from easy_talk.renderers import ValidationFormRenderer
+from easy_talk.renderers import FormComValidacaoRenderer
 from .models import Paciente, Psicologo, Especializacao
 from usuario.forms import UsuarioCreationForm
 
@@ -10,7 +10,8 @@ Usuario = get_user_model()
 
 
 class PacienteCadastroForm(UsuarioCreationForm):
-    default_renderer = ValidationFormRenderer
+    default_renderer = FormComValidacaoRenderer
+
     nome = forms.CharField(
         max_length=50,
     )
@@ -34,7 +35,8 @@ class PacienteCadastroForm(UsuarioCreationForm):
 
 
 class PsicologoCadastroForm(UsuarioCreationForm):
-    default_renderer = ValidationFormRenderer
+    default_renderer = FormComValidacaoRenderer
+
     nome_completo = forms.CharField(
         max_length=50,
     )
@@ -58,7 +60,6 @@ class PsicologoCadastroForm(UsuarioCreationForm):
 
 
 class PsicologoFiltrosForm(forms.Form):
-    default_renderer = ValidationFormRenderer
     especializacao = forms.ModelChoiceField(
         queryset=Especializacao.objects.all(),
         required=False,
@@ -68,9 +69,23 @@ class PsicologoFiltrosForm(forms.Form):
         required=False,
         min_value=0,
         label="Mínimo",
+        widget=forms.NumberInput(attrs={'placeholder': 'Mínimo'}),
     )
     valor_maximo = forms.DecimalField(
         required=False,
         min_value=0,
         label="Máximo",
+        widget=forms.NumberInput(attrs={'placeholder': 'Máximo'}),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for field in self.fields.values():
+            if isinstance(field.widget, widgets.Input):
+                field.widget.attrs.update({
+                    'class': 'shadow-none',
+                })
+
+            elif isinstance(field, forms.ModelChoiceField):
+                field.empty_label = field.label
