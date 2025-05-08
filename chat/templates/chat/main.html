@@ -25,15 +25,16 @@
 
     <div id="chat">
         <h3>CHAT</h3>
-        <div id="message">
-            <ul id="messages-list"></ul>
+        <div id="messages">
+            <ul id="message-list"></ul>
         </div>
         <div>
-            <input id="message-input" type="text" placeholder="Type a message...">
-            <button id="btn-send">Send</button>
-
+            <div>
+                <input id="msg">
+                <button id="btn-send-msg">Send Message</button>
+            </div>
+            <button id="btn-share-screen">Share Screen</button>
         </div>
-        <button id="btn-share-screen">Share Screen</button>
     </div>
 </div>
 <script type="text/javascript" src="{% static 'js/main.js' %}"></script>

@@ -96,6 +96,43 @@ navigator.mediaDevices.getUserMedia(constraints)
     })
     .catch(err => console.error('Error getting MediaStream', err));
 
+const btnSendMsg = document.querySelector('#btn-send-msg');
+const messageList = document.querySelector('#message-list');
+const messageInput = document.querySelector('#msg');
+
+function sendMsgOnClick() {
+
+    var message = messageInput.value
+
+    var li = document.createElement('li');
+    li.appendChild(document.createTextNode("me: " + message));
+    messageList.appendChild(li);
+
+    var dataChannels = getDataChannels();
+
+    message = username + ": " + message;
+
+    for(index in dataChannels) {
+        dataChannels[index].send(message);
+
+    }
+
+    messageInput.value = '';
+}
+
+btnSendMsg.addEventListener('click', sendMsgOnClick)
+
+function getDataChannels() {
+    var dataChannels = [];
+
+    for(peerUsername in mapPeers) {
+        var dataChannel = mapPeers[peerUsername][1];
+        dataChannels.push(dataChannel);
+    }
+
+  return dataChannels; // Agora retorna o array
+}
+
 function sendSignal(action, message) {
     webSocket.send(JSON.stringify({
         peer: username,
@@ -195,8 +232,6 @@ function createAnswerer(offer, peerUsername, receiver_channel_name) {
 function addLocalTracks(peer, stream) {
     stream.getTracks().forEach(track => peer.addTrack(track, stream));
 }
-
-let messageList = document.querySelector('#message-list');
 
 function dcOnMessage(event) {
     let li = document.createElement('li');
