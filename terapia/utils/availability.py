@@ -67,30 +67,30 @@ def validate_disponibilidade_json(
     if not isinstance(data, list):
         raise ValidationError("Disponibilidade deve ser uma lista de objetos")
 
-    for idx, item in enumerate(data):
+    for i, item in enumerate(data):
         if not isinstance(item, dict):
-            raise ValidationError(f"Item #{idx} não é um objeto válido")
+            raise ValidationError(f"Item #{i} não é um objeto válido")
 
         dia = item.get("dia_semana")
-        intrs = item.get("intervalos")
+        intervalos = item.get("intervalos")
 
         if not isinstance(dia, int) or not (1 <= dia <= 7):
-            raise ValidationError(f"Item #{idx}: 'dia_semana' deve ser int 1–7")
+            raise ValidationError(f"Item #{i}: 'dia_semana' deve ser int 1–7")
 
-        if not isinstance(intrs, list):
-            raise ValidationError(f"Item #{idx}: 'intervalos' deve ser uma lista")
+        if not isinstance(intervalos, list):
+            raise ValidationError(f"Item #{i}: 'intervalos' deve ser uma lista")
 
-        for j, intr in enumerate(intrs):
-            if not isinstance(intr, dict):
-                raise ValidationError(f"Item #{idx}.intervalos[{j}] não é objeto")
-            if "horario_inicio" not in intr or "horario_fim" not in intr:
+        for j, intervalo in enumerate(intervalos):
+            if not isinstance(intervalo, dict):
+                raise ValidationError(f"Item #{i}.intervalos[{j}] não é objeto")
+            if "horario_inicio" not in intervalo or "horario_fim" not in intervalo:
                 raise ValidationError(
-                    f"Item #{idx}.intervalos[{j}] precisa de 'horario_inicio' e 'horario_fim'"
+                    f"Item #{i}.intervalos[{j}] precisa de 'horario_inicio' e 'horario_fim'"
                 )
             # Valida o formato de horário
-            if parse_time(intr["horario_inicio"]) is None or parse_time(intr["horario_fim"]) is None:
+            if parse_time(intervalo["horario_inicio"]) is None or parse_time(intervalo["horario_fim"]) is None:
                 raise ValidationError(
-                    f"Item #{idx}.intervalos[{j}]: formato de horário inválido"
+                    f"Item #{i}.intervalos[{j}]: formato de horário inválido"
                 )
 
 
@@ -119,3 +119,54 @@ def check_psicologo_disponibilidade(
         if disp.get("dia_semana") == hoje
         for intervalo in disp.get("intervalos", [])
     )
+
+def main():
+    disponibilidades_json = [
+        None,
+
+        [None],
+
+        [
+            {
+                "dia_semana": 1,
+                "intervalos": [
+                    {"horario_inicio": "08:00", "horario_fim": "12:00"},
+                    {"horario_inicio": "14:00", "horario_fim": "18:00"}
+                ]
+            },
+            {
+                "dia_semana": 7,
+                "intervalos": [
+                    {"horario_inicio": "09:00", "horario_fim": "11:00"},
+                    {"horario_inicio": "13:00", "horario_fim": "17:00"}
+                ]
+            }
+        ],
+
+        [
+            {
+                "dia_semana": 1,
+                "intervalos": [
+                    {"horario_inicio": "08:00", "horario_fim": "12:00"},
+                    {"horario_inicio": "14:00", "horario_fim": "18:00"}
+                ]
+            },
+            {
+                "dia_semana": 7,
+                "intervalos": [
+                    {"horario_inicio": "09:00", "horario_fim": "11:00"},
+                    {"horario_inicio": "13:00", "horario_fim": "17:00"}
+                ]
+            }
+        ],
+    ]
+
+    for d in disponibilidades_json:
+        try:
+            validate_disponibilidade_json(d)
+        except ValidationError as e:
+            print(e)
+
+
+if __name__ == '__main__':
+    main()
