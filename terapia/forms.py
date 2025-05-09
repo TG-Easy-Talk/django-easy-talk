@@ -1,8 +1,8 @@
 from django import forms
-from django.forms import widgets
+from django.forms import widgets, DateInput
 from django.contrib.auth import get_user_model
 from easy_talk.renderers import FormComValidacaoRenderer
-from .models import Paciente, Psicologo, Especializacao
+from .models import Paciente, Psicologo, Especializacao, EstadoConsulta
 from usuario.forms import UsuarioCreationForm
 
 
@@ -22,7 +22,7 @@ class PacienteCadastroForm(UsuarioCreationForm):
 
     class Meta(UsuarioCreationForm.Meta):
         model = Usuario
-        fields = ['email', 'nome', 'cpf'] # password1/password2 já vêm do pai
+        fields = ['cpf', 'nome', 'email'] # password1/password2 já vêm do pai
 
     def save(self, commit=True):
         usuario = super().save(commit=commit)
@@ -47,7 +47,7 @@ class PsicologoCadastroForm(UsuarioCreationForm):
 
     class Meta(UsuarioCreationForm.Meta):
         model = Usuario
-        fields = ['email', 'nome_completo', 'crp'] # password1/password2 já vêm do pai
+        fields = ['crp', 'nome_completo', 'email'] # password1/password2 já vêm do pai
 
     def save(self, commit=True):
         usuario = super().save(commit=commit)
@@ -59,18 +59,26 @@ class PsicologoCadastroForm(UsuarioCreationForm):
         return usuario
 
 
-class FormDeFiltrosEstilizadorMixin:
+class EstilizadorMixin:
+    def aplicar_estilos(self):
+        pass
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.aplicar_estilos()
 
-        for field in self.fields.values():
-            if isinstance(field.widget, widgets.Input):
-                field.widget.attrs.update({
-                    'class': 'shadow-none',
-                })
 
-            elif isinstance(field, forms.ModelChoiceField):
-                field.empty_label = field.label
+class FormDeFiltrosEstilizadorMixin(EstilizadorMixin):
+    def aplicar_estilos(self):
+        if hasattr(self, 'fields'):
+            for field in self.fields.values():
+                if isinstance(field.widget, widgets.Input):
+                    field.widget.attrs.update({
+                        'class': 'shadow-none',
+                    })
+
+                elif isinstance(field, forms.ModelChoiceField):
+                    field.empty_label = field.label
 
 
 class PsicologoFiltrosForm(FormDeFiltrosEstilizadorMixin, forms.Form):
@@ -92,3 +100,14 @@ class PsicologoFiltrosForm(FormDeFiltrosEstilizadorMixin, forms.Form):
         widget=forms.NumberInput(attrs={'placeholder': 'Máximo'}),
     )
 
+
+class CustomDateInput(DateInput):
+    input_type = 'date'
+
+
+class ConsultaFiltrosForm(FormDeFiltrosEstilizadorMixin, forms.Form):
+    estado = forms.ChoiceField(
+        choices=[("", "Estado")] + EstadoConsulta.choices,
+    )
+    data_inicial = forms.DateTimeField(widget=CustomDateInput())
+    data_final = forms.DateTimeField(widget=CustomDateInput())

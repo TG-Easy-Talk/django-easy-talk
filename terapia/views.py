@@ -2,7 +2,7 @@ from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
 from django.views.generic import TemplateView, FormView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import PacienteCadastroForm, PsicologoCadastroForm, PsicologoFiltrosForm
+from .forms import PacienteCadastroForm, PsicologoCadastroForm, PsicologoFiltrosForm, ConsultaFiltrosForm
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
 from django.views.generic.edit import ContextMixin, FormMixin
@@ -134,8 +134,10 @@ class PesquisaView(ListView, FormMixin):
         return context
 
 
-class MinhasConsultasView(LoginRequiredMixin, TemplateView):
+class MinhasConsultasView(LoginRequiredMixin, TemplateView, FormMixin):
     template_name = "minhas_consultas/minhas_consultas.html"
+    form_class = ConsultaFiltrosForm
+
 
     def get_context_data(self, **kwargs):
         # Esse método é para teste do template por enquanto.

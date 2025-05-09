@@ -28,15 +28,13 @@
                     <div class="vstack gap-3">
                         <div class="hstack gap-3 flex-column flex-sm-row">
                             <div class="input-group">
-                                <span class="input-group-text text-bg-secondary border-0 text-white" id="ValorMinimo">R$</span>
-<!--                                <input type="number" step="1.00" class="form-control" placeholder="Mínimo" aria-label="Valor mínimo" aria-describedby="ValorMinimo">-->
-                                {{ form.valor_minimo.as_widget }}
+                                <span class="input-group-text text-bg-secondary border-0 text-white">R$</span>
+                                {{ form.valor_minimo }}
                             </div>
                             <div class="d-none d-sm-block">até</div>
                             <div class="input-group">
-                                <span class="input-group-text text-bg-secondary border-0 text-white" id="ValorMaximo">R$</span>
-<!--                                <input type="number" step="1.00" class="form-control" placeholder="Máximo" aria-label="Valor máximo" aria-describedby="ValorMaximo">-->
-                                {{ form.valor_maximo.as_widget }}
+                                <span class="input-group-text text-bg-secondary border-0 text-white">R$</span>
+                                {{ form.valor_maximo }}
                             </div>
                         </div>
                         <button class="btn btn-secondary text-white">Pesquisar profissionais</button>

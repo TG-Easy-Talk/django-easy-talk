@@ -1,6 +1,6 @@
 {% load static %}
 
-<div class="table-responsive shadow rounded-3 border border-primary">
+<div class="table-responsive shadow-sm rounded-3 border">
     <table class="table table-borderless text-center mb-0">
         {% comment %} <colgroup>
             <col style="width: 25%;">
@@ -30,7 +30,10 @@
                         </div>
                     </td>
                     <td>
-                        <span class="badge text-bg-{{ consulta.class }}">{{ consulta.status }}</span>
+                        <span class="badge
+                        {% if consulta.class == 'warning' or consulta.class == 'success' %}text-{% endif %}bg-{{ consulta.class }}">
+                            {{ consulta.status }}
+                        </span>
                     </td>
                     <td>{{ consulta.data }}, {{ consulta.hora }}</td>
                     <td>

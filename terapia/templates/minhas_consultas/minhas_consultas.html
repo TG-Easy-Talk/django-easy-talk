@@ -10,12 +10,7 @@
             <h5 class="card-title mb-3">Filtros</h5>
 
             <div class="vstack gap-3">
-                <select class="form-select" aria-label="Default select example">
-                    <option selected>Estado</option>
-                    <option value="1">One</option>
-                    <option value="2">Two</option>
-                    <option value="3">Three</option>
-                </select>
+                {{ form.estado }}
 
                 <select class="form-select" aria-label="Default select example">
                     <option selected>Profissional</option>
@@ -25,13 +20,13 @@
                 </select>
 
                 <div class="input-group">
-                    <span class="input-group-text text-bg-secondary border-0 text-white" id="DataDe">De</span>
-                    <input type="date" class="form-control" aria-label="Data limite início" aria-describedby="DataDe">
+                    <span class="input-group-text text-bg-secondary border-0 text-white">De</span>
+                    {{ form.data_inicial }}
                 </div>
 
                 <div class="input-group">
-                    <span class="input-group-text text-bg-secondary border-0 text-white" id="DataAte">Até</span>
-                    <input type="date" class="form-control" aria-label="Data limite fim" aria-describedby="DataAte">
+                    <span class="input-group-text text-bg-secondary border-0 text-white">Até</span>
+                    {{ form.data_final }}
                 </div>
 
                 <button class="btn btn-secondary text-white">Pesquisar profissionais</button>
