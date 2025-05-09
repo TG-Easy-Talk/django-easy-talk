@@ -59,7 +59,21 @@ class PsicologoCadastroForm(UsuarioCreationForm):
         return usuario
 
 
-class PsicologoFiltrosForm(forms.Form):
+class FormDeFiltrosEstilizadorMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for field in self.fields.values():
+            if isinstance(field.widget, widgets.Input):
+                field.widget.attrs.update({
+                    'class': 'shadow-none',
+                })
+
+            elif isinstance(field, forms.ModelChoiceField):
+                field.empty_label = field.label
+
+
+class PsicologoFiltrosForm(FormDeFiltrosEstilizadorMixin, forms.Form):
     especializacao = forms.ModelChoiceField(
         queryset=Especializacao.objects.all(),
         required=False,
@@ -78,14 +92,3 @@ class PsicologoFiltrosForm(forms.Form):
         widget=forms.NumberInput(attrs={'placeholder': 'Máximo'}),
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        for field in self.fields.values():
-            if isinstance(field.widget, widgets.Input):
-                field.widget.attrs.update({
-                    'class': 'shadow-none',
-                })
-
-            elif isinstance(field, forms.ModelChoiceField):
-                field.empty_label = field.label
