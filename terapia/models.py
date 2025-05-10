@@ -97,9 +97,11 @@ class Psicologo(models.Model):
     def primeiro_nome(self):
         return self.nome_completo.split()[0]
 
+
     class Meta:
         verbose_name = "Psicólogo"
         verbose_name_plural = "Psicólogos"
+
 
     def clean(self):
         super().clean()
@@ -107,16 +109,82 @@ class Psicologo(models.Model):
         if hasattr(self.usuario, 'paciente'):
             raise ValidationError("Este usuário já está relacionado a um paciente.")
 
+
     def __str__(self):
         return self.nome_completo
     
+
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
     
+
     def get_url_foto_propria_ou_padrao(self):
         if self.foto:
             return self.foto.url
         return settings.STATIC_URL + "img/foto_de_perfil.jpg"
+    
+
+    def get_intervalos_do_dia(self, dia_semana):
+        if (1 <= dia_semana <= 7) is False:
+            raise ValueError("O dia da semana deve ser um número entre 1 (domingo) e 7 (sábado).")
+
+        for disp in self.disponibilidade:
+            if disp["dia_semana"] == dia_semana:
+                return disp["intervalos"]
+        return []
+
+
+    def get_numero_maximo_intervalos(self):
+        return max(len(disp["intervalos"]) for disp in self.disponibilidade)
+
+
+    def get_matriz_disponibilidade(self):
+        """
+        Monta uma matriz de disponibilidade com base no JSON de disponibilidade,
+        onde cada coluna representa um dia da semana.
+        """
+        numero_maximo_intervalos = self.get_numero_maximo_intervalos()
+        matriz = []
+        
+        for i in range(1, 8):
+            intervalos_do_dia = self.get_intervalos_do_dia(i)
+            horarios_do_dia = []
+
+            for intervalo in intervalos_do_dia:
+                horarios_do_dia.append(f"{intervalo['horario_inicio']} - {intervalo['horario_fim']}")
+
+            if len(horarios_do_dia) < numero_maximo_intervalos:
+                horarios_do_dia += ["-"] * (numero_maximo_intervalos - len(horarios_do_dia))
+
+            matriz.append(horarios_do_dia)
+
+        # Transpor a matriz
+        qtd_colunas_transp = 7
+        qtd_linhas_transp = numero_maximo_intervalos
+        matriz_transp = [[0 for _ in range(qtd_colunas_transp)] for _ in range(qtd_linhas_transp)]
+
+        for i, linha in enumerate(matriz):
+            for j, valor in enumerate(linha):
+                matriz_transp[j][i] = matriz[i][j]
+
+        return matriz_transp
+    
+
+    def get_html_corpo_tabela_disponibilidade(self):
+        """
+        Monta o HTML do corpo da tabela de disponibilidade do psicólogo.
+        """
+        tbody_inner_html = ""
+
+        for linha in self.get_matriz_disponibilidade():
+            tbody_inner_html += "<tr>"
+
+            for intervalo in linha:
+                tbody_inner_html += f"<td>{intervalo}</td>"
+
+            tbody_inner_html += "</tr>"
+
+        return tbody_inner_html
 
 
 class EstadoConsulta(models.TextChoices):
