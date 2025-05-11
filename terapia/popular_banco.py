@@ -1,15 +1,3 @@
-import json
-from django.core.serializers.json import DjangoJSONEncoder
-
-
-
-
-
-
-
-
-
-
 def popular_especializacoes(sender, **kwargs):
     from .models import Especializacao
 
@@ -62,7 +50,6 @@ def popular_especializacoes(sender, **kwargs):
 
 def popular_usuarios(sender, **kwargs):
     from django.contrib.auth import get_user_model
-
     Usuario = get_user_model()
 
     dados = [
@@ -136,23 +123,35 @@ disp1 = [
 
 disp2 = [
     {
-        "dia_semana": 7,
+        "dia_semana": 6,
         "intervalos": [
             {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "08:00", "horario_fim": "12:00"}
         ]
-    }
+    },
+    {
+        "dia_semana": 1,
+        "intervalos": [
+            {"horario_inicio": "08:00", "horario_fim": "12:00"},
+            {"horario_inicio": "15:00", "horario_fim": "18:00"},
+        ]
+    },
+]
+
+disp3 = [
+    {
+        "dia_semana": 3,
+        "intervalos": [
+            {"horario_inicio": "08:00", "horario_fim": "12:00"},
+            {"horario_inicio": "14:00", "horario_fim": "15:00"},
+            {"horario_inicio": "17:00", "horario_fim": "20:00"},
+        ]
+    },
 ]
 
 def popular_psicologos(sender, **kwargs):
     from .models import Psicologo
-    from django.contrib.auth import get_user_model
     import random
-
+    from django.contrib.auth import get_user_model
     Usuario = get_user_model()
 
     dados = [
@@ -162,7 +161,8 @@ def popular_psicologos(sender, **kwargs):
             "usuario": Usuario.objects.get(email="joao.silva@gmail.com"),
             "valor_consulta": round(random.uniform(100, 300), 2),
             "sobre_mim": "Tenho ampla experiência em diversas áreas da psicologia e estou aqui para ajudar você a superar seus desafios.",
-            "especializacoes": [1, 2, 3, 4, 5]  # IDs das especializações
+            "especializacoes": [1, 2, 3, 4, 5],  # IDs das especializações
+            "disponibilidade": disp2,
         },
         {
             "nome_completo": "Maria Oliveira",
@@ -172,7 +172,7 @@ def popular_psicologos(sender, **kwargs):
             "sobre_mim": "Sou especialista em terapia familiar e de casal, e meu objetivo é fortalecer os laços e resolver conflitos.",
             "especializacoes": [6, 7, 8, 9, 10],  # IDs das especializações
             "foto": "psicologos/fotos/maria.oliveira.jpg",
-            "disponibilidade": json.dumps(disp2, cls=DjangoJSONEncoder),
+            "disponibilidade": disp1,
         },
         {
             "nome_completo": "Pedro Santos",
@@ -180,7 +180,8 @@ def popular_psicologos(sender, **kwargs):
             "usuario": Usuario.objects.get(email="pedro.santos@gmail.com"),
             "valor_consulta": round(random.uniform(100, 300), 2),
             "sobre_mim": "Trabalho com psicologia organizacional e do trabalho, ajudando pessoas a alcançarem seu potencial no ambiente profissional.",
-            "especializacoes": [11, 12, 13, 14, 15]  # IDs das especializações
+            "especializacoes": [11, 12, 13, 14, 15],  # IDs das especializações
+            "disponibilidade": disp3,
         },
         {
             "nome_completo": "Ana Costa",
@@ -188,7 +189,7 @@ def popular_psicologos(sender, **kwargs):
             "usuario": Usuario.objects.get(email="ana.costa@gmail.com"),
             "valor_consulta": round(random.uniform(100, 300), 2),
             "sobre_mim": "Atuo com psicologia infantil e desenvolvimento pessoal, ajudando crianças e adultos a crescerem emocionalmente.",
-            "especializacoes": [16, 17, 18, 19, 20]  # IDs das especializações
+            "especializacoes": [16, 17, 18, 19, 20],  # IDs das especializações
         },
         {
             "nome_completo": "Lucas Almeida",
@@ -196,7 +197,7 @@ def popular_psicologos(sender, **kwargs):
             "usuario": Usuario.objects.get(email="lucas.almeida@gmail.com"),
             "valor_consulta": round(random.uniform(100, 300), 2),
             "sobre_mim": "Tenho experiência no tratamento de transtornos de ansiedade e estou aqui para oferecer suporte e acolhimento.",
-            "especializacoes": [21, 22, 23, 24, 25]  # IDs das especializações
+            "especializacoes": [21, 22, 23, 24, 25],  # IDs das especializações
         },
     ]
 
@@ -208,22 +209,13 @@ def popular_psicologos(sender, **kwargs):
                 "usuario": item["usuario"],
                 "valor_consulta": item["valor_consulta"],
                 "sobre_mim": item["sobre_mim"],
-                "foto": item.get("foto", None),
+                "foto": item.get("foto"),
+                "disponibilidade": item.get("disponibilidade"),
             }
         )
         if created:
             psicologo.especializacoes.set(item["especializacoes"])
 
-    for item in dados:
-        Psicologo.objects.get_or_create(
-            crp=item["crp"],
-            defaults={
-                "nome_completo": item["nome_completo"],
-                "usuario": item["usuario"],
-                "valor_consulta": item["valor_consulta"],
-                "sobre_mim": item["sobre_mim"],
-            }
-        )
 
 
 
@@ -237,7 +229,6 @@ def popular_psicologos(sender, **kwargs):
 def popular_pacientes(sender, **kwargs):
     from .models import Paciente
     from django.contrib.auth import get_user_model
-
     Usuario = get_user_model()
 
     dados = [

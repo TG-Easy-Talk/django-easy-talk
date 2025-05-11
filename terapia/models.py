@@ -81,7 +81,6 @@ class Psicologo(models.Model):
     )
     disponibilidade = models.JSONField(
         "Disponibilidade",
-        default=dict,
         blank=True,
         null=True,
         validators=[validate_disponibilidade_json]
@@ -238,3 +237,4 @@ class Consulta(models.Model):
 
     def __str__(self):
         return f"Consulta em {self.data_hora_marcada:%Y-%m-%d %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
+    
