@@ -74,7 +74,6 @@ class Psicologo(models.Model):
         blank=True,
         null=True,
         validators=[
-            MinValueValidator(0),
             validate_valor_consulta,
         ],
         help_text="Entre R$ 20,00 e R$ 4.999,99",

@@ -5,7 +5,7 @@
 
 {% block conteudo %}
 <div class="row gap-4 flex-nowrap">
-    <section class="col vstack gap-5">
+    <main class="col vstack gap-5">
         <div class="hstack gap-4">
             <img class="rounded-circle mx-auto"
             style="width: 7.5rem; height: 7.5rem;"
@@ -32,15 +32,15 @@
         <div class="vstack gap-2">
             <h6>Especializações</h6>
             <div class="hstack gap-2 flex-wrap">
-                {% for especializacao in psicologo.especializacoes.all %}
-                    <span class="badge text-bg-secondary text-white">{{ especializacao.titulo }}</span>
-                {% endfor %}
+                {% include "geral/especializacoes.html" %}
             </div>
         </div>
 
         <div class="vstack gap-2">
             <h6>Sobre mim</h6>
-            <div class="text-body-secondary">{{ psicologo.sobre_mim }}</div>
+            <div class="text-body-secondary">
+                {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre Mim.</i>" }}
+            </div>
         </div>
 
         <div class="vstack gap-2">
@@ -52,13 +52,13 @@
             {% endif %}
         </div>
 
-        <div class="vstack gap-2">
+        {% comment %} <div class="vstack gap-2">
             <h6>Sobre minhas especializações</h6>
             {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
-        </div>
+        </div> {% endcomment %}
 
 
-    </section>
+    </main>
 
     <aside class="col-auto bg-primary rounded-3" style="width: 250px;"></aside>
 </div>

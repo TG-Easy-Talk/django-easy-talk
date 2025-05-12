@@ -1,15 +1,17 @@
 from django import forms
-from django.forms import widgets, DateInput
+from django.forms import DateInput
 from django.contrib.auth import get_user_model
-from easy_talk.renderers import FormComValidacaoRenderer
+from easy_talk.renderers import FormComValidacaoRenderer, PsicologoChangeFormRenderer, FormDeFiltrosRenderer
 from .models import Paciente, Psicologo, Especializacao, EstadoConsulta
 from usuario.forms import UsuarioCreationForm
+from .utils.crp import validate_crp
+from .utils.cpf import validate_cpf
 
 
 Usuario = get_user_model()
 
 
-class PacienteCadastroForm(UsuarioCreationForm):
+class PacienteCreationForm(UsuarioCreationForm):
     default_renderer = FormComValidacaoRenderer
 
     nome = forms.CharField(
@@ -18,6 +20,7 @@ class PacienteCadastroForm(UsuarioCreationForm):
     cpf = forms.CharField(
         label="CPF",
         max_length=14,
+        validators=[validate_cpf],
     )
 
     class Meta(UsuarioCreationForm.Meta):
@@ -34,7 +37,7 @@ class PacienteCadastroForm(UsuarioCreationForm):
         return usuario
 
 
-class PsicologoCadastroForm(UsuarioCreationForm):
+class PsicologoCreationForm(UsuarioCreationForm):
     default_renderer = FormComValidacaoRenderer
 
     nome_completo = forms.CharField(
@@ -43,6 +46,7 @@ class PsicologoCadastroForm(UsuarioCreationForm):
     crp = forms.CharField(
         label="CRP",
         max_length=20,
+        validators=[validate_crp]
     )
 
     class Meta(UsuarioCreationForm.Meta):
@@ -59,29 +63,10 @@ class PsicologoCadastroForm(UsuarioCreationForm):
         return usuario
 
 
-class EstilizadorMixin:
-    def aplicar_estilos(self):
-        pass
+class PsicologoFiltrosForm(forms.Form):
+    default_renderer = FormDeFiltrosRenderer
+    template_name = 'pesquisa/componentes/form.html'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.aplicar_estilos()
-
-
-class FormDeFiltrosEstilizadorMixin(EstilizadorMixin):
-    def aplicar_estilos(self):
-        if hasattr(self, 'fields'):
-            for field in self.fields.values():
-                if isinstance(field.widget, widgets.Input):
-                    field.widget.attrs.update({
-                        'class': 'shadow-none',
-                    })
-
-                elif isinstance(field, forms.ModelChoiceField):
-                    field.empty_label = field.label
-
-
-class PsicologoFiltrosForm(FormDeFiltrosEstilizadorMixin, forms.Form):
     especializacao = forms.ModelChoiceField(
         queryset=Especializacao.objects.all(),
         required=False,
@@ -105,9 +90,28 @@ class CustomDateInput(DateInput):
     input_type = 'date'
 
 
-class ConsultaFiltrosForm(FormDeFiltrosEstilizadorMixin, forms.Form):
+class ConsultaFiltrosForm(forms.Form):
+    default_renderer = FormDeFiltrosRenderer
+    template_name = 'minhas_consultas/componentes/form.html'
+
     estado = forms.ChoiceField(
         choices=[("", "Estado")] + EstadoConsulta.choices,
     )
     data_inicial = forms.DateTimeField(widget=CustomDateInput())
     data_final = forms.DateTimeField(widget=CustomDateInput())
+    
+
+class PsicologoChangeForm(forms.ModelForm):
+    default_renderer = PsicologoChangeFormRenderer
+
+    class Meta:
+        model = Psicologo
+        fields = ['valor_consulta', 'sobre_mim', 'foto', 'especializacoes']
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['sobre_mim'].widget.attrs.update({
+            'placeholder': 'Apresente-se para os pacientes do EasyTalk...',
+        })
+        self.fields['foto'].widget = forms.FileInput()

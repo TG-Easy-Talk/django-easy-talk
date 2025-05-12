@@ -1,0 +1,55 @@
+<main class="vstack gap-5">
+    <div class="hstack gap-4">
+        <img class="rounded-circle mx-auto"
+        style="width: 7.5rem; height: 7.5rem;"
+        src="{{ form.instance.get_url_foto_propria_ou_padrao }}"
+        alt="Foto de perfil">
+
+        <div class="flex-grow-1">
+            <h4 class="fw-bold">{{ form.instance.nome_completo }}</h4>
+            <hr class="border border-primary opacity-100">
+
+            <div class="hstack gap-5">
+                <div>
+                    <h6 class="text-body-secondary">Valor da consulta</h6>
+                    {{ form.valor_consulta.as_field_group }}
+                </div>
+                <div>
+                    <h6 class="text-body-secondary">CRP</h6>
+                    <h6 class="fw-semibold">{{ form.instance.crp }}</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="vstack gap-2">
+        <h6>Alterar foto</h6>
+        {{ form.foto.as_field_group }}
+    </div>
+
+    <div class="vstack gap-2">
+        <h6>Especializações</h6>
+        {{ form.especializacoes.as_field_group }}
+    </div>
+
+    <div class="vstack gap-2">
+        <h6>Sobre mim</h6>
+        <div class="text-body-secondary">{{ form.sobre_mim.as_field_group }}</div>
+    </div>
+
+    {% comment %} <div class="vstack gap-2">
+        <h6>Disponibilidade</h6>
+        {% if form.instance.disponibilidade %}
+            {% include 'perfil/componentes/tabela_disponibilidade.html' %}
+        {% else %}
+            <div class="text-body-secondary"><i>Este psicólogo ainda não definiu sua disponibilidade.</i></div>
+        {% endif %}
+    </div>
+
+    <div class="vstack gap-2">
+        <h6>Sobre minhas especializações</h6>
+        {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
+    </div> {% endcomment %}
+
+    <button class="btn btn-primary text-white" type="submit">Salvar alterações</button>
+</main>

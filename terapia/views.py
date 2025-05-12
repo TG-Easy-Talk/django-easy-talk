@@ -1,8 +1,14 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView, FormView, ListView, DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import PacienteCadastroForm, PsicologoCadastroForm, PsicologoFiltrosForm, ConsultaFiltrosForm
+from django.views.generic import TemplateView, FormView, ListView, DetailView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from .forms import (
+    PacienteCreationForm,
+    PsicologoCreationForm,
+    PsicologoChangeForm,
+    PsicologoFiltrosForm,
+    ConsultaFiltrosForm
+)
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
 from django.views.generic.edit import ContextMixin, FormMixin
@@ -39,7 +45,7 @@ class CadastroView(FormView, FluxoAlternativoLoginContextMixin):
 
 
 class PacienteCadastroView(CadastroView):
-    form_class = PacienteCadastroForm
+    form_class = PacienteCreationForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -56,7 +62,7 @@ class PacienteCadastroView(CadastroView):
 
 
 class PsicologoCadastroView(CadastroView):
-    form_class = PsicologoCadastroForm
+    form_class = PsicologoCreationForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -180,3 +186,20 @@ class MinhasConsultasView(LoginRequiredMixin, TemplateView, FormMixin):
             },
         ]
         return context
+
+
+class DeveSerPsicologoMixin(LoginRequiredMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not hasattr(request.user, "psicologo"):
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
+
+
+class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
+    template_name = "meu_perfil/meu_perfil.html"
+    form_class = PsicologoChangeForm
+    context_object_name = "psicologo"
+
+    def get_object(self, queryset=None):
+        return Psicologo.objects.get(usuario=self.request.user)
+    

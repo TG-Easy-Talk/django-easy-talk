@@ -1,11 +1,20 @@
 from django.forms.renderers import TemplatesSetting
+from django.forms import widgets
+from django import forms
 
 
-class FormComValidacaoRenderer(TemplatesSetting):
+class CustomFormRenderer(TemplatesSetting):
+    def get_widget_classes(self, widget):
+        return [widget.attrs.get('class', '')]
+    
+
+    def update_widget_classes(self, widget, classes):
+        widget.attrs.update({'class': ' '.join(classes)})
+
 
     def render(self, template_name, context, renderer=None):
-        form = context.get('form', None)
-        fields = context.get('fields', None)
+        form = context.get('form')
+        fields = context.get('fields')
 
         if form:
             form.label_suffix = ''
@@ -15,15 +24,64 @@ class FormComValidacaoRenderer(TemplatesSetting):
                 # Adicionar um placeholder vazio caso já não haja algum para o form-floating do Bootstrap funcionar
                 bound_field.field.widget.attrs.setdefault('placeholder', '')
 
-                # Adicionar classes de validação do Bootstrap
-                classes = [bound_field.field.widget.attrs.get('class', '')]
+                # Adicionar classes do Bootstrap dependendo do tipo de widget
+                classes = self.get_widget_classes(bound_field.field.widget)
 
+                if isinstance(bound_field.field.widget, widgets.Input) \
+                or isinstance(bound_field.field.widget, widgets.Textarea):
+                    classes.append('form-control')
+
+                elif isinstance(bound_field.field.widget, widgets.Select):
+                    classes.append('form-select')
+
+                self.update_widget_classes(bound_field.field.widget, classes)
+
+        return super().render(template_name, context, renderer)
+
+
+class FormComValidacaoRenderer(CustomFormRenderer):
+    def render(self, template_name, context, renderer=None):
+        form = context.get('form')
+        fields = context.get('fields')
+
+        if fields:
+            for bound_field, errors in fields:
+                classes = self.get_widget_classes(bound_field.field.widget)
+
+                # Adicionar classes de validação do Bootstrap
                 if bound_field.errors:
                     classes.append('is-invalid')
 
-                elif form.is_bound and bound_field.field.widget.input_type not in ['email', 'password']:
+                elif form.is_bound and bound_field.html_name not in ['username', 'password', 'password1', 'password2']:
                     classes.append('is-valid')
 
-                bound_field.field.widget.attrs.setdefault('class', ' '.join(classes))
+                self.update_widget_classes(bound_field.field.widget, classes)
 
         return super().render(template_name, context, renderer)
+    
+
+class FormDeFiltrosRenderer(CustomFormRenderer):
+    def render(self, template_name, context, renderer=None):
+        fields = context.get('fields')
+
+        if fields:
+            for bound_field, errors in fields:
+                classes = self.get_widget_classes(bound_field.field.widget)
+
+                # Remover o focus ring dos inputs no filtro para melhorar a estética
+                if isinstance(bound_field.field.widget, widgets.Input):
+                    classes.append('shadow-none')
+
+                # Adicionar o label do próprio campo como empty_label para os ModelChoiceFields
+                # Em vez de aparecer "-------" como opção selecionada, aparece a label do campo
+                elif isinstance(bound_field.field, forms.ModelChoiceField):
+                    bound_field.field.empty_label = bound_field.field.label
+
+                self.update_widget_classes(bound_field.field.widget, classes)
+
+        return super().render(template_name, context, renderer)
+
+
+class PsicologoChangeFormRenderer(FormComValidacaoRenderer):
+    field_template_name = "meu_perfil/componentes/field.html"
+    form_template_name = "meu_perfil/componentes/form.html"

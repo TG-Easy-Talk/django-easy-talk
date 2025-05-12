@@ -14,9 +14,7 @@
         </div>
 
         <div class="hstack gap-2 flex-wrap">
-            {% for especializacao in psicologo.especializacoes.all %}
-                <span class="badge text-bg-secondary text-white">{{ especializacao.titulo }}</span>
-            {% endfor %}
+            {% include "geral/especializacoes.html" %}
             <span class="text-body-secondary ms-2">+3</span>
         </div>
 

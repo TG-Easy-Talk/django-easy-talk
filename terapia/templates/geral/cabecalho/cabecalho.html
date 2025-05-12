@@ -31,6 +31,11 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
                         <li class="nav-item">
                             <a class="nav-link text-nowrap" href="{% url 'minhas_consultas' %}">Minhas consultas</a>
                         </li>
+                        {% if request.user.psicologo %}
+                            <li class="nav-item">
+                                <a class="nav-link text-nowrap" href="{% url 'meu_perfil' %}">Meu perfil</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="d-block d-sm-none nav-link text-nowrap text-warning" href="#" onclick="logout()">Encerrar sessão</a>
                         </li>
@@ -83,7 +88,7 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
 
 
 
-<!-- Espaço para o cabeçalho fixo -->
+{% comment %} Espaço para o cabeçalho fixo {% endcomment %}
 <div id="cabecalhoEspaco"></div>
 
 <script>
