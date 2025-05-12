@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='psicologo',
             name='disponibilidade',
-            field=models.JSONField(blank=True, default=dict, null=True, validators=[terapia.utils.availability.validate_disponibilidade_json], verbose_name='Disponibilidade'),
+            field=models.JSONField(blank=True, default=dict, null=True, validators=[terapia.utils.availability.validate_disponibilidade], verbose_name='Disponibilidade'),
         ),
         migrations.AlterField(
             model_name='psicologo',

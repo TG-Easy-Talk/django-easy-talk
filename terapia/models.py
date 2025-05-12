@@ -7,7 +7,7 @@ from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
 from terapia.utils.availability import (
     check_psicologo_disponibilidade,
-    validate_disponibilidade_json
+    validate_disponibilidade
 )
 from terapia.utils.validators import (
     validate_future_datetime,
@@ -82,7 +82,7 @@ class Psicologo(models.Model):
         "Disponibilidade",
         blank=True,
         null=True,
-        validators=[validate_disponibilidade_json]
+        validators=[validate_disponibilidade]
     )
     especializacoes = models.ManyToManyField(
         Especializacao,
