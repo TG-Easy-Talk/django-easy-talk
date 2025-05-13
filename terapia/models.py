@@ -107,7 +107,12 @@ class Psicologo(models.Model):
         if hasattr(self.usuario, 'paciente'):
             raise ValidationError("Este usuário já está relacionado a um paciente.")
 
-        self.ordenar_intervalos_disponibilidade()
+        # Ordenar os intervalos de cada dia em ordem cronológica crescente
+        if self.disponibilidade:
+            for disp in self.disponibilidade:
+                intervalos = disp["intervalos"]
+                intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
+                disp["intervalos"] = intervalos
 
 
     def __str__(self):
@@ -124,14 +129,14 @@ class Psicologo(models.Model):
         return settings.STATIC_URL + "img/foto_de_perfil.jpg"
 
 
-    def ordenar_intervalos_disponibilidade(self):
-        """
-        Ordena os intervalos de cada dia em ordem crescente.
-        """
-        for disp in self.disponibilidade:
-            intervalos = disp["intervalos"]
-            intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
-            disp["intervalos"] = intervalos
+    # def ordenar_intervalos_disponibilidade(self):
+    #     """
+    #     Ordena os intervalos de cada dia em ordem crescente.
+    #     """
+    #     for disp in self.disponibilidade:
+    #         intervalos = disp["intervalos"]
+    #         intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
+    #         disp["intervalos"] = intervalos
     
 
     def get_intervalos_do_dia(self, dia_semana):

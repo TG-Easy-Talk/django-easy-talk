@@ -37,6 +37,11 @@
         <div class="text-body-secondary">{{ form.sobre_mim.as_field_group }}</div>
     </div>
 
+    <div class="vstack gap-2">
+        <h6>Disponibilidade</h6>
+        {{ form.disponibilidade.as_field_group }}
+    </div>
+
     {% comment %} <div class="vstack gap-2">
         <h6>Disponibilidade</h6>
         {% if form.instance.disponibilidade %}

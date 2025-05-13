@@ -227,6 +227,8 @@ def popular_psicologos(sender, **kwargs):
         )
         if created:
             psicologo.especializacoes.set(item["especializacoes"])
+            psicologo.full_clean()
+            psicologo.save()
 
 
 

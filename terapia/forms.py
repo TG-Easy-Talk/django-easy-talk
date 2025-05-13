@@ -106,7 +106,7 @@ class PsicologoChangeForm(forms.ModelForm):
 
     class Meta:
         model = Psicologo
-        fields = ['valor_consulta', 'sobre_mim', 'foto', 'especializacoes']
+        fields = ['valor_consulta', 'sobre_mim', 'foto', 'especializacoes', 'disponibilidade']
 
 
     def __init__(self, *args, **kwargs):

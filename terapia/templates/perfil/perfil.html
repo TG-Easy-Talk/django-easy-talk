@@ -52,14 +52,33 @@
             {% endif %}
         </div>
 
-        {% comment %} <div class="vstack gap-2">
+        {% comment %}
+        Essa parte do código é um acordeão que mostra as especializações do psicólogo em mais detalhes,
+        mas como o sistema ainda não permite que o psicólogo detalhe sua experiência com cada uma das
+        suas especializações, essa parte ficará comentada por enquanto.
+
+        <div class="vstack gap-2">
             <h6>Sobre minhas especializações</h6>
             {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
-        </div> {% endcomment %}
+        </div>
+
+        {% endcomment %}
 
 
     </main>
 
-    <aside class="col-auto bg-primary rounded-3" style="width: 250px;"></aside>
+    {% comment %} <aside class="col-auto rounded-3 sticky-top" style="width: 250px;">
+        <div class="vstack gap-2">
+            <h6 class="text-center">Agende sua consulta</h6>
+            a
+        </div>
+    </aside> {% endcomment %}
+
+    <aside class="col-auto rounded-3 sticky-top" style="width: 250px;">
+        <div class="vstack gap-2">
+            <h6 class="text-center">Agende sua consulta</h6>
+            a
+        </div>
+    </aside>
 </div>
 {% endblock %}

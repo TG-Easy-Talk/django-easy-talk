@@ -403,8 +403,6 @@ def main():
                 intervalos = dia["intervalos"]
                 intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
 
-                print('aaa', intervalos)
-
 
 if __name__ == '__main__':
     main()
