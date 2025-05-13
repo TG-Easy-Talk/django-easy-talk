@@ -16,12 +16,12 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
                     {% if request.user.is_anonymous %}
                         {% include 'geral/nav_items_compartilhados.html' %}
                         <li class="nav-item">
-                            <a type="button" class="btn btn-secondary text-white me-md-3 mt-3 mt-md-0 w-100 w-md-auto rounded-3"
+                            <a type="button" class="btn text-white btn-secondary me-md-3 mt-3 mt-md-0 w-100 w-md-auto rounded-3"
                                 href="{% url 'login' %}">Entrar</a>
                         </li>
                         <li class="nav-item">
                             <a type="button"
-                                class="btn btn-primary text-white mt-3 mt-md-0 w-100 w-md-auto rounded-3"
+                                class="btn text-white btn-primary mt-3 mt-md-0 w-100 w-md-auto rounded-3"
                                 href="{% url 'cadastro_escolha' %}">Cadastrar-se</a>
                         </li>
                     {% else %}
@@ -57,7 +57,7 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
                 </div>
 
                 <div class="nav-item d-none d-sm-block dropdown">
-                    <button class="btn btn-dark hstack fw-normal border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                    <button class="btn text-white btn-dark hstack fw-normal border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false"
                     style="--bs-btn-hover-bg: null; --bs-btn-active-bg: null;
                     --bs-btn-hover-color: var(--bs-secondary); --bs-btn-active-color: var(--bs-secondary);">
 
@@ -95,9 +95,10 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
     const cabecalhoEspaco = document.getElementById('cabecalhoEspaco');
     const cabecalho = document.getElementById('cabecalho');
 
-    cabecalhoEspaco.style.height = `${cabecalho.offsetHeight}px`;
-    
-    window.addEventListener('resize', () => {
+    function setHeightCabecalhoEspaco() {
         cabecalhoEspaco.style.height = `${cabecalho.offsetHeight}px`;
-    });
+    }
+
+    setHeightCabecalhoEspaco();
+    window.addEventListener('resize', setHeightCabecalhoEspaco);
 </script>

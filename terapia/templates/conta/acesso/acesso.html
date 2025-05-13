@@ -15,7 +15,7 @@
 
     {% block form %}{{ form }}{% endblock %}
 
-    <button class="btn btn-primary text-white {% block classes_adicionais_submit %}{% endblock %}" type="submit">{% block texto_submit %}{% endblock %}</button>
+    <button class="btn text-white btn-primary {% block classes_adicionais_submit %}{% endblock %}" type="submit">{% block texto_submit %}{% endblock %}</button>
 
     <div class="mt-3">
         {% include 'conta/acesso/componentes/fluxos_alternativos.html' %}

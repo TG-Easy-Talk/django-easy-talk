@@ -67,18 +67,25 @@
 
     </main>
 
-    {% comment %} <aside class="col-auto rounded-3 sticky-top" style="width: 250px;">
-        <div class="vstack gap-2">
-            <h6 class="text-center">Agende sua consulta</h6>
-            a
-        </div>
-    </aside> {% endcomment %}
-
-    <aside class="col-auto rounded-3 sticky-top" style="width: 250px;">
-        <div class="vstack gap-2">
-            <h6 class="text-center">Agende sua consulta</h6>
-            a
+    <aside class="col-auto rounded-3" style="width: 250px;">
+        <div class="vstack gap-2 sticky-top" id="agendamentoConsulta">
+            <form method="post">
+                {% csrf_token %}
+                {{ form }}
+            </form>
         </div>
     </aside>
 </div>
+
+<script>
+    const conteudoContainer = document.getElementById('conteudoContainer');
+    const agendamentoConsulta = document.getElementById('agendamentoConsulta');
+
+    function setTopAgendamentoConsulta() {
+        agendamentoConsulta.style.top = `${cabecalhoEspaco.offsetHeight + 30}px`;
+    }
+
+    setTopAgendamentoConsulta();
+    window.addEventListener('resize', setTopAgendamentoConsulta);
+</script>
 {% endblock %}

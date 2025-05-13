@@ -1,8 +1,11 @@
 from django import forms
-from django.forms import DateInput
 from django.contrib.auth import get_user_model
-from easy_talk.renderers import FormComValidacaoRenderer, PsicologoChangeFormRenderer, FormDeFiltrosRenderer
-from .models import Paciente, Psicologo, Especializacao, EstadoConsulta
+from easy_talk.renderers import (
+    FormComValidacaoRenderer,
+    PsicologoChangeFormRenderer,
+    FormDeFiltrosRenderer
+)
+from .models import Paciente, Psicologo, Especializacao, Consulta, EstadoConsulta
 from usuario.forms import UsuarioCreationForm
 from .utils.crp import validate_crp
 from .utils.cpf import validate_cpf
@@ -86,8 +89,12 @@ class PsicologoFiltrosForm(forms.Form):
     )
 
 
-class CustomDateInput(DateInput):
+class CustomDateInput(forms.DateInput):
     input_type = 'date'
+
+
+class CustomDateTimeInput(forms.DateTimeInput):
+    input_type = 'datetime-local'
 
 
 class ConsultaFiltrosForm(forms.Form):
@@ -115,3 +122,16 @@ class PsicologoChangeForm(forms.ModelForm):
             'placeholder': 'Apresente-se para os pacientes do EasyTalk...',
         })
         self.fields['foto'].widget = forms.FileInput()
+
+
+class ConsultaCreationForm(forms.ModelForm):
+    default_renderer = FormComValidacaoRenderer
+    template_name = 'perfil/componentes/form.html'
+
+    class Meta:
+        model = Consulta
+        fields = ['data_hora_marcada']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['data_hora_marcada'].widget = CustomDateTimeInput()
