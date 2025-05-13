@@ -383,20 +383,27 @@ def main():
         [{
             "dia_semana": 5,
             "intervalos": [
-                {"horario_inicio": "08:00", "horario_fim": "12:00"},
                 {"horario_inicio": "13:00", "horario_fim": "14:00"},
+                {"horario_inicio": "08:00", "horario_fim": "12:00"},
                 {"horario_inicio": "06:30", "horario_fim": "07:30"},
             ]
         }],
     ]
 
-    for i, disponibilidade in enumerate(disponibilidades_json):
+    for i, disp in enumerate(disponibilidades_json):
         print(f"Testando disponibilidade #{i}", end=": ")
         try:
-            validate_disponibilidade(disponibilidade)
+            validate_disponibilidade(disp)
             print("OK")
         except ValidationError as e:
             print(e)
+
+        if i == 23:
+            for j, dia in enumerate(disp):
+                intervalos = dia["intervalos"]
+                intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
+
+                print('aaa', intervalos)
 
 
 if __name__ == '__main__':

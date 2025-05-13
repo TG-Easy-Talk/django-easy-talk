@@ -148,6 +148,17 @@ disp3 = [
     },
 ]
 
+disp4 = [
+    {
+        "dia_semana": 3,
+        "intervalos": [
+            {"horario_inicio": "17:00", "horario_fim": "20:00"},
+            {"horario_inicio": "08:00", "horario_fim": "12:00"},
+            {"horario_inicio": "14:00", "horario_fim": "15:00"},
+        ]
+    },
+]
+
 def popular_psicologos(sender, **kwargs):
     from .models import Psicologo
     import random
@@ -159,7 +170,7 @@ def popular_psicologos(sender, **kwargs):
             "nome_completo": "João Silva",
             "crp": "01/12345",
             "usuario": Usuario.objects.get(email="joao.silva@gmail.com"),
-            "valor_consulta": round(random.uniform(100, 300), 2),
+            "valor_consulta": round(random.uniform(100, 300), 0),
             "sobre_mim": "Tenho ampla experiência em diversas áreas da psicologia e estou aqui para ajudar você a superar seus desafios.",
             "especializacoes": [1, 2, 3, 4, 5],  # IDs das especializações
             "disponibilidade": disp2,
@@ -168,7 +179,7 @@ def popular_psicologos(sender, **kwargs):
             "nome_completo": "Maria Oliveira",
             "crp": "02/67890",
             "usuario": Usuario.objects.get(email="maria.oliveira@gmail.com"),
-            "valor_consulta": round(random.uniform(100, 300), 2),
+            "valor_consulta": round(random.uniform(100, 300), 0),
             "sobre_mim": "Sou especialista em terapia familiar e de casal, e meu objetivo é fortalecer os laços e resolver conflitos.",
             "especializacoes": [6, 7, 8, 9, 10],  # IDs das especializações
             "foto": "psicologos/fotos/maria.oliveira.jpg",
@@ -178,7 +189,7 @@ def popular_psicologos(sender, **kwargs):
             "nome_completo": "Pedro Santos",
             "crp": "03/11223",
             "usuario": Usuario.objects.get(email="pedro.santos@gmail.com"),
-            "valor_consulta": round(random.uniform(100, 300), 2),
+            "valor_consulta": round(random.uniform(100, 300), 0),
             "sobre_mim": "Trabalho com psicologia organizacional e do trabalho, ajudando pessoas a alcançarem seu potencial no ambiente profissional.",
             "especializacoes": [11, 12, 13, 14, 15],  # IDs das especializações
             "disponibilidade": disp3,
@@ -187,15 +198,16 @@ def popular_psicologos(sender, **kwargs):
             "nome_completo": "Ana Costa",
             "crp": "04/44556",
             "usuario": Usuario.objects.get(email="ana.costa@gmail.com"),
-            "valor_consulta": round(random.uniform(100, 300), 2),
+            "valor_consulta": round(random.uniform(100, 300), 0),
             "sobre_mim": "Atuo com psicologia infantil e desenvolvimento pessoal, ajudando crianças e adultos a crescerem emocionalmente.",
             "especializacoes": [16, 17, 18, 19, 20],  # IDs das especializações
+            "disponibilidade": disp4,
         },
         {
             "nome_completo": "Lucas Almeida",
             "crp": "05/77889",
             "usuario": Usuario.objects.get(email="lucas.almeida@gmail.com"),
-            "valor_consulta": round(random.uniform(100, 300), 2),
+            "valor_consulta": round(random.uniform(100, 300), 0),
             "sobre_mim": "Tenho experiência no tratamento de transtornos de ansiedade e estou aqui para oferecer suporte e acolhimento.",
             "especializacoes": [21, 22, 23, 24, 25],  # IDs das especializações
         },
