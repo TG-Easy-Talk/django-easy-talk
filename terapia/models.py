@@ -1,12 +1,12 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
 from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
 from terapia.utils.availability import (
     validate_disponibilidade,
-    parse_time,
     esta_no_intervalo,
 )
 from terapia.utils.validators import (
@@ -149,13 +149,11 @@ class Psicologo(models.Model):
         return None
 
 
-    def tem_disponibilidade_para_essa_data_hora(self, data_hora_marcada):
+    def tem_intervalo_para_essa_data_hora(self, data_hora_marcada):
         """
-        Verifica se o psicólogo tem disponibilidade para uma consulta em um determinado dia e horário.
+        Verifica se há algum intervalo de disponibilidade para a data e hora marcadas.
+        Além disso, verifica se a consulta terminará antes do fim do intervalo.
         """
-        if self.disponibilidade is None:
-            return False
-        
         # Verificar se o início da consulta está em algum intervalo
         dia_semana = (data_hora_marcada.isoweekday() % 7) + 1 # 1 (domingo) a 7 (sábado)
         hora_inicio = data_hora_marcada.time()
@@ -171,6 +169,30 @@ class Psicologo(models.Model):
         hora_final = data_hora_final.time()
 
         return esta_no_intervalo(hora_final, intervalo)
+    
+
+    def ja_tem_consulta_que_ocupa_o_tempo(self, consulta):
+        """
+        Verifica se o psicólogo já tem alguma consulta marcada que tomará tempo da
+        consulta que se deseja marcar na data e hora especificados.
+        """
+        return self.consultas.filter(
+            Q(data_hora_marcada__gt = consulta.data_hora_marcada - timedelta(hours=1)) &
+            Q(data_hora_marcada__lt = consulta.data_hora_marcada + timedelta(hours=1)) &
+            ~ Q(estado=EstadoConsulta.CANCELADA) & # Desconsiderar consultas canceladas
+            ~ Q(pk=consulta.pk) # Desconsiderar a própria consulta
+        ).exists()
+
+
+    def tem_disponibilidade_para_essa_consulta(self, consulta):
+        """
+        Verifica se o psicólogo tem disponibilidade para uma consulta em um determinado dia e horário.
+        """
+        return (
+            self.disponibilidade is not None
+            and self.tem_intervalo_para_essa_data_hora(consulta.data_hora_marcada)
+            and not self.ja_tem_consulta_que_ocupa_o_tempo(consulta)
+        )
 
 
     def get_intervalos_do_dia(self, dia_semana):
@@ -271,9 +293,9 @@ class Consulta(models.Model):
 
     def clean(self):
         super().clean()
-        if not self.psicologo.tem_disponibilidade_para_essa_data_hora(self.data_hora_marcada):
+        if not self.psicologo.tem_disponibilidade_para_essa_consulta(self):
             raise ValidationError({"data_hora_marcada": "O psicólogo não tem disponibilidade nessa data e horário"})
         
     def __str__(self):
-        return f"Consulta em {self.data_hora_marcada:%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
+        return f"Consulta {self.estado.upper()} em {self.data_hora_marcada:%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
     
