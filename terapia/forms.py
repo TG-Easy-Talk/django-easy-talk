@@ -135,3 +135,4 @@ class ConsultaCreationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['data_hora_marcada'].widget = CustomDateTimeInput()
+        

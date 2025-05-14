@@ -2940,7 +2940,7 @@ textarea.form-control-lg {
   --bs-btn-font-size: 0.875rem;
   --bs-btn-font-weight: 500;
   --bs-btn-line-height: 1.5;
-  --bs-btn-color: white;
+  --bs-btn-color: var(--bs-body-color);
   --bs-btn-bg: transparent;
   --bs-btn-border-width: var(--bs-border-width);
   --bs-btn-border-color: transparent;

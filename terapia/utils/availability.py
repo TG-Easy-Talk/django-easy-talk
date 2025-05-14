@@ -37,45 +37,48 @@ def parse_time(s: str) -> time | None:
         return None
 
 
-def is_in_interval(
-        now: time,
-        start: time | None,
-        end: time | None
+def esta_no_intervalo(
+        hora: time,
+        intervalo: Intervalo | None,
 ) -> bool:
     """
-    Retorna True se now estiver entre start e end, incluindo limites.
-    Se start ou end for None, retorna False.
+    Retorna True se hora estiver entre inicio e fim, incluindo limites.
+    Se inicio ou fim forem None, retorna False.
     """
-    if start is None or end is None:
+    if intervalo is None:
         return False
-    return start <= now <= end
+    
+    inicio = parse_time(intervalo["horario_inicio"])
+    fim = parse_time(intervalo["horario_fim"])
+
+    return inicio <= hora <= fim
 
 
-def check_psicologo_disponibilidade(
-        psicologo: Any,
-        data_hora: _dt.datetime
-) -> bool:
-    """
-    Retorna True se 'data_hora' cai dentro de algum intervalo
-    da lista psicologo.disponibilidade.
+# def check_psicologo_disponibilidade(
+#         psicologo: Any,
+#         data_hora: _dt.datetime
+# ) -> bool:
+#     """
+#     Retorna True se 'data_hora' cai dentro de algum intervalo
+#     da lista psicologo.disponibilidade.
 
-    - Usa any() para interromper ao encontrar o primeiro intervalo válido.
-    - Trata disponibilidade ausente ou None como lista vazia.
-    """
-    dispon: List[Disponibilidade] = getattr(psicologo, "disponibilidade", []) or []
-    hoje = data_hora.isoweekday()
-    agora = data_hora.time()
+#     - Usa any() para interromper ao encontrar o primeiro intervalo válido.
+#     - Trata disponibilidade ausente ou None como lista vazia.
+#     """
+#     dispon: List[Disponibilidade] = getattr(psicologo, "disponibilidade", []) or []
+#     hoje = (data_hora.isoweekday() % 7) + 1 # 1 (domingo) a 7 (sábado)
+#     agora = data_hora.time()
 
-    return any(
-        is_in_interval(
-            agora,
-            parse_time(intervalo["horario_inicio"]),
-            parse_time(intervalo["horario_fim"])
-        )
-        for disp in dispon
-        if disp.get("dia_semana") == hoje
-        for intervalo in disp.get("intervalos", [])
-    )
+#     return any(
+#         esta_no_intervalo(
+#             agora,
+#             parse_time(intervalo["horario_inicio"]),
+#             parse_time(intervalo["horario_fim"])
+#         )
+#         for disp in dispon
+#         if disp.get("dia_semana") == hoje
+#         for intervalo in disp.get("intervalos", [])
+#     )
 
 
 def validate_disponibilidade(
@@ -167,11 +170,10 @@ def validate_disponibilidade_horarios(data):
                 if k == j:
                     continue
 
-                outro_horario_inicio = parse_time(item["intervalos"][k]["horario_inicio"])
-                outro_horario_fim = parse_time(item["intervalos"][k]["horario_fim"])
+                outro_intervalo = item["intervalos"][k]
 
-                if is_in_interval(horario_inicio, outro_horario_inicio, outro_horario_fim) \
-                or is_in_interval(horario_fim, outro_horario_inicio, outro_horario_fim):
+                if esta_no_intervalo(horario_inicio, outro_intervalo) \
+                or esta_no_intervalo(horario_fim, outro_intervalo):
                     raise ValidationError(
                         f"Item #{i}.intervalos[{j}] e item #{i}.intervalos[{k}]: os intervalos se sobrepõem"
                     )
@@ -397,11 +399,6 @@ def main():
             print("OK")
         except ValidationError as e:
             print(e)
-
-        if i == 23:
-            for j, dia in enumerate(disp):
-                intervalos = dia["intervalos"]
-                intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
 
 
 if __name__ == '__main__':

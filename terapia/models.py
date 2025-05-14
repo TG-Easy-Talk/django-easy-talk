@@ -1,19 +1,19 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
 from terapia.utils.availability import (
-    check_psicologo_disponibilidade,
-    validate_disponibilidade
+    validate_disponibilidade,
+    parse_time,
+    esta_no_intervalo,
 )
 from terapia.utils.validators import (
-    validate_future_datetime,
-    validate_duracao_range,
+    validate_uma_hora_antecedencia,
     validate_valor_consulta,
 )
+from datetime import datetime, timedelta
 
 
 class Paciente(models.Model):
@@ -127,17 +127,51 @@ class Psicologo(models.Model):
         if self.foto:
             return self.foto.url
         return settings.STATIC_URL + "img/foto_de_perfil.jpg"
-
-
-    # def ordenar_intervalos_disponibilidade(self):
-    #     """
-    #     Ordena os intervalos de cada dia em ordem crescente.
-    #     """
-    #     for disp in self.disponibilidade:
-    #         intervalos = disp["intervalos"]
-    #         intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
-    #         disp["intervalos"] = intervalos
     
+
+    def get_intervalo_dessa_hora(self, hora, dia_semana):
+        """
+        Dentre os intervalos de disponibilidade de um dia da semana específico,
+        retorna o intervalo em que a hora enviada está.
+
+        @param hora: Hora a ser verificada (datetime.time)
+        @param dia_semana: Dia da semana do intervalo (1 = domingo, 7 = sábado)
+        @return: Intervalo em que a hora está ou None se não estiver em nenhum intervalo.
+        """
+        if self.disponibilidade is None:
+            return None
+
+        for disp in self.disponibilidade:
+            if disp["dia_semana"] == dia_semana:
+                for intervalo in disp["intervalos"]:
+                    if esta_no_intervalo(hora, intervalo):
+                        return intervalo
+        return None
+
+
+    def tem_disponibilidade_para_essa_data_hora(self, data_hora_marcada):
+        """
+        Verifica se o psicólogo tem disponibilidade para uma consulta em um determinado dia e horário.
+        """
+        if self.disponibilidade is None:
+            return False
+        
+        # Verificar se o início da consulta está em algum intervalo
+        dia_semana = (data_hora_marcada.isoweekday() % 7) + 1 # 1 (domingo) a 7 (sábado)
+        hora_inicio = data_hora_marcada.time()
+
+        intervalo = self.get_intervalo_dessa_hora(hora_inicio, dia_semana)
+
+        if intervalo is None:
+            return False
+        
+        # Verificar se a consulta terminará antes do fim do intervalo
+        data_hora_inicio = datetime.combine(datetime.today(), hora_inicio) # Passar para datetime para poder somar 1 hora
+        data_hora_final = data_hora_inicio + timedelta(hours=1)
+        hora_final = data_hora_final.time()
+
+        return esta_no_intervalo(hora_final, intervalo)
+
 
     def get_intervalos_do_dia(self, dia_semana):
         if (1 <= dia_semana <= 7) is False:
@@ -212,12 +246,13 @@ class EstadoConsulta(models.TextChoices):
 
 class Consulta(models.Model):
     data_hora_marcada = models.DateTimeField(
-        "Data e Hora Marcada",
-        validators=[validate_future_datetime],
+        "Data e hora para as quais a consulta foi marcada",
+        validators=[validate_uma_hora_antecedencia],
     )
     duracao = models.IntegerField(
-        "Duração (minutos)",
-        validators=[validate_duracao_range],
+        "Duração que a consulta teve em minutos",
+        blank=True,
+        null=True,
     )
     estado = models.CharField(
         "Estado",
@@ -225,8 +260,8 @@ class Consulta(models.Model):
         choices=EstadoConsulta.choices,
         default=EstadoConsulta.SOLICITADA,
     )
-    anotacoes = models.TextField("Anotações", blank=True)
-    checklist_tarefas = models.TextField("Checklist de Tarefas", blank=True)
+    anotacoes = models.TextField("Anotações", blank=True, null=True)
+    checklist_tarefas = models.TextField("Checklist de tarefas", blank=True, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='consultas')
     psicologo = models.ForeignKey(Psicologo, on_delete=models.CASCADE, related_name='consultas')
 
@@ -236,21 +271,9 @@ class Consulta(models.Model):
 
     def clean(self):
         super().clean()
-        if not check_psicologo_disponibilidade(self.psicologo, self.data_hora_marcada):
-            raise ValidationError("O psicólogo não tem disponibilidade nessa data e horário")
-
-    def validate_unique(self, exclude=None):
-        super().validate_unique(exclude=exclude)
-        # Conflito de horário
-        qs = Consulta.objects.filter(
-            paciente=self.paciente,
-            data_hora_marcada=self.data_hora_marcada
-        ).exclude(pk=self.pk or None)
-        if qs.exists():
-            raise ValidationError({
-                'data_hora_marcada': 'Você já possui uma consulta agendada nesse horário'
-            })
-
+        if not self.psicologo.tem_disponibilidade_para_essa_data_hora(self.data_hora_marcada):
+            raise ValidationError({"data_hora_marcada": "O psicólogo não tem disponibilidade nessa data e horário"})
+        
     def __str__(self):
-        return f"Consulta em {self.data_hora_marcada:%Y-%m-%d %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
+        return f"Consulta em {self.data_hora_marcada:%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
     
