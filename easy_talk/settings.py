@@ -127,3 +127,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+TEST_RUNNER = "django.test.runner.DiscoverRunner"
+TEST_DISCOVER_TOP_LEVEL = BASE_DIR
+TEST_DISCOVER_ROOT = BASE_DIR / "terapia" / "tests"
