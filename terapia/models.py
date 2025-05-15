@@ -16,7 +16,24 @@ from terapia.utils.validators import (
 from datetime import datetime, timedelta
 
 
-class Paciente(models.Model):
+class BasePacienteOuPsicologo(models.Model):
+    def ja_tem_consulta_que_ocupa_o_tempo(self, consulta):
+        """
+        Verifica se o psicólogo já tem alguma consulta marcada que tomará tempo da
+        consulta que se deseja marcar na data e hora especificados.
+        """
+        return self.consultas.filter(
+            Q(data_hora_marcada__gt = consulta.data_hora_marcada - timedelta(hours=1)) &
+            Q(data_hora_marcada__lt = consulta.data_hora_marcada + timedelta(hours=1)) &
+            ~ Q(estado=EstadoConsulta.CANCELADA) & # Desconsiderar consultas canceladas
+            ~ Q(pk=consulta.pk) # Desconsiderar a própria consulta
+        ).exists()
+
+    class Meta:
+        abstract = True
+
+
+class Paciente(BasePacienteOuPsicologo):
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -57,7 +74,7 @@ class Especializacao(models.Model):
         return self.titulo
 
 
-class Psicologo(models.Model):
+class Psicologo(BasePacienteOuPsicologo):
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -169,19 +186,6 @@ class Psicologo(models.Model):
         hora_final = data_hora_final.time()
 
         return esta_no_intervalo(hora_final, intervalo)
-    
-
-    def ja_tem_consulta_que_ocupa_o_tempo(self, consulta):
-        """
-        Verifica se o psicólogo já tem alguma consulta marcada que tomará tempo da
-        consulta que se deseja marcar na data e hora especificados.
-        """
-        return self.consultas.filter(
-            Q(data_hora_marcada__gt = consulta.data_hora_marcada - timedelta(hours=1)) &
-            Q(data_hora_marcada__lt = consulta.data_hora_marcada + timedelta(hours=1)) &
-            ~ Q(estado=EstadoConsulta.CANCELADA) & # Desconsiderar consultas canceladas
-            ~ Q(pk=consulta.pk) # Desconsiderar a própria consulta
-        ).exists()
 
 
     def tem_disponibilidade_para_essa_consulta(self, consulta):
@@ -232,10 +236,10 @@ class Psicologo(models.Model):
         # Transpor a matriz
         qtd_colunas_transp = 7
         qtd_linhas_transp = numero_maximo_intervalos
-        matriz_transp = [[0 for _ in range(qtd_colunas_transp)] for _ in range(qtd_linhas_transp)]
+        matriz_transp = [['' for _ in range(qtd_colunas_transp)] for _ in range(qtd_linhas_transp)]
 
-        for i, linha in enumerate(matriz):
-            for j, valor in enumerate(linha):
+        for i in range(len(matriz)):
+            for j in range(len(matriz[i])):
                 matriz_transp[j][i] = matriz[i][j]
 
         return matriz_transp
@@ -295,6 +299,8 @@ class Consulta(models.Model):
         super().clean()
         if not self.psicologo.tem_disponibilidade_para_essa_consulta(self):
             raise ValidationError({"data_hora_marcada": "O psicólogo não tem disponibilidade nessa data e horário"})
+        if self.paciente.ja_tem_consulta_que_ocupa_o_tempo(self):
+            raise ValidationError({"data_hora_marcada": "O paciente já tem uma consulta marcada que tomaria tempo dessa que se deseja marcar"})
         
     def __str__(self):
         return f"Consulta {self.estado.upper()} em {self.data_hora_marcada:%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"

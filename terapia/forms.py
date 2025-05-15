@@ -9,6 +9,7 @@ from .models import Paciente, Psicologo, Especializacao, Consulta, EstadoConsult
 from usuario.forms import UsuarioCreationForm
 from .utils.crp import validate_crp
 from .utils.cpf import validate_cpf
+from django.db.models import Model
 
 
 Usuario = get_user_model()
@@ -132,7 +133,15 @@ class ConsultaCreationForm(forms.ModelForm):
         model = Consulta
         fields = ['data_hora_marcada']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, usuario=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.usuario = usuario
         self.fields['data_hora_marcada'].widget = CustomDateTimeInput()
-        
+
+    def is_valid(self):
+        if not hasattr(self.usuario, 'paciente'):
+            return False
+
+        self.cleaned_data['paciente'] = self.usuario.paciente
+
+        return super().is_valid()

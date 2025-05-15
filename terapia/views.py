@@ -112,6 +112,11 @@ class PerfilView(DetailView, ModelFormMixin):
     template_name = "perfil/perfil.html"
     form_class = ConsultaCreationForm
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["usuario"] = self.request.user
+        return kwargs
+
 
 class PesquisaView(ListView, FormMixin):
     template_name = "pesquisa/pesquisa.html"
