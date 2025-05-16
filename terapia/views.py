@@ -1,6 +1,6 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView, FormView, ListView, DetailView, UpdateView
+from django.views.generic import TemplateView, FormView, ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import (
     PacienteCreationForm,
@@ -12,7 +12,7 @@ from .forms import (
 )
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
-from django.views.generic.edit import ContextMixin, FormMixin, ModelFormMixin
+from django.views.generic.edit import ContextMixin, FormMixin, ModelFormMixin, SingleObjectMixin
 from .models import Psicologo
 
 
@@ -106,17 +106,30 @@ class ConsultaView(LoginRequiredMixin, TemplateView):
     template_name = "consulta/consulta.html"
 
 
-class PerfilView(DetailView, ModelFormMixin):
+class PerfilView(FormView, SingleObjectMixin):
     model = Psicologo
     context_object_name = "psicologo"
     template_name = "perfil/perfil.html"
     form_class = ConsultaCreationForm
+    success_url = reverse_lazy("minhas_consultas")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["usuario"] = self.request.user
+        kwargs["psicologo"] = self.get_object()
         return kwargs
-
+    
+    def get_context_data(self, **kwargs):
+        # Setar self.object para o SingleObjectMixin funcionar
+        self.object = self.get_object()
+        context = super().get_context_data(**kwargs)
+        context[self.context_object_name] = self.object
+        return context
+    
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
+    
 
 class PesquisaView(ListView, FormMixin):
     template_name = "pesquisa/pesquisa.html"

@@ -120,4 +120,4 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-FORM_RENDERER = 'easy_talk.renderers.TemplatesSetting'
+FORM_RENDERER = 'easy_talk.renderers.CustomFormRenderer'

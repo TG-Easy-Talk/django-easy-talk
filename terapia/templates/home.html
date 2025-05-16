@@ -1,6 +1,12 @@
 {% extends 'geral/base.html' %}
 {% block titulo %} Home {% endblock %}
 
+{% block div_conteudo_classes %}
+{{ block.super }} justify-content-center
+{% endblock %}
+
 {% block conteudo %}
-Home
+<div class="font-family-easytalk-logo display-1 text-center">
+    Home em construção
+</div>
 {% endblock %}

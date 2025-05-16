@@ -3,9 +3,9 @@
 {% with u=request.user %}
 
     <div class="nav-link p-0 pe-2" style="color: inherit;">
-        {% if u.paciente %}
+        {% if u.is_paciente %}
             {{ u.paciente.nome }}
-        {% elif u.psicologo %}
+        {% elif u.is_psicologo %}
             {{ u.psicologo.primeiro_nome }}
         {% else %}
             {{ u.email }}
@@ -17,9 +17,9 @@
         style="width: 2em; height: 2em;"
         alt="Foto de perfil"
 
-        {% if u.paciente and u.paciente.foto %}
+        {% if u.is_paciente and u.paciente.foto %}
             src="{{ u.paciente.get_url_foto_propria_ou_padrao }}"
-        {% elif u.psicologo and u.psicologo.foto %}
+        {% elif u.is_psicologo and u.psicologo.foto %}
             src="{{ u.psicologo.get_url_foto_propria_ou_padrao }}"
         {% else %}
             src="{% static 'img/foto_de_perfil.jpg' %}"

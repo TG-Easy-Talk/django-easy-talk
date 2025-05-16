@@ -40,6 +40,14 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = 'Usuários'
         ordering = ['email']
 
+    @property
+    def is_psicologo(self):
+        return hasattr(self, 'psicologo')
+
+    @property
+    def is_paciente(self):
+        return hasattr(self, 'paciente')
+
     def get_full_name(self):
         return self.email
 

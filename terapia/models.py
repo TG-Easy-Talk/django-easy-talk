@@ -50,7 +50,7 @@ class Paciente(BasePacienteOuPsicologo):
     def clean(self):
         super().clean()
         # Primeiro, verifica se o usuário já é psicólogo
-        if hasattr(self.usuario, 'psicologo'):
+        if self.usuario.is_psicologo:
             raise ValidationError("Este usuário já está relacionado a um psicólogo.")
 
     def __str__(self):
@@ -121,7 +121,7 @@ class Psicologo(BasePacienteOuPsicologo):
     def clean(self):
         super().clean()
         # Checar se já há paciente relacionado
-        if hasattr(self.usuario, 'paciente'):
+        if self.usuario.is_paciente:
             raise ValidationError("Este usuário já está relacionado a um paciente.")
 
         # Ordenar os intervalos de cada dia em ordem cronológica crescente
@@ -300,7 +300,7 @@ class Consulta(models.Model):
         if not self.psicologo.tem_disponibilidade_para_essa_consulta(self):
             raise ValidationError({"data_hora_marcada": "O psicólogo não tem disponibilidade nessa data e horário"})
         if self.paciente.ja_tem_consulta_que_ocupa_o_tempo(self):
-            raise ValidationError({"data_hora_marcada": "O paciente já tem uma consulta marcada que tomaria tempo dessa que se deseja marcar"})
+            raise ValidationError({"data_hora_marcada": "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar"})
         
     def __str__(self):
         return f"Consulta {self.estado.upper()} em {self.data_hora_marcada:%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"

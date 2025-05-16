@@ -1,15 +1,14 @@
 from django import forms
+from django.forms import ValidationError
 from django.contrib.auth import get_user_model
 from easy_talk.renderers import (
     FormComValidacaoRenderer,
-    PsicologoChangeFormRenderer,
     FormDeFiltrosRenderer
 )
 from .models import Paciente, Psicologo, Especializacao, Consulta, EstadoConsulta
 from usuario.forms import UsuarioCreationForm
 from .utils.crp import validate_crp
 from .utils.cpf import validate_cpf
-from django.db.models import Model
 
 
 Usuario = get_user_model()
@@ -110,7 +109,8 @@ class ConsultaFiltrosForm(forms.Form):
     
 
 class PsicologoChangeForm(forms.ModelForm):
-    default_renderer = PsicologoChangeFormRenderer
+    default_renderer = FormComValidacaoRenderer
+    template_name = 'meu_perfil/componentes/form.html'
 
     class Meta:
         model = Psicologo
@@ -128,20 +128,28 @@ class PsicologoChangeForm(forms.ModelForm):
 class ConsultaCreationForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
     template_name = 'perfil/componentes/form.html'
-
+    
     class Meta:
         model = Consulta
         fields = ['data_hora_marcada']
 
-    def __init__(self, *args, usuario=None, **kwargs):
+    def __init__(self, *args, usuario, psicologo, **kwargs):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
+        self.psicologo = psicologo
         self.fields['data_hora_marcada'].widget = CustomDateTimeInput()
 
-    def is_valid(self):
-        if not hasattr(self.usuario, 'paciente'):
-            return False
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        if not self.usuario.is_paciente:
+            raise ValidationError("Sua conta não é do tipo paciente para poder agendar uma consulta.")
 
-        self.cleaned_data['paciente'] = self.usuario.paciente
+        return cleaned_data
 
-        return super().is_valid()
+    def _post_clean(self):
+        # Setar os campos de paciente e psicólogo antes da validação da model
+        if not self.errors and self.instance.pk is None:
+            self.instance.paciente = self.usuario.paciente
+            self.instance.psicologo = self.psicologo
+            super()._post_clean()
