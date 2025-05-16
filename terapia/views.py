@@ -12,8 +12,9 @@ from .forms import (
 )
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
-from django.views.generic.edit import ContextMixin, FormMixin, ModelFormMixin, SingleObjectMixin
+from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 from .models import Psicologo
+from django.http import HttpResponseForbidden
 
 
 class FluxoAlternativoLoginContextMixin(ContextMixin):
@@ -126,6 +127,11 @@ class PerfilView(FormView, SingleObjectMixin):
         context[self.context_object_name] = self.object
         return context
     
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_paciente:
+            return HttpResponseForbidden("Sua conta precisa ser do tipo paciente para agendar uma consulta.")
+        return super().post(request, *args, **kwargs)
+    
     def form_valid(self, form):
         form.save()
         return super().form_valid(form)
@@ -212,7 +218,7 @@ class MinhasConsultasView(LoginRequiredMixin, TemplateView, FormMixin):
 
 class DeveSerPsicologoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
-        if not hasattr(request.user, "psicologo"):
+        if not request.user.is_psicologo:
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
 

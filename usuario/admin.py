@@ -4,12 +4,18 @@ from .models import Usuario
 from .forms import UsuarioCreationForm, UsuarioChangeForm
 
 
-@admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
     form = UsuarioChangeForm
     add_form = UsuarioCreationForm
 
-    list_display = ["email", "is_staff", "is_active", "is_superuser"]
+    list_display = [
+        "email",
+        "is_paciente",
+        "is_psicologo",
+        "is_staff",
+        "is_active",
+        "is_superuser",
+    ]
     list_filter = []
     fieldsets = []
 

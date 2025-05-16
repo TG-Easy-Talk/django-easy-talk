@@ -15,9 +15,6 @@ class PsicologoInline(admin.StackedInline):
     model = Psicologo
 
 
-admin.site.unregister(Usuario)
-
-
 @admin.register(Usuario)
 class UsuarioAdminComInlines(UsuarioAdmin):
     inlines = [PsicologoInline, PacienteInline]
@@ -30,6 +27,20 @@ class PsicologoAdmin(admin.ModelAdmin):
     filter_horizontal = ['especializacoes']
 
 
-admin.site.register(Paciente)
-admin.site.register(Especializacao)
-admin.site.register(Consulta)
+@admin.register(Paciente)
+class PacienteAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'cpf', 'usuario']
+    search_fields = ['nome', 'cpf']
+
+
+@admin.register(Especializacao)
+class EspecializacaoAdmin(admin.ModelAdmin):
+    list_display = ['titulo', 'descricao']
+    search_fields = ['titulo']
+
+
+@admin.register(Consulta)
+class ConsultaAdmin(admin.ModelAdmin):
+    list_display = ['data_hora_marcada', 'estado', 'paciente', 'psicologo']
+    search_fields = ['paciente__nome', 'psicologo__nome_completo']
+    list_filter = ['estado', 'data_hora_marcada']

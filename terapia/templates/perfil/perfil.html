@@ -71,7 +71,18 @@
         <div class="vstack gap-2 sticky-top" id="agendamentoConsulta">
             <form method="post">
                 {% csrf_token %}
-                {{ form }}
+                <fieldset class="vstack gap-3" {% if not request.user.is_paciente %} disabled {% endif %}>
+
+                    {{ form }}
+
+                    {% if not request.user.is_paciente %}
+                        <div class="text-body-secondary">
+                            Sua conta não é de paciente para poder agendar uma consulta.
+                        </div>
+
+                    {% endif %}
+
+                </fieldset>
             </form>
         </div>
     </aside>

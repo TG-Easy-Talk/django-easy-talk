@@ -4,9 +4,8 @@ from django import forms
 
 
 class CustomFormRenderer(TemplatesSetting):
-    def __init__(self, *args, excluir_labels=False, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.excluir_labels = excluir_labels
 
 
     def get_widget_classes(self, widget):
@@ -26,9 +25,6 @@ class CustomFormRenderer(TemplatesSetting):
 
         if fields:
             for bound_field, errors in fields:
-                if self.excluir_labels:
-                    bound_field.label = 'abababacv'
-
                 # Adicionar um placeholder vazio caso já não haja algum para o form-floating do Bootstrap funcionar
                 bound_field.field.widget.attrs.setdefault('placeholder', '')
 

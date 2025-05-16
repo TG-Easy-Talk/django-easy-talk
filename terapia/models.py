@@ -28,6 +28,11 @@ class BasePacienteOuPsicologo(models.Model):
             ~ Q(estado=EstadoConsulta.CANCELADA) & # Desconsiderar consultas canceladas
             ~ Q(pk=consulta.pk) # Desconsiderar a própria consulta
         ).exists()
+    
+    def get_url_foto_propria_ou_padrao(self):
+        if self.foto:
+            return self.foto.url
+        return settings.STATIC_URL + "img/foto_de_perfil.jpg"
 
     class Meta:
         abstract = True
@@ -55,11 +60,6 @@ class Paciente(BasePacienteOuPsicologo):
 
     def __str__(self):
         return self.nome
-    
-    def get_url_foto_propria_ou_padrao(self):
-        if self.foto:
-            return self.foto.url
-        return settings.STATIC_URL + "img/foto_de_perfil.jpg"
 
 
 class Especializacao(models.Model):
@@ -138,12 +138,6 @@ class Psicologo(BasePacienteOuPsicologo):
 
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
-    
-
-    def get_url_foto_propria_ou_padrao(self):
-        if self.foto:
-            return self.foto.url
-        return settings.STATIC_URL + "img/foto_de_perfil.jpg"
     
 
     def get_intervalo_dessa_hora(self, hora, dia_semana):
@@ -272,7 +266,7 @@ class EstadoConsulta(models.TextChoices):
 
 class Consulta(models.Model):
     data_hora_marcada = models.DateTimeField(
-        "Data e hora para as quais a consulta foi marcada",
+        "Data e hora marcadas para a consulta",
         validators=[validate_uma_hora_antecedencia],
     )
     duracao = models.IntegerField(
@@ -289,7 +283,7 @@ class Consulta(models.Model):
     anotacoes = models.TextField("Anotações", blank=True, null=True)
     checklist_tarefas = models.TextField("Checklist de tarefas", blank=True, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='consultas')
-    psicologo = models.ForeignKey(Psicologo, on_delete=models.CASCADE, related_name='consultas')
+    psicologo = models.ForeignKey(Psicologo, verbose_name="Psicólogo", on_delete=models.CASCADE, related_name='consultas')
 
     class Meta:
         verbose_name = "Consulta"
