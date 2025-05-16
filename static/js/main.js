@@ -1,268 +1,142 @@
-console.log('In main.js!');
 
-let usernameInput = document.querySelector('#username');
-let btnJoin = document.querySelector('#btn-join');
+const APP_ID = 'YOUR APP ID'
+const TOKEN = sessionStorage.getItem('token')
+const CHANNEL = sessionStorage.getItem('room')
+let UID = sessionStorage.getItem('UID')
 
-let username;
-let webSocket;
-let mapPeers = {};
+let NAME = sessionStorage.getItem('name')
 
-function webSocketOnMessage(event) {
-    let parsedData = JSON.parse(event.data);
-    let peerUsername = parsedData.peer;
-    let action = parsedData.action;
+const client = AgoraRTC.createClient({mode:'rtc', codec:'vp8'})
 
-    if (username === peerUsername) {
-        return;
+let localTracks = []
+let remoteUsers = {}
+
+let joinAndDisplayLocalStream = async () => {
+    document.getElementById('room-name').innerText = CHANNEL
+
+    client.on('user-published', handleUserJoined)
+    client.on('user-left', handleUserLeft)
+
+    try{
+        UID = await client.join(APP_ID, CHANNEL, TOKEN, UID)
+    }catch(error){
+        console.error(error)
+        window.open('/', '_self')
     }
 
-    let receiver_channel_name = parsedData.message.receiver_channel_name;
+    localTracks = await AgoraRTC.createMicrophoneAndCameraTracks()
 
-    if (action === 'new-peer') {
-        createOfferer(peerUsername, receiver_channel_name);
-        return;
+    let member = await createMember()
+
+    let player = `<div  class="video-container" id="user-container-${UID}">
+                     <div class="video-player" id="user-${UID}"></div>
+                     <div class="username-wrapper"><span class="user-name">${member.name}</span></div>
+                  </div>`
+
+    document.getElementById('video-streams').insertAdjacentHTML('beforeend', player)
+    localTracks[1].play(`user-${UID}`)
+    await client.publish([localTracks[0], localTracks[1]])
+}
+
+let handleUserJoined = async (user, mediaType) => {
+    remoteUsers[user.uid] = user
+    await client.subscribe(user, mediaType)
+
+    if (mediaType === 'video'){
+        let player = document.getElementById(`user-container-${user.uid}`)
+        if (player != null){
+            player.remove()
+        }
+
+        let member = await getMember(user)
+
+        player = `<div  class="video-container" id="user-container-${user.uid}">
+            <div class="video-player" id="user-${user.uid}"></div>
+            <div class="username-wrapper"><span class="user-name">${member.name}</span></div>
+        </div>`
+
+        document.getElementById('video-streams').insertAdjacentHTML('beforeend', player)
+        user.videoTrack.play(`user-${user.uid}`)
     }
 
-    if (action === 'new-offer') {
-        let offer = parsedData.message.sdp;
-        createAnswerer(offer, peerUsername, receiver_channel_name);
-        return;
-    }
-
-    if (action === 'new-answer') {
-        let answer = parsedData.message.sdp;
-        let peer = mapPeers[peerUsername][0];
-        peer.setRemoteDescription(answer);
+    if (mediaType === 'audio'){
+        user.audioTrack.play()
     }
 }
 
-btnJoin.addEventListener('click', () => {
-    username = usernameInput.value.trim();
-    if (username === '') return;
+let handleUserLeft = async (user) => {
+    delete remoteUsers[user.uid]
+    document.getElementById(`user-container-${user.uid}`).remove()
+}
 
-    usernameInput.value = '';
-    usernameInput.disabled = true;
-    usernameInput.style.visibility = 'hidden';
-    btnJoin.disabled = true;
-    btnJoin.style.visibility = 'hidden';
+let leaveAndRemoveLocalStream = async () => {
+    for (let i=0; localTracks.length > i; i++){
+        localTracks[i].stop()
+        localTracks[i].close()
+    }
 
-    document.querySelector('#label-username').innerText = username;
+    await client.leave()
+    //This is somewhat of an issue because if user leaves without actaull pressing leave button, it will not trigger
+    deleteMember()
+    window.open('/', '_self')
+}
 
-    let loc = window.location;
-    let wsStart = loc.protocol === 'https:' ? 'wss://' : 'ws://';
-    let endPoint = wsStart + loc.host + '/ws/';
+let toggleCamera = async (e) => {
+    console.log('TOGGLE CAMERA TRIGGERED')
+    if(localTracks[1].muted){
+        await localTracks[1].setMuted(false)
+        e.target.style.backgroundColor = '#fff'
+    }else{
+        await localTracks[1].setMuted(true)
+        e.target.style.backgroundColor = 'rgb(255, 80, 80, 1)'
+    }
+}
 
-    console.log('Connecting to', endPoint);
-    webSocket = new WebSocket(endPoint);
+let toggleMic = async (e) => {
+    console.log('TOGGLE MIC TRIGGERED')
+    if(localTracks[0].muted){
+        await localTracks[0].setMuted(false)
+        e.target.style.backgroundColor = '#fff'
+    }else{
+        await localTracks[0].setMuted(true)
+        e.target.style.backgroundColor = 'rgb(255, 80, 80, 1)'
+    }
+}
 
-    webSocket.addEventListener('open', () => {
-        console.log('WebSocket opened');
-        sendSignal('new-peer', {});
-    });
-
-    webSocket.addEventListener('message', webSocketOnMessage);
-    webSocket.addEventListener('close', () => console.log('WebSocket closed'));
-    webSocket.addEventListener('error', e => console.error('WebSocket error', e));
-});
-
-let localStream = new MediaStream();
-const constraints = {video: true, audio: true};
-const localVideo = document.querySelector('#local-video');
-const btnToggleAudio = document.querySelector('#btn-toggle-audio');
-const btnToggleVideo = document.querySelector('#btn-toggle-video');
-
-navigator.mediaDevices.getUserMedia(constraints)
-    .then(stream => {
-        console.log('Got MediaStream', stream);
-        localStream = stream;
-        localVideo.srcObject = stream;
-        localVideo.muted = true;
-
-        let audioTrack = stream.getAudioTracks()[0];
-        let videoTrack = stream.getVideoTracks()[0];
-
-        audioTrack.enabled = true;
-        videoTrack.enabled = true;
-
-        btnToggleAudio.addEventListener('click', () => {
-            audioTrack.enabled = !audioTrack.enabled;
-            btnToggleAudio.innerText = audioTrack.enabled ? 'Mute' : 'Unmute';
-        });
-
-        btnToggleVideo.addEventListener('click', () => {
-            videoTrack.enabled = !videoTrack.enabled;
-            btnToggleVideo.innerText = videoTrack.enabled ? 'Stop Video' : 'Start Video';
-        });
+let createMember = async () => {
+    let response = await fetch('/create_member/', {
+        method:'POST',
+        headers: {
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({'name':NAME, 'room_name':CHANNEL, 'UID':UID})
     })
-    .catch(err => console.error('Error getting MediaStream', err));
-
-const btnSendMsg = document.querySelector('#btn-send-msg');
-const messageList = document.querySelector('#message-list');
-const messageInput = document.querySelector('#msg');
-
-function sendMsgOnClick() {
-
-    var message = messageInput.value
-
-    var li = document.createElement('li');
-    li.appendChild(document.createTextNode("me: " + message));
-    messageList.appendChild(li);
-
-    var dataChannels = getDataChannels();
-
-    message = username + ": " + message;
-
-    for(index in dataChannels) {
-        dataChannels[index].send(message);
-
-    }
-
-    messageInput.value = '';
+    let member = await response.json()
+    return member
 }
 
-btnSendMsg.addEventListener('click', sendMsgOnClick)
 
-function getDataChannels() {
-    var dataChannels = [];
-
-    for(peerUsername in mapPeers) {
-        var dataChannel = mapPeers[peerUsername][1];
-        dataChannels.push(dataChannel);
-    }
-
-  return dataChannels; // Agora retorna o array
+let getMember = async (user) => {
+    let response = await fetch(`/get_member/?UID=${user.uid}&room_name=${CHANNEL}`)
+    let member = await response.json()
+    return member
 }
 
-function sendSignal(action, message) {
-    webSocket.send(JSON.stringify({
-        peer: username,
-        action: action,
-        message: message
-    }));
+let deleteMember = async () => {
+    let response = await fetch('/delete_member/', {
+        method:'POST',
+        headers: {
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify({'name':NAME, 'room_name':CHANNEL, 'UID':UID})
+    })
+    let member = await response.json()
 }
 
-function createOfferer(peerUsername, receiver_channel_name) {
-    const peer = new RTCPeerConnection();
+window.addEventListener("beforeunload",deleteMember);
 
-    // 1) Adiciona tracks locais
-    addLocalTracks(peer, localStream);
+joinAndDisplayLocalStream()
 
-    // 2) Prepara vídeo remoto e listener de tracks
-    const remoteVideo = createVideo(peerUsername);
-    setOnTrack(peer, remoteVideo);
-
-    // 3) Gera e envia offer após ICE gathering final
-    peer.addEventListener('icecandidate', event => {
-        if (!event.candidate) {
-            sendSignal('new-offer', {
-                sdp: peer.localDescription,
-                receiver_channel_name
-            });
-        }
-    });
-
-    peer.createOffer()
-        .then(offer => peer.setLocalDescription(offer))
-        .catch(console.error);
-
-    // 4) Data channel
-    const dc = peer.createDataChannel('channel');
-    dc.addEventListener('open', () => console.log('Data channel opened'));
-    dc.addEventListener('message', dcOnMessage);
-
-    // 5) Mapeia peer + canal
-    mapPeers[peerUsername] = [peer, dc];
-
-    // 6) Cleanup de desconexões
-    peer.addEventListener('iceconnectionstatechange', () => {
-        let state = peer.iceConnectionState;
-        if (['failed', 'disconnected', 'closed'].includes(state)) {
-            delete mapPeers[peerUsername];
-            if (state !== 'closed') peer.close();
-            removeVideo(remoteVideo);
-        }
-    });
-}
-
-function createAnswerer(offer, peerUsername, receiver_channel_name) {
-    const peer = new RTCPeerConnection();
-
-    // 1) Adiciona tracks locais
-    addLocalTracks(peer, localStream);
-
-    // 2) Prepara vídeo remoto e listener de tracks
-    const remoteVideo = createVideo(peerUsername);
-    setOnTrack(peer, remoteVideo);
-
-    // 3) Data channel handler
-    peer.addEventListener('datachannel', e => {
-        const dc = e.channel;
-        dc.addEventListener('open', () => console.log('Data channel opened'));
-        dc.addEventListener('message', dcOnMessage);
-        mapPeers[peerUsername] = [peer, dc];
-    });
-
-    // 4) Cleanup de estados de ICE
-    peer.addEventListener('iceconnectionstatechange', () => {
-        let state = peer.iceConnectionState;
-        if (['failed', 'disconnected', 'closed'].includes(state)) {
-            delete mapPeers[peerUsername];
-            if (state !== 'closed') peer.close();
-            removeVideo(remoteVideo);
-        }
-    });
-
-    // 5) Gera e envia answer após ICE gathering final
-    peer.addEventListener('icecandidate', event => {
-        if (!event.candidate) {
-            sendSignal('new-answer', {
-                sdp: peer.localDescription,
-                receiver_channel_name
-            });
-        }
-    });
-
-    // 6) Aplica offer e cria answer
-    peer.setRemoteDescription(offer)
-        .then(() => peer.createAnswer())
-        .then(ans => peer.setLocalDescription(ans))
-        .catch(console.error);
-}
-
-function addLocalTracks(peer, stream) {
-    stream.getTracks().forEach(track => peer.addTrack(track, stream));
-}
-
-function dcOnMessage(event) {
-    let li = document.createElement('li');
-    li.textContent = event.data;
-    messageList.appendChild(li);
-}
-
-function createVideo(peerUsername) {
-    let container = document.querySelector('#video-container');
-    let wrapper = document.createElement('div');
-    let video = document.createElement('video');
-
-    video.id = `${peerUsername}-video`;
-    video.autoplay = true;
-    video.playsInline = true;
-
-    wrapper.appendChild(video);
-    container.appendChild(wrapper);
-    return video;
-}
-
-function setOnTrack(peer, remoteVideo) {
-    let remoteStream = new MediaStream();
-    remoteVideo.srcObject = remoteStream;
-
-    peer.addEventListener('track', event => {
-        remoteStream.addTrack(event.track);
-    });
-}
-
-function removeVideo(remoteVideo) {
-    let wrapper = remoteVideo.parentNode;
-    wrapper.parentNode.removeChild(wrapper);
-}
+document.getElementById('leave-btn').addEventListener('click', leaveAndRemoveLocalStream)
+document.getElementById('camera-btn').addEventListener('click', toggleCamera)
+document.getElementById('mic-btn').addEventListener('click', toggleMic)

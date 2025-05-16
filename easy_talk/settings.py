@@ -17,8 +17,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "daphne",  # permite que runserver use Daphne/ASGI
-    "channels",  # habilita o roteamento ASGI
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -120,7 +118,6 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ASGI_APPLICATION = "easy_talk.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
