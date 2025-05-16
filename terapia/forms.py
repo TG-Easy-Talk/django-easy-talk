@@ -139,17 +139,8 @@ class ConsultaCreationForm(forms.ModelForm):
         self.psicologo = psicologo
         self.fields['data_hora_marcada'].widget = CustomDateTimeInput()
 
-    def clean(self):
-        cleaned_data = super().clean()
-        
-        if not self.usuario.is_paciente:
-            raise ValidationError("Sua conta não é do tipo paciente para poder agendar uma consulta.")
-
-        return cleaned_data
-
     def _post_clean(self):
         # Setar os campos de paciente e psicólogo antes da validação da model
-        if not self.errors and self.instance.pk is None:
-            self.instance.paciente = self.usuario.paciente
-            self.instance.psicologo = self.psicologo
-            super()._post_clean()
+        self.instance.paciente = self.usuario.paciente
+        self.instance.psicologo = self.psicologo
+        super()._post_clean()

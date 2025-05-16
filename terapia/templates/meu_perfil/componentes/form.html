@@ -12,7 +12,8 @@
             <div class="hstack gap-5">
                 <div>
                     <h6 class="text-body-secondary">Valor da consulta</h6>
-                    {{ form.valor_consulta.as_field_group }}
+                    {{ form.valor_consulta }}
+                    {{ form.valor_consulta.errors }}
                 </div>
                 <div>
                     <h6 class="text-body-secondary">CRP</h6>
@@ -24,22 +25,26 @@
 
     <div class="vstack gap-2">
         <h6>Alterar foto</h6>
-        {{ form.foto.as_field_group }}
+        {{ form.foto }}
+        {{ form.foto.errors }}
     </div>
 
     <div class="vstack gap-2">
         <h6>Especializações</h6>
-        {{ form.especializacoes.as_field_group }}
+        {{ form.especializacoes }}
+        {{ form.especializacoes.errors }}
     </div>
 
     <div class="vstack gap-2">
         <h6>Sobre mim</h6>
-        <div class="text-body-secondary">{{ form.sobre_mim.as_field_group }}</div>
+        {{ form.sobre_mim }}
+        {{ form.sobre_mim.errors }}
     </div>
 
     <div class="vstack gap-2">
         <h6>Disponibilidade</h6>
-        {{ form.disponibilidade.as_field_group }}
+        {{ form.disponibilidade }}
+        {{ form.disponibilidade.errors }}
     </div>
 
     {% comment %} <div class="vstack gap-2">

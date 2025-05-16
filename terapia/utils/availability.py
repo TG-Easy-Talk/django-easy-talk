@@ -54,33 +54,6 @@ def esta_no_intervalo(
     return inicio <= hora <= fim
 
 
-# def check_psicologo_disponibilidade(
-#         psicologo: Any,
-#         data_hora: _dt.datetime
-# ) -> bool:
-#     """
-#     Retorna True se 'data_hora' cai dentro de algum intervalo
-#     da lista psicologo.disponibilidade.
-
-#     - Usa any() para interromper ao encontrar o primeiro intervalo válido.
-#     - Trata disponibilidade ausente ou None como lista vazia.
-#     """
-#     dispon: List[Disponibilidade] = getattr(psicologo, "disponibilidade", []) or []
-#     hoje = (data_hora.isoweekday() % 7) + 1 # 1 (domingo) a 7 (sábado)
-#     agora = data_hora.time()
-
-#     return any(
-#         esta_no_intervalo(
-#             agora,
-#             parse_time(intervalo["horario_inicio"]),
-#             parse_time(intervalo["horario_fim"])
-#         )
-#         for disp in dispon
-#         if disp.get("dia_semana") == hoje
-#         for intervalo in disp.get("intervalos", [])
-#     )
-
-
 def validate_disponibilidade(
         data: Optional[List[Disponibilidade]]
 ) -> None:
