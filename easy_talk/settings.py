@@ -19,7 +19,6 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     "daphne",  # permite que runserver use Daphne/ASGI
     "channels",  # habilita o roteamento ASGI
-    "chat",  # seu app de chat
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -1,3 +1,0 @@
-groups are like rooms
-they keep chaneel names
-message can be sent through all channels in the group to ther respective peers
