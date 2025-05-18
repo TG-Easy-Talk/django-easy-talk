@@ -1,3 +1,5 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.http import JsonResponse
 import random
@@ -6,6 +8,7 @@ from agora_token_builder import RtcTokenBuilder
 from .models import RoomMember
 import json
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,6 +18,7 @@ def lobby(request):
     return render(request, 'base/lobby.html')
 
 
+@ensure_csrf_cookie
 def room(request):
     return render(request, 'base/room.html')
 
@@ -71,11 +75,19 @@ def getMember(request):
 
 @csrf_exempt
 def deleteMember(request):
-    data = json.loads(request.body)
-    member = RoomMember.objects.get(
-        name=data['name'],
-        uid=data['UID'],
-        room_name=data['room_name']
-    )
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método não permitido.'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        member_id = data.get('id')
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'JSON inválido.'}, status=400)
+
+    if not member_id:
+        return JsonResponse({'error': 'ID do membro não fornecido.'}, status=400)
+
+    # Usando get_object_or_404 para 404 automático
+    member = get_object_or_404(RoomMember, id=member_id)
     member.delete()
-    return JsonResponse('Member deleted', safe=False)
+    return JsonResponse({'status': 'deletado'}, status=200)

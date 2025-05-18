@@ -115,7 +115,6 @@ MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
@@ -125,3 +124,4 @@ CHANNEL_LAYERS = {
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
 TEST_DISCOVER_TOP_LEVEL = BASE_DIR
 TEST_DISCOVER_ROOT = BASE_DIR / "terapia" / "tests"
+APPEND_SLASH = True

@@ -96,7 +96,7 @@ async function leaveAndRemoveLocalStream() {
         track.close();
     });
     await client.leave();
-    deleteMember();
+    await deleteMember();
     window.open('/', '_self');
 }
 
