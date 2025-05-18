@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 {% load static %}
-<html>
+<html lang="pt-BR">
 <head>
-    <meta charset='utf-8'>
-    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>MyChat</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
-    <link rel='stylesheet' type='text/css' media='screen' href="{% static 'styles/main.css' %}">
-    <script type="text/javascript" src="{% static 'assets/AgoraRTC_N-4.8.0.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/streams.js' %}" ></script>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>MyChat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link
+    rel="stylesheet"
+    href="{% static 'styles/main.css' %}"
+    type="text/css"
+    media="screen"
+  />
+  <script
+    src="https://unpkg.com/agora-rtc-sdk-ng@4.23.3/AgoraRTC_N-production.js"
+    crossorigin="anonymous"
+  ></script>
 </head>
 <body>
-{% block content %}
-
-{% endblock content %}
+  {% block content %}{% endblock content %}
+  <script
+    type="module"
+    src="{% static 'js/streams.js' %}"
+  ></script>
 </body>
-<!-- <script type="text/javascript" src="{% static 'assets/AgoraRTC_N-4.8.0.js' %}"></script> -->
-
-
 </html>

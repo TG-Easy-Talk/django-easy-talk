@@ -18,6 +18,7 @@
   "homepage": "https://github.com/TG-Easy-Talk/django-easy-talk#readme",
   "description": "",
   "dependencies": {
+    "agora-rtc-sdk-ng": "^4.23.3",
     "bootstrap": "^5.3.5"
   }
 }
