@@ -6,6 +6,9 @@ from agora_token_builder import RtcTokenBuilder
 from .models import RoomMember
 import json
 from django.views.decorators.csrf import csrf_exempt
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def lobby(request):
@@ -33,14 +36,25 @@ def getToken(request):
 
 @csrf_exempt
 def createMember(request):
-    data = json.loads(request.body)
-    member, created = RoomMember.objects.get_or_create(
-        name=data['name'],
-        uid=data['UID'],
-        room_name=data['room_name']
-    )
+    try:
+        data = json.loads(request.body)
+        name = data.get('name')
+        room_name = data.get('room_name')
+        uid = data.get('UID')
 
-    return JsonResponse({'name': data['name']}, safe=False)
+        member, created = RoomMember.objects.get_or_create(
+            uid=uid,
+            room_name=room_name,
+            defaults={'name': name}
+        )
+        if not created:
+            member.name = name
+            member.save()
+
+        return JsonResponse({'name': member.name}, status=200)
+    except Exception as e:
+        logger.exception("Erro ao criar membro")
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 def getMember(request):
