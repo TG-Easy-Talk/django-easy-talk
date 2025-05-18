@@ -71,8 +71,8 @@ class PsicologoFiltrosForm(forms.Form):
     template_name = 'pesquisa/componentes/form.html'
 
     especializacao = forms.ModelChoiceField(
-        queryset=Especializacao.objects.all(),
         required=False,
+        queryset=Especializacao.objects.all(),
         label="Especialização",
     )
     valor_minimo = forms.DecimalField(
@@ -102,10 +102,32 @@ class ConsultaFiltrosForm(forms.Form):
     template_name = 'minhas_consultas/componentes/form.html'
 
     estado = forms.ChoiceField(
+        required=False,
         choices=[("", "Estado")] + EstadoConsulta.choices,
     )
-    data_inicial = forms.DateTimeField(widget=CustomDateInput())
-    data_final = forms.DateTimeField(widget=CustomDateInput())
+    data_inicial = forms.DateTimeField(
+        required=False,
+        widget=CustomDateInput(),
+    )
+    data_final = forms.DateTimeField(
+        required=False,
+        widget=CustomDateInput(),
+    )
+
+
+class ConsultaFiltrosFormParaPaciente(ConsultaFiltrosForm):
+    psicologo = forms.ModelChoiceField(
+        required=False,
+        queryset=Psicologo.objects.all(),
+        label="Profissional",
+    )
+
+
+class ConsultaFiltrosFormParaPsicologo(ConsultaFiltrosForm):
+    paciente = forms.ModelChoiceField(
+        required=False,
+        queryset=Paciente.objects.all(),
+    )
     
 
 class PsicologoChangeForm(forms.ModelForm):

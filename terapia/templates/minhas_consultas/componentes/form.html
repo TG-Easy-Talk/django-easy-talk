@@ -4,12 +4,7 @@
     <div class="vstack gap-3">
         {{ form.estado }}
 
-        <select class="form-select" aria-label="Default select example">
-            <option selected>Profissional</option>
-            <option value="1">One</option>
-            <option value="2">Two</option>
-            <option value="3">Three</option>
-        </select>
+        {{ form.psicologo }}
 
         <div class="input-group">
             <span class="input-group-text text-bg-secondary border-0 text-white">De</span>
@@ -21,6 +16,6 @@
             {{ form.data_final }}
         </div>
 
-        <button type="submit" class="btn text-white btn-secondary">Pesquisar profissionais</button>
+        <button type="submit" class="btn text-white btn-secondary">Filtrar</button>
     </div>
 </div>

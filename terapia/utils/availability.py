@@ -71,7 +71,7 @@ def validate_disponibilidade_json(data):
     Valida a estrutura JSON de disponibilidade.
 
     - Garante que seja uma lista de objetos.
-    - Cada objeto deve ter 'dia_semana' (int 1–7) e 'intervalos' (lista de dicionários).
+    - Cada objeto deve ter 'dia_semana' (int 1-7) e 'intervalos' (lista de dicionários).
     - Cada intervalo deve conter as chaves 'horario_inicio' e 'horario_fim', não podendo conter outras.
     """
     if not isinstance(data, list):

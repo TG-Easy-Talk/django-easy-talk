@@ -7,14 +7,37 @@ from .forms import (
     PsicologoCreationForm,
     PsicologoChangeForm,
     PsicologoFiltrosForm,
-    ConsultaFiltrosForm,
     ConsultaCreationForm,
+    ConsultaFiltrosFormParaPaciente,
+    ConsultaFiltrosFormParaPsicologo,
 )
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
-from .models import Psicologo
+from .models import Psicologo, Consulta, EstadoConsulta
 from django.http import HttpResponseForbidden
+from datetime import timedelta
+
+
+class DeveTerRoleMixin(LoginRequiredMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_psicologo and not request.user.is_paciente:
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
+
+
+class DeveSerPsicologoMixin(LoginRequiredMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_psicologo:
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
+    
+
+class GetFormMixin(FormMixin):
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["data"] = self.request.GET
+        return kwargs
 
 
 class FluxoAlternativoLoginContextMixin(ContextMixin):
@@ -28,6 +51,7 @@ class FluxoAlternativoLoginContextMixin(ContextMixin):
             }
         ]
         return context
+    
     
 class CadastroEscolhaView(TemplateView, FluxoAlternativoLoginContextMixin):
     template_name = 'conta/acesso/cadastro_escolha.html'
@@ -137,14 +161,16 @@ class PerfilView(FormView, SingleObjectMixin):
         return super().form_valid(form)
     
 
-class PesquisaView(ListView, FormMixin):
+class PesquisaView(ListView, GetFormMixin):
     template_name = "pesquisa/pesquisa.html"
     context_object_name = "psicologos"
     form_class = PsicologoFiltrosForm
+    allow_empty = True
 
     def get_queryset(self):
         queryset = Psicologo.objects.all()
-        form = self.form_class(self.request.GET)
+
+        form = self.get_form()
 
         if form.is_valid():
             especializacao = form.cleaned_data.get("especializacao")
@@ -162,65 +188,71 @@ class PesquisaView(ListView, FormMixin):
 
         return queryset
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["form"] = self.form_class(self.request.GET)
-        return context
 
-
-class MinhasConsultasView(LoginRequiredMixin, TemplateView, FormMixin):
+class MinhasConsultasView(DeveTerRoleMixin, ListView, GetFormMixin):
     template_name = "minhas_consultas/minhas_consultas.html"
-    form_class = ConsultaFiltrosForm
+    allow_empty = True
+    context_object_name = "consultas"
 
+    def get_form_class(self):
+        if self.request.user.is_paciente:
+            return ConsultaFiltrosFormParaPaciente
+        return ConsultaFiltrosFormParaPsicologo
+
+    def get_queryset(self):
+        queryset = None
+
+        if self.request.user.is_paciente:
+            queryset = Consulta.objects.filter(paciente=self.request.user.paciente)
+        else:
+            queryset = Consulta.objects.filter(psicologo=self.request.user.psicologo)
+
+        form = self.get_form()
+
+        if form.is_valid():
+            estado = form.cleaned_data.get("estado")
+            psicologo = form.cleaned_data.get("psicologo")
+            paciente = form.cleaned_data.get("paciente")
+            data_inicial = form.cleaned_data.get("data_inicial")
+            data_final = form.cleaned_data.get("data_final")
+
+            if estado:
+                queryset = queryset.filter(estado=estado)
+
+            if psicologo:
+                queryset = queryset.filter(psicologo=psicologo)
+
+            if paciente:
+                queryset = queryset.filter(paciente=paciente)
+
+            if data_inicial:
+                queryset = queryset.filter(data_hora_marcada__gte=data_inicial)
+
+            if data_final:
+                # Somar 1 dia para incluir até as 23:59 da data final especificada
+                queryset = queryset.filter(data_hora_marcada__lte=data_final + timedelta(days=1))
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         # Esse método é para teste do template por enquanto.
         context = super().get_context_data(**kwargs)
-        context["minhas_consultas"] = [
-            {
-                "data": "2023-10-01",
-                "hora": "10:00",
-                "psicologo": "Dr. João Silva",
-                "status": "Confirmada",
-                "class": "success",
-            },
-            {
-                "data": "2023-10-05",
-                "hora": "14:00",
-                "psicologo": "Dra. Maria Oliveira",
-                "status": "Em andamento",
-                "class": "warning",
-            },
-            {
-                "data": "2023-10-10",
-                "hora": "16:00",
-                "psicologo": "Dr. Carlos Pereira",
-                "status": "Cancelada",
-                "class": "danger",
-            },
-            {
-                "data": "2023-10-15",
-                "hora": "11:00",
-                "psicologo": "Dra. Ana Costa",
-                "status": "Solicitada",
-                "class": "info",
-            },
-            {
-                "data": "2023-10-20",
-                "hora": "09:00",
-                "psicologo": "Dr. Lucas Almeida",
-                "status": "Concluída",
-                "class": "completed",
-            },
-        ]
+
+        consulta_classes_dict = {
+            EstadoConsulta.SOLICITADA: "info",
+            EstadoConsulta.CONFIRMADA: "success",
+            EstadoConsulta.CANCELADA: "danger",
+            EstadoConsulta.EM_ANDAMENTO: "warning",
+            EstadoConsulta.FINALIZADA: "completed",
+        }
+
+        for consulta in context["consultas"]:
+            consulta.classe = consulta_classes_dict.get(consulta.estado, "")
+
+            if consulta.estado in (EstadoConsulta.SOLICITADA, EstadoConsulta.CONFIRMADA, EstadoConsulta.CANCELADA):
+                consulta.classe += " text-white"
+
         return context
-
-
-class DeveSerPsicologoMixin(LoginRequiredMixin):
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_psicologo:
-            return self.handle_no_permission()
-        return super().dispatch(request, *args, **kwargs)
 
 
 class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):

@@ -12,7 +12,11 @@
     </div>
 
     <main class="col p-0">
-        {% include 'minhas_consultas/componentes/tabela_historico.html' %}
+        {% if consultas %}
+            {% include 'minhas_consultas/componentes/tabela_historico.html' %}
+        {% else %}
+            Nenhuma consulta encontrada.
+        {% endif %}
     </main>
 </div>
 {% endblock %}

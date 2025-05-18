@@ -1,8 +1,6 @@
 {% extends 'geral/base.html' %}
 {% block titulo %} Pesquisa {% endblock %}
 
-{% load static %}
-
 {% block conteudo %}
 <h4 class="fw-bold">Profissionais</h4>
 
@@ -23,7 +21,7 @@
         </div>
     {% empty %}
         <div class="col">
-                Nenhum profissional corresponde à pesquisa.
+            Nenhum profissional corresponde à pesquisa.
         </div>
     {% endfor %}
 </main>
