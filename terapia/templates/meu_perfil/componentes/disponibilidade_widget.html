@@ -1,0 +1,37 @@
+<div>
+    <div class="hstack gap-2 mt-4">
+        Domingo
+
+        <div class="progress-stacked border border-secondary flex-grow-1">
+            
+            {% for i in "123456789012345678901234567890123456789012345678" %}
+                <div class="progress {% if forloop.last %} flex-grow-1 {% endif %}" style="width: 2.083%">
+                    <div class="progress-bar position-relative
+                        {% if forloop.counter|divisibleby:'4' or forloop.counter|divisibleby:'3' %}
+                            bg-secondary
+                        {% else %}
+                            bg-body-secondary
+                        {% endif %}
+                        {% if not forloop.last %}
+                            border-end
+                            {% if forloop.counter|divisibleby:'4' or forloop.counter|divisibleby:'3' %}
+                                border-white
+                            {% else %}
+                                border-secondary
+                            {% endif %}
+                        {% endif %}">
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+
+        {% comment %} <div class="progress-stacked border border-secondary flex-grow-1">
+            {% for i in "123456789012345678901234" %}
+                <div class="progress {% if forloop.last %} flex-grow-1 {% endif %}" style="width: 4.1666%">
+                    <div class="progress-bar bg-secondary {% if not forloop.last %} border-end border-white {% endif %}"></div>
+                </div>
+            {% endfor %}
+        </div> {% endcomment %}
+    </div>
+</div>
