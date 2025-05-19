@@ -6,7 +6,7 @@
             <col style="width: 25%;">
             <col style="width: 25%;">
         </colgroup> {% endcomment %}
-        <thead class="table-primary">
+        {% comment %} <thead class="table-primary">
             <tr>
                 <th class="text-white border-0" scope="col">
                     {% if request.user.is_paciente %}
@@ -19,7 +19,7 @@
                 <th class="text-white border-0" scope="col">Data e horário</th>
                 <th class="text-white border-0" scope="col">Ação</th>
             </tr>
-        </thead>
+        </thead> {% endcomment %}
         <tbody class="text-nowrap">
             {% for consulta in consultas %}
                 <tr class="{% if not forloop.last %}border-bottom{% endif %}">
@@ -52,7 +52,7 @@
                     </td>
                     <td>{{ consulta.data_hora_marcada|date:"d/m/Y" }} às {{ consulta.data_hora_marcada|time }}</td>
                     <td>
-                        <small>Em construção</small>
+                        <small>(Em construção)</small>
                     </td>
                 </tr>
             {% endfor %}

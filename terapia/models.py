@@ -288,6 +288,7 @@ class Consulta(models.Model):
     class Meta:
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
+        ordering = ['-data_hora_marcada']
 
     def clean(self):
         super().clean()

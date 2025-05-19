@@ -8,8 +8,7 @@ from .forms import (
     PsicologoChangeForm,
     PsicologoFiltrosForm,
     ConsultaCreationForm,
-    ConsultaFiltrosFormParaPaciente,
-    ConsultaFiltrosFormParaPsicologo,
+    ConsultaFiltrosForm,
 )
 from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm
@@ -19,7 +18,7 @@ from django.http import HttpResponseForbidden
 from datetime import timedelta
 
 
-class DeveTerRoleMixin(LoginRequiredMixin):
+class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_psicologo and not request.user.is_paciente:
             return self.handle_no_permission()
@@ -189,15 +188,16 @@ class PesquisaView(ListView, GetFormMixin):
         return queryset
 
 
-class MinhasConsultasView(DeveTerRoleMixin, ListView, GetFormMixin):
+class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
     template_name = "minhas_consultas/minhas_consultas.html"
     allow_empty = True
     context_object_name = "consultas"
+    form_class = ConsultaFiltrosForm
 
-    def get_form_class(self):
-        if self.request.user.is_paciente:
-            return ConsultaFiltrosFormParaPaciente
-        return ConsultaFiltrosFormParaPsicologo
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["usuario"] = self.request.user
+        return kwargs
 
     def get_queryset(self):
         queryset = None
@@ -211,19 +211,18 @@ class MinhasConsultasView(DeveTerRoleMixin, ListView, GetFormMixin):
 
         if form.is_valid():
             estado = form.cleaned_data.get("estado")
-            psicologo = form.cleaned_data.get("psicologo")
-            paciente = form.cleaned_data.get("paciente")
+            paciente_ou_psicologo = form.cleaned_data.get("paciente_ou_psicologo")
             data_inicial = form.cleaned_data.get("data_inicial")
             data_final = form.cleaned_data.get("data_final")
 
             if estado:
                 queryset = queryset.filter(estado=estado)
 
-            if psicologo:
-                queryset = queryset.filter(psicologo=psicologo)
-
-            if paciente:
-                queryset = queryset.filter(paciente=paciente)
+            if paciente_ou_psicologo:
+                if self.request.user.is_paciente:
+                    queryset = queryset.filter(psicologo=paciente_ou_psicologo)
+                else:
+                    queryset = queryset.filter(paciente=paciente_ou_psicologo)
 
             if data_inicial:
                 queryset = queryset.filter(data_hora_marcada__gte=data_inicial)
@@ -235,9 +234,9 @@ class MinhasConsultasView(DeveTerRoleMixin, ListView, GetFormMixin):
         return queryset
 
     def get_context_data(self, **kwargs):
-        # Esse método é para teste do template por enquanto.
         context = super().get_context_data(**kwargs)
 
+        # Adicionar um atributo de classes do Bootstrap
         consulta_classes_dict = {
             EstadoConsulta.SOLICITADA: "info",
             EstadoConsulta.CONFIRMADA: "success",
@@ -249,7 +248,7 @@ class MinhasConsultasView(DeveTerRoleMixin, ListView, GetFormMixin):
         for consulta in context["consultas"]:
             consulta.classe = consulta_classes_dict.get(consulta.estado, "")
 
-            if consulta.estado in (EstadoConsulta.SOLICITADA, EstadoConsulta.CONFIRMADA, EstadoConsulta.CANCELADA):
+            if consulta.estado != EstadoConsulta.EM_ANDAMENTO:
                 consulta.classe += " text-white"
 
         return context

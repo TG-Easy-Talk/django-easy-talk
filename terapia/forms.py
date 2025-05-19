@@ -105,6 +105,10 @@ class ConsultaFiltrosForm(forms.Form):
         required=False,
         choices=[("", "Estado")] + EstadoConsulta.choices,
     )
+    paciente_ou_psicologo = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+    )
     data_inicial = forms.DateTimeField(
         required=False,
         widget=CustomDateInput(),
@@ -114,21 +118,16 @@ class ConsultaFiltrosForm(forms.Form):
         widget=CustomDateInput(),
     )
 
+    def __init__(self, *args, usuario, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if usuario.is_paciente:
+            self.fields['paciente_ou_psicologo'].label = "Profissional"
+            self.fields['paciente_ou_psicologo'].queryset = Psicologo.objects.filter(consultas__paciente=usuario.paciente).distinct()
+        else:
+            self.fields['paciente_ou_psicologo'].label = "Paciente"
+            self.fields['paciente_ou_psicologo'].queryset = Paciente.objects.filter(consultas__psicologo=usuario.psicologo).distinct()
 
-class ConsultaFiltrosFormParaPaciente(ConsultaFiltrosForm):
-    psicologo = forms.ModelChoiceField(
-        required=False,
-        queryset=Psicologo.objects.all(),
-        label="Profissional",
-    )
-
-
-class ConsultaFiltrosFormParaPsicologo(ConsultaFiltrosForm):
-    paciente = forms.ModelChoiceField(
-        required=False,
-        queryset=Paciente.objects.all(),
-    )
-    
 
 class PsicologoChangeForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
