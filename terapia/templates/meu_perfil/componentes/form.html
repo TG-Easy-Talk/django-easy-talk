@@ -43,9 +43,8 @@
 
     <div class="vstack gap-2">
         <h6>Disponibilidade</h6>
-        {% comment %} {{ form.disponibilidade }}
-        {{ form.disponibilidade.errors }} {% endcomment %}
-        {% include "meu_perfil/componentes/disponibilidade_widget.html" %}
+        {{ form.disponibilidade }} {{ form.disponibilidade.errors }}
+        {% comment %} {% include "meu_perfil/componentes/disponibilidade_widget.html" %} {% endcomment %}
     </div>
 
     {% comment %} <div class="vstack gap-2">

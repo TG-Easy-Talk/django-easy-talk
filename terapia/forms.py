@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import ValidationError
+from .widgets import CustomDateTimeInput, CustomDateInput, DisponibilidadeInput
 from django.contrib.auth import get_user_model
 from easy_talk.renderers import (
     FormComValidacaoRenderer,
@@ -89,14 +89,6 @@ class PsicologoFiltrosForm(forms.Form):
     )
 
 
-class CustomDateInput(forms.DateInput):
-    input_type = 'date'
-
-
-class CustomDateTimeInput(forms.DateTimeInput):
-    input_type = 'datetime-local'
-
-
 class ConsultaFiltrosForm(forms.Form):
     default_renderer = FormDeFiltrosRenderer
     template_name = 'minhas_consultas/componentes/form.html'
@@ -144,6 +136,7 @@ class PsicologoChangeForm(forms.ModelForm):
             'placeholder': 'Apresente-se para os pacientes do EasyTalk...',
         })
         self.fields['foto'].widget = forms.FileInput()
+        self.fields['disponibilidade'].widget = DisponibilidadeInput()
 
 
 class ConsultaCreationForm(forms.ModelForm):

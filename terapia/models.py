@@ -207,9 +207,9 @@ class Psicologo(BasePacienteOuPsicologo):
         return max(len(disp["intervalos"]) for disp in self.disponibilidade)
 
 
-    def get_matriz_disponibilidade(self):
+    def get_tabela_disponibilidade_como_matriz(self):
         """
-        Monta uma matriz de disponibilidade com base no JSON de disponibilidade,
+        Monta a tabela de disponibilidade na forma de matriz,
         onde cada coluna representa um dia da semana.
         """
         numero_maximo_intervalos = self.get_numero_maximo_intervalos()
@@ -239,13 +239,13 @@ class Psicologo(BasePacienteOuPsicologo):
         return matriz_transp
     
 
-    def get_html_corpo_tabela_disponibilidade(self):
+    def get_tabela_disponibilidade_como_html(self):
         """
         Monta o HTML do corpo da tabela de disponibilidade do psicólogo.
         """
         tbody_inner_html = ""
 
-        for linha in self.get_matriz_disponibilidade():
+        for linha in self.get_tabela_disponibilidade_como_matriz():
             tbody_inner_html += "<tr>"
 
             for intervalo in linha:
