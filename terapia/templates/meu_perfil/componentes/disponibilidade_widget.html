@@ -1,9 +1,43 @@
-<div>
-    <div class="hstack gap-2 mt-4">
-        Domingo
+<style>
+    .grade-intervalos {
+        display: grid;
+        grid-template-columns: repeat(25, 1fr);
+        background: white;
+    }
 
-        <div class="progress-stacked border border-secondary flex-grow-1">
-            
+    .grade-intervalos > * {
+        min-height: 1rem;
+    }
+
+    .prevent-select {
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10 and IE 11 */
+        user-select: none; /* Standard syntax */
+    }
+</style>
+
+<div id="grade" class="grade-intervalos mt-5">
+    {% for _ in "1234567" %}
+        <span draggable="false" class="text-end font-monospace me-3">
+            {% if forloop.counter|divisibleby:"7" %}
+                Sáb
+            {% elif forloop.counter|divisibleby:"6" %}
+                Sex
+            {% elif forloop.counter|divisibleby:"5" %}
+                Qui
+            {% elif forloop.counter|divisibleby:"4" %}
+                Qua
+            {% elif forloop.counter|divisibleby:"3" %}
+                Ter
+            {% elif forloop.counter|divisibleby:"2" %}
+                Seg
+            {% else %}
+                Dom
+            {% endif %}
+        </span>
+
+        {% comment %} <div class="progress-stacked border border-secondary flex-grow-1">
+
             {% for i in "123456789012345678901234567890123456789012345678" %}
                 <div class="progress {% if forloop.last %} flex-grow-1 {% endif %}" style="width: 2.083%">
                     <div class="progress-bar position-relative
@@ -24,14 +58,113 @@
                 </div>
             {% endfor %}
 
-        </div>
+        </div>{% endcomment %}
 
-        {% comment %} <div class="progress-stacked border border-secondary flex-grow-1">
+        {% comment %}<div class="progress-stacked border border-secondary flex-grow-1">
             {% for i in "123456789012345678901234" %}
-                <div class="progress {% if forloop.last %} flex-grow-1 {% endif %}" style="width: 4.1666%">
-                    <div class="progress-bar bg-secondary {% if not forloop.last %} border-end border-white {% endif %}"></div>
+                <div class="progress {% if forloop.last %} flex-grow-1 {% endif %}" style="width: 4.166%">
+                    <div class="progress-bar position-relative
+                        {% if forloop.counter|divisibleby:'4' or forloop.counter|divisibleby:'3' %}
+                            bg-secondary
+                        {% else %}
+                            bg-body-secondary
+                        {% endif %}
+                        {% if not forloop.last %}
+                            border-end
+                            {% if forloop.counter|divisibleby:'4' or forloop.counter|divisibleby:'3' %}
+                                border-white
+                            {% else %}
+                                border-secondary
+                            {% endif %}
+                        {% endif %}">
+                    </div>
                 </div>
             {% endfor %}
-        </div> {% endcomment %}
-    </div>
+        </div>{% endcomment %}
+
+        {% for _ in "123456789012345678901234" %}
+            <div
+                id="grade[{{forloop.parentloop.counter0}}][{{forloop.counter0}}]"
+                data-grade data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
+                class="position-relative border-bottom
+                    {% if forloop.parentloop.first %}
+                        border-top
+                    {% endif %}
+
+                    {% if forloop.first %}
+                        border-start
+                    {% endif %}
+
+                    border-end
+                "
+            >
+                {% if forloop.parentloop.first %}
+                    <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%;">
+                        {{ forloop.counter0 }}
+                    </div>
+
+                    {% if forloop.last %}
+                        <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%;">
+                            {{ forloop.counter }}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endfor %}
 </div>
+
+<script>
+    document.querySelectorAll('[draggable="false"]').forEach((item) => {
+        item.classList.add('prevent-select');
+    });
+
+    document.getElementById("grade").addEventListener('dragstart', function(e) {
+      e.preventDefault();
+    });
+
+    const classesNaoSelecionado = ["bg-body", "border-secondary"]
+    const classesSelecionado = ["bg-secondary", "border-white"]
+
+    const celulasGrade = document.querySelectorAll('[data-grade]');
+
+    function selecionar(item) {
+        item.dataset.selecionado = "true";
+
+        classesNaoSelecionado.forEach(classe => {
+            item.classList.remove(classe);
+        });
+        classesSelecionado.forEach(classe => {
+            item.classList.add(classe);
+        });
+    }
+
+    function tirar(item) {
+        item.dataset.selecionado = "false";
+
+        classesSelecionado.forEach(classe => {
+            item.classList.remove(classe);
+        });
+        classesNaoSelecionado.forEach(classe => {
+            item.classList.add(classe);
+        });
+    }
+
+    function selecionarOuTirar(item) {
+        if (item.dataset.selecionado === "false")
+            selecionar(item)
+        else
+            tirar(item)
+    }
+
+    celulasGrade.forEach((item) => {
+        tirar(item)
+
+        item.addEventListener('mouseover', (e) => {
+            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
+                selecionarOuTirar(item)
+        });
+
+        item.addEventListener('mousedown', (e) => selecionarOuTirar(item) )
+    });
+</script>
