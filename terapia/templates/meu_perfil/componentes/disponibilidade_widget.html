@@ -4,7 +4,7 @@
         grid-template-columns: repeat(25, 1fr);
     }
 
-    .grade-intervalos > * {
+    .grade-intervalos > *[data-grade] {
         min-height: 1rem;
         cursor: pointer;
     }
@@ -16,9 +16,9 @@
     }
 </style>
 
-<div id="grade" class="grade-intervalos mt-5">
+<div draggable="false" class="grade-intervalos mt-5">
     {% for _ in "1234567" %}
-        <span draggable="false" class="text-end font-monospace me-3">
+        <div draggable="false" class="text-end font-monospace me-3">
             {% if forloop.counter|divisibleby:"7" %}
                 Sáb
             {% elif forloop.counter|divisibleby:"6" %}
@@ -34,7 +34,7 @@
             {% else %}
                 Dom
             {% endif %}
-        </span>
+        </div>
 
         {% for _ in "123456789012345678901234" %}
             <div
@@ -55,13 +55,13 @@
                 "
             >
                 {% if forloop.parentloop.first %}
-                    <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%;">
-                        {{ forloop.counter0 }}
+                    <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%; cursor: default;">
+                        {{ forloop.counter0 }}h
                     </div>
 
                     {% if forloop.last %}
-                        <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%;">
-                            {{ forloop.counter }}
+                        <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%; cursor: default;">
+                            {{ forloop.counter }}h
                         </div>
                     {% endif %}
                 {% endif %}
@@ -85,20 +85,53 @@
     const classesNaoSelecionado = ["bg-body-secondary"]
     const classesSelecionado = ["bg-secondary"]
     const celulasGrade = document.querySelectorAll('[data-grade]')
-    let matriz = []
+    const matriz = transformarJsonEmMatriz('{{ widget.value|safe }}')
 
-    function atualizarItemNaMatriz(item) {
+    function transformarJsonEmMatriz(json) {
+        const matriz = []
+
+        for (let i = 0; i < 7; i++) {
+            matriz[i] = []
+            for (let j = 0; j < 24; j++) {
+                if (!matriz[i][j])
+                    matriz[i][j] = false
+            }
+        }
+
+        disponibilidade = JSON.parse(json)
+        
+        disponibilidade.forEach((disp) => {
+            const i = Number(disp.dia_semana - 1)
+            const intervalos = disp.intervalos
+
+            intervalos.forEach((intervalo) => {
+                inicio = Number(intervalo.horario_inicio.split(':')[0])
+                fim = Number(intervalo.horario_fim.split(':')[0])
+
+                for (let j = inicio; j < fim; j++) {
+                    matriz[i][j] = true
+                }
+            })
+        })
+
+        return matriz
+    }
+
+    function atualizarItemPelaMatriz(item) {
         const linha = Number(item.dataset.linha)
         const coluna = Number(item.dataset.coluna)
 
-        if (!matriz[linha])
-            matriz[linha] = []
-
-        matriz[linha][coluna] = item.dataset.selecionado === "true" ? true : false
-        console.log(matriz)
+        if (matriz[linha][coluna])
+            selecionar(item)
+        else
+            tirar(item)
     }
 
-    celulasGrade.forEach((item) => atualizarItemNaMatriz(item))
+    function atualizarMatrizPeloItem(item) {
+        const linha = Number(item.dataset.linha)
+        const coluna = Number(item.dataset.coluna)
+        matriz[linha][coluna] = item.dataset.selecionado === "true" ? true : false
+    }
 
     function selecionar(item) {
         item.dataset.selecionado = "true"
@@ -118,11 +151,11 @@
         else
             tirar(item)
 
-        atualizarItemNaMatriz(item)
+        atualizarMatrizPeloItem(item)
     }
 
     celulasGrade.forEach((item) => {
-        tirar(item)
+        atualizarItemPelaMatriz(item)
 
         item.addEventListener('mouseover', (e) => {
             if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
