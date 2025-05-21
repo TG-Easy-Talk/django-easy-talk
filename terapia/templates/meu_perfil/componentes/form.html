@@ -31,6 +31,7 @@
 
     <div class="vstack gap-2">
         <h6>Especializações</h6>
+        <div class="text-body-secondary">Segure CTRL para selecionar múltiplas.</div>
         {{ form.especializacoes }}
         {{ form.especializacoes.errors }}
     </div>
@@ -43,6 +44,10 @@
 
     <div class="vstack gap-2">
         <h6>Disponibilidade</h6>
+        <div class="text-body-secondary">
+            Preencha a grade de acordo com sua agenda.<br>
+            Segure e arraste o mouse para preencher várias células de uma vez.
+        </div>
         {{ form.disponibilidade }} {{ form.disponibilidade.errors }}
         {% comment %} {% include "meu_perfil/componentes/disponibilidade_widget.html" %} {% endcomment %}
     </div>
@@ -52,5 +57,11 @@
         {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
     </div> {% endcomment %}
 
-    <button class="btn text-white btn-primary" type="submit">Salvar alterações</button>
+    <a href="#" onclick="salvar()" class="btn text-white btn-primary">Salvar alterações</a>
 </main>
+
+<script>
+    function salvar() {
+        document.getElementById('PsicologoChangeForm').submit()
+    }
+</script>

@@ -30,7 +30,10 @@ def parse_time(s: str) -> time | None:
     """
     Converte string "HH:MM" para datetime.time.
     Retorna None se o formato for inválido.
+    Aceita "24:00", retornando time(0, 0).
     """
+    if s == "24:00":
+        return time(0, 0)
     try:
         return datetime.strptime(s, TIME_FMT).time()
     except (ValueError, TypeError):
@@ -112,6 +115,11 @@ def validate_disponibilidade_horarios(data):
     """
     for i, item in enumerate(data):
         for j, intervalo in enumerate(item["intervalos"]):
+            if intervalo["horario_inicio"] == "24:00":
+                raise ValidationError(
+                    f"Item #{i}.intervalos[{j}]: '24:00' só pode ser usado como horário de fim"
+                )
+            
             horario_inicio = parse_time(intervalo["horario_inicio"])
             horario_fim = parse_time(intervalo["horario_fim"])
 
@@ -120,15 +128,18 @@ def validate_disponibilidade_horarios(data):
                 raise ValidationError(
                     f"Item #{i}.intervalos[{j}]: formato de horário inválido"
                 )
+            
+            datetime_inicio = datetime.combine(datetime.today(), horario_inicio)
+            hoje_ou_amanha = datetime.today() if intervalo["horario_fim"] != "24:00" else datetime.today() + _dt.timedelta(days=1)
+            datetime_fim = datetime.combine(hoje_ou_amanha, horario_fim)
 
             # Valida que o horário de início é menor que o horário de fim
-            if horario_inicio >= horario_fim:
+            if datetime_inicio >= datetime_fim:
                 raise ValidationError(
                     f"Item #{i}.intervalos[{j}]: o horário de início deve ser menor que o horário de fim"
                 )
 
-            # Valida a duração mínima de 1 hora
-            if (horario_fim.hour - horario_inicio.hour) < 1:
+            if (datetime_fim - datetime_inicio).total_seconds() < 3600:
                 raise ValidationError(
                     f"Item #{i}.intervalos[{j}]: o horário de fim deve ser, no mínimo, 1 hora depois do horário de início"
                 )
@@ -350,7 +361,9 @@ def main():
         [{
             "dia_semana": 5,
             "intervalos": [
-                {"horario_inicio": "00:00", "horario_fim": "24:00"},
+                {"horario_inicio": "13:00", "horario_fim": "14:00"},
+                {"horario_inicio": "08:00", "horario_fim": "12:00"},
+                {"horario_inicio": "06:30", "horario_fim": "07:30"},
             ]
         }],
 
@@ -358,9 +371,15 @@ def main():
         [{
             "dia_semana": 5,
             "intervalos": [
-                {"horario_inicio": "13:00", "horario_fim": "14:00"},
-                {"horario_inicio": "08:00", "horario_fim": "12:00"},
-                {"horario_inicio": "06:30", "horario_fim": "07:30"},
+                {"horario_inicio": "24:00", "horario_fim": "03:00"},
+            ]
+        }],
+
+        # 24
+        [{
+            "dia_semana": 5,
+            "intervalos": [
+                {"horario_inicio": "00:00", "horario_fim": "24:00"},
             ]
         }],
     ]

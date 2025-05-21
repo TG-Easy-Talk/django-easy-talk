@@ -69,8 +69,9 @@
         {% endfor %}
     {% endfor %}
 </div>
+<a type="button" class="text-end" onclick="limparGrade()">Limpar grade</a>
 
-<input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+<input type="{{ widget.type }}" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}>
 
 <script>
     document.querySelectorAll('[draggable="false"]').forEach((item) => {
@@ -98,7 +99,7 @@
             }
         }
 
-        disponibilidade = JSON.parse(json)
+        disponibilidade = JSON.parse(json) || []
         
         disponibilidade.forEach((disp) => {
             const i = Number(disp.dia_semana - 1)
@@ -115,6 +116,45 @@
         })
 
         return matriz
+    }
+
+    function transformarMatrizEmJson() {
+        const disponibilidade = []
+
+        for (let i = 0; i < 7; i++) {
+            const intervalos = []
+            let intervaloAtual = null
+            
+            for (let j = 0; j < 24; j++) {
+
+                if (matriz[i][j]) {
+                    if (!intervaloAtual)
+                        intervaloAtual = {
+                            horario_inicio: `${j.toString().padStart(2, '0')}:00`,
+                            horario_fim: `${(j + 1).toString().padStart(2, '0')}:00`
+                        }
+                    else
+                        intervaloAtual.horario_fim = `${(j + 1).toString().padStart(2, '0')}:00`
+                }
+                else {
+                    if (intervaloAtual) {
+                        intervalos.push(intervaloAtual)
+                        intervaloAtual = null
+                    }
+                }
+            }
+
+            if (intervaloAtual)
+                intervalos.push(intervaloAtual)
+                intervaloAtual = null
+
+            console.log(intervalos)
+
+            if (intervalos.length > 0)    
+                disponibilidade.push({ dia_semana: i + 1, intervalos: intervalos })
+        }
+
+        return JSON.stringify(disponibilidade)
     }
 
     function atualizarItemPelaMatriz(item) {
@@ -152,6 +192,11 @@
             tirar(item)
 
         atualizarMatrizPeloItem(item)
+        document.querySelector('input[name="{{ widget.name }}"]').value = transformarMatrizEmJson()
+    }
+
+    function limparGrade() {
+        celulasGrade.forEach((item) => tirar(item))
     }
 
     celulasGrade.forEach((item) => {
@@ -162,6 +207,9 @@
                 selecionarOuTirar(item)
         })
 
-        item.addEventListener('mousedown', (e) => selecionarOuTirar(item))
+        item.addEventListener('mousedown', (e) => {
+            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
+                selecionarOuTirar(item)
+        })
     })
 </script>

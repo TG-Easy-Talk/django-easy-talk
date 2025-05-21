@@ -64,7 +64,7 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{% url 'login' %}">Mudar de conta</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="logout()">Encerrar sessão</a></li>
+                        <li><div class="dropdown-item" type="button" onclick="logout()">Encerrar sessão</div></li>
                     </ul>
                 </div>
             </div>
@@ -81,7 +81,6 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
 <script>
     function logout() {
         document.getElementById('logout-form').submit();
-        return false; // Assegurar que o navegador não siga o href da tag <a>
     }
 </script>
 
