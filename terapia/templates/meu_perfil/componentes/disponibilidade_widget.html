@@ -73,202 +73,29 @@
     <a type="button" class="link-primary" onclick="limparGrade()">Limpar grade</a>
 </div>
 
-<input type="{{ widget.type }}" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}/>
+<input type="{{ widget.type }}" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}>
 
 {% load static %}
 <script>
     disponibilidadeInput = document.querySelector('input[name="{{ widget.name }}"]')
+</script>
+<script src="{% static 'js/disp.js' %}"></script>
+<script>
+    disp_json = {{ widget.value|safe }}
+    console.log(disp_json)
+    const matriz = transformarJsonEmMatriz(disp_json)
 
-document.querySelectorAll('[draggable="false"]').forEach((item) => {
-    item.classList.add('prevent-select')
+    celulasGrade.forEach((item) => {
+        atualizarItemPelaMatriz(item)
 
-    // Prevenir que elementos sejam arrastados quando o usuário estiver arrastando o mouse na grade
-    item.addEventListener('dragstart', (e) => {
-        e.preventDefault()
-    })
-})
+        item.addEventListener('mouseover', (e) => {
+            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
+                selecionarOuTirar(item)
+        })
 
-const classesNaoSelecionado = ["bg-body-secondary"]
-const classesSelecionado = ["bg-secondary"]
-const celulasGrade = document.querySelectorAll('[data-grade]')
-const matriz = transformarJsonEmMatriz('{{ widget.value|safe }}')
-
-function transformarJsonEmMatriz(json) {
-    const matriz = []
-
-    for (let i = 0; i < 7; i++) {
-        matriz[i] = []
-        for (let j = 0; j < 24; j++) {
-            if (!matriz[i][j])
-                matriz[i][j] = false
-        }
-    }
-
-    disponibilidade = JSON.parse(json) || []
-
-    disponibilidade.forEach((disp) => {
-        const i = Number(disp.dia_semana - 1)
-        const intervalos = disp.intervalos
-
-        intervalos.forEach((intervalo) => {
-            inicio = Number(intervalo.horario_inicio.split(':')[0])
-            fim = Number(intervalo.horario_fim.split(':')[0])
-
-            for (let j = inicio; j < fim; j++) {
-                matriz[i][j] = true
-            }
+        item.addEventListener('mousedown', (e) => {
+            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
+                selecionarOuTirar(item)
         })
     })
-
-    return matriz
-}
-
-function transformarMatrizEmJson() {
-    const disponibilidade = []
-
-    for (let i = 0; i < 7; i++) {
-        const intervalos = []
-        let intervaloAtual = null
-
-        for (let j = 0; j < 24; j++) {
-
-            if (matriz[i][j]) {
-                if (!intervaloAtual)
-                    intervaloAtual = {
-                        horario_inicio: `${j.toString().padStart(2, '0')}:00`,
-                        horario_fim: `${(j + 1).toString().padStart(2, '0')}:00`
-                    }
-                else
-                    intervaloAtual.horario_fim = `${(j + 1).toString().padStart(2, '0')}:00`
-            }
-            else {
-                if (intervaloAtual) {
-                    intervalos.push(intervaloAtual)
-                    intervaloAtual = null
-                }
-            }
-        }
-
-        if (intervaloAtual)
-            intervalos.push(intervaloAtual)
-            intervaloAtual = null
-
-        console.log(intervalos)
-
-        if (intervalos.length > 0)
-            disponibilidade.push({ dia_semana: i + 1, intervalos: intervalos })
-    }
-
-    return JSON.stringify(disponibilidade)
-}
-
-function atualizarItemPelaMatriz(item) {
-    const linha = Number(item.dataset.linha)
-    const coluna = Number(item.dataset.coluna)
-
-    if (matriz[linha][coluna])
-        selecionar(item)
-    else
-        tirar(item)
-}
-
-function atualizarMatrizPeloItem(item) {
-    const linha = Number(item.dataset.linha)
-    const coluna = Number(item.dataset.coluna)
-    matriz[linha][coluna] = item.dataset.selecionado === "true" ? true : false
-}
-
-function selecionar(item) {
-    item.dataset.selecionado = "true"
-    classesNaoSelecionado.forEach(classe => item.classList.remove(classe))
-    classesSelecionado.forEach(classe => item.classList.add(classe))
-}
-
-function tirar(item) {
-    item.dataset.selecionado = "false"
-    classesSelecionado.forEach(classe => item.classList.remove(classe))
-    classesNaoSelecionado.forEach(classe => item.classList.add(classe))
-}
-
-function selecionarOuTirar(item) {
-    if (item.dataset.selecionado === "false")
-        selecionar(item)
-    else
-        tirar(item)
-
-    atualizarMatrizPeloItem(item)
-    disponibilidadeInput.value = transformarMatrizEmJson()
-}
-
-function limparGrade() {
-    celulasGrade.forEach((item) => tirar(item))
-}
-
-celulasGrade.forEach((item) => {
-    atualizarItemPelaMatriz(item)
-
-    item.addEventListener('mouseover', (e) => {
-        if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-            selecionarOuTirar(item)
-    })
-
-    item.addEventListener('mousedown', (e) => {
-        if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-            selecionarOuTirar(item)
-    })
-})
-
-function getIntervalosDoDia(diaSemana) {
-    if (1 <= diaSemana <= 7) {
-        throw new Error("O dia da semana deve ser um número entre 1 (domingo) e 7 (sábado).")
-    }
-
-    for (disp of disponibilidadeInput.value)
-        if (disp.dia_semana === diaSemana)
-            return disp.intervalos
-
-    return []
-}
-
-function getNumeroMaximoIntervalos() {
-    return Math.max(...disponibilidadeInput.value.map(disp => disp.intervalos.length))
-}
-
-function getTabelaDisponibilidadeComoMatriz() {
-    const numeroMaximoIntervalos = getNumeroMaximoIntervalos()
-    const matriz = []
-
-    for (let i = 1; i <= 7; i++) {
-        const intervalosDoDia = getIntervalosDoDia(i)
-        const horariosDoDia = []
-
-        for (const intervalo of intervalosDoDia)
-            horariosDoDia.push(`${intervalo.horario_inicio} - ${intervalo.horario_fim}`)
-
-        if (horariosDoDia.length < numeroMaximoIntervalos)
-            horariosDoDia.push("-".repeat(numeroMaximoIntervalos - horariosDoDia.length))
-
-        matriz.push(horariosDoDia)
-
-    // Transpor a matriz
-    const qtdColunasTransp = 7
-    const qtdLinhasTransp = numeroMaximoIntervalos
-    const matrizTransp = []
-
-    for (let i = 0; i < qtdLinhasTransp; i++) {
-        matrizTransp[i] = []
-        for (let j = 0; j < qtdColunasTransp; j++)
-            matrizTransp[i][j] = matriz[j][i]
-    }
-
-    return matrizTransp
-}
-
-function getTabelaDisponibilidadeComoHtml() {
-    const tbodyInnerHtml = getTabelaDisponibilidadeComoMatriz()
-        .map(linha => `<tr>${linha.map(intervalo => `<td>${intervalo}</td>`).join('')}</tr>`)
-        .join('')
-
-    return tbodyInnerHtml
-}
 </script>

@@ -97,8 +97,8 @@ class Psicologo(BasePacienteOuPsicologo):
     )
     disponibilidade = models.JSONField(
         "Disponibilidade",
+        default=list,
         blank=True,
-        null=True,
         validators=[validate_disponibilidade]
     )
     especializacoes = models.ManyToManyField(
@@ -243,6 +243,9 @@ class Psicologo(BasePacienteOuPsicologo):
         """
         Monta o HTML do corpo da tabela de disponibilidade do psicólogo.
         """
+        if not self.disponibilidade:
+            return "<tr>" + "<td colspan='7'>Nenhum horário disponível</td>" + "</tr>"
+
         tbody_inner_html = ""
 
         for linha in self.get_tabela_disponibilidade_como_matriz():

@@ -46,7 +46,7 @@
         <div class="vstack gap-2">
             <h6>Disponibilidade</h6>
             {% if psicologo.disponibilidade %}
-                {% include 'geral/tabela_disponibilidade.html' with tbody_inner_html=psicologo.get_tabela_disponibilidade_como_html %}
+                {% include 'geral/tabela_disponibilidade.html' with disponibilidade=psicologo.disponibilidade %}
             {% else %}
                 <div class="text-body-secondary"><i>Este psicólogo ainda não definiu sua disponibilidade.</i></div>
             {% endif %}

@@ -1,5 +1,3 @@
-disponibilidadeInput = document.querySelector('input[name="{{ widget.name }}"]')
-
 document.querySelectorAll('[draggable="false"]').forEach((item) => {
     item.classList.add('prevent-select')
 
@@ -12,7 +10,6 @@ document.querySelectorAll('[draggable="false"]').forEach((item) => {
 const classesNaoSelecionado = ["bg-body-secondary"]
 const classesSelecionado = ["bg-secondary"]
 const celulasGrade = document.querySelectorAll('[data-grade]')
-const matriz = transformarJsonEmMatriz('{{ widget.value|safe }}')
 
 function transformarJsonEmMatriz(json) {
     const matriz = []
@@ -25,7 +22,7 @@ function transformarJsonEmMatriz(json) {
         }
     }
 
-    disponibilidade = JSON.parse(json) || []
+    disponibilidade = json
 
     disponibilidade.forEach((disp) => {
         const i = Number(disp.dia_semana - 1)
@@ -123,72 +120,4 @@ function selecionarOuTirar(item) {
 
 function limparGrade() {
     celulasGrade.forEach((item) => tirar(item))
-}
-
-celulasGrade.forEach((item) => {
-    atualizarItemPelaMatriz(item)
-
-    item.addEventListener('mouseover', (e) => {
-        if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-            selecionarOuTirar(item)
-    })
-
-    item.addEventListener('mousedown', (e) => {
-        if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-            selecionarOuTirar(item)
-    })
-})
-
-function getIntervalosDoDia(diaSemana) {
-    if (1 <= diaSemana <= 7) {
-        throw new Error("O dia da semana deve ser um número entre 1 (domingo) e 7 (sábado).")
-    }
-
-    for (disp of disponibilidadeInput.value)
-        if (disp.dia_semana === diaSemana)
-            return disp.intervalos
-
-    return []
-}
-
-function getNumeroMaximoIntervalos() {
-    return Math.max(...disponibilidadeInput.value.map(disp => disp.intervalos.length))
-}
-
-function getTabelaDisponibilidadeComoMatriz() {
-    const numeroMaximoIntervalos = getNumeroMaximoIntervalos()
-    const matriz = []
-
-    for (let i = 1; i <= 7; i++) {
-        const intervalosDoDia = getIntervalosDoDia(i)
-        const horariosDoDia = []
-
-        for (const intervalo of intervalosDoDia)
-            horariosDoDia.push(`${intervalo.horario_inicio} - ${intervalo.horario_fim}`)
-
-        if (horariosDoDia.length < numeroMaximoIntervalos)
-            horariosDoDia.push("-".repeat(numeroMaximoIntervalos - horariosDoDia.length))
-
-        matriz.push(horariosDoDia)
-
-    // Transpor a matriz
-    const qtdColunasTransp = 7
-    const qtdLinhasTransp = numeroMaximoIntervalos
-    const matrizTransp = []
-
-    for (let i = 0; i < qtdLinhasTransp; i++) {
-        matrizTransp[i] = []
-        for (let j = 0; j < qtdColunasTransp; j++)
-            matrizTransp[i][j] = matriz[j][i]
-    }
-
-    return matrizTransp
-}
-
-function getTabelaDisponibilidadeComoHtml() {
-    const tbodyInnerHtml = getTabelaDisponibilidadeComoMatriz()
-        .map(linha => `<tr>${linha.map(intervalo => `<td>${intervalo}</td>`).join('')}</tr>`)
-        .join('')
-
-    return tbodyInnerHtml
 }
