@@ -52,10 +52,21 @@
                     </td>
                     <td>{{ consulta.data_hora_marcada|date:"d/m/Y" }} às {{ consulta.data_hora_marcada|time }}</td>
                     <td>
-                        <small>(Em construção)</small>
+                        {% if usuario.is_psicologo and consulta.get_estado_display == "Solicitada" %}
+                            <button class="btn btn-success btn-sm text-white" onclick="naoImplementado()">Aceitar</button>
+                            <button class="btn btn-danger btn-sm text-white" onclick="naoImplementado()">Recusar</button>
+                        {% else %}
+                            <small>(Em construção)</small>
+                        {% endif %}
                     </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<script>
+    function naoImplementado() {
+        alert("Essa funcionalidade ainda não foi implementada. Por enquanto, está aqui só para mostrar como será.");
+    }
+</script>

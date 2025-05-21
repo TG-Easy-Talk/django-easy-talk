@@ -13,7 +13,7 @@
 
     <main class="col p-0">
         {% if consultas %}
-            {% include 'minhas_consultas/componentes/tabela_historico.html' %}
+            {% include 'minhas_consultas/componentes/tabela_historico.html' with usuario=request.user %}
         {% else %}
             Nenhuma consulta encontrada.
         {% endif %}
