@@ -1,83 +1,4 @@
-<style>
-    .grade-intervalos {
-        display: grid;
-        grid-template-columns: repeat(25, 1fr);
-    }
-
-    .grade-intervalos > *[data-grade] {
-        min-height: 1rem;
-        cursor: pointer;
-    }
-
-    .prevent-select {
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10 and IE 11 */
-        user-select: none; /* Standard syntax */
-    }
-</style>
-
-<div draggable="false" class="grade-intervalos mt-5">
-    {% for _ in "1234567" %}
-        <div draggable="false" class="text-end font-monospace me-3">
-            {% if forloop.counter|divisibleby:"7" %}
-                Sáb
-            {% elif forloop.counter|divisibleby:"6" %}
-                Sex
-            {% elif forloop.counter|divisibleby:"5" %}
-                Qui
-            {% elif forloop.counter|divisibleby:"4" %}
-                Qua
-            {% elif forloop.counter|divisibleby:"3" %}
-                Ter
-            {% elif forloop.counter|divisibleby:"2" %}
-                Seg
-            {% else %}
-                Dom
-            {% endif %}
-        </div>
-
-        {% for _ in "123456789012345678901234" %}
-            <div
-                data-grade
-                data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
-                data-linha="{{ forloop.parentloop.counter0 }}"
-                data-coluna="{{ forloop.counter0 }}"
-                class="position-relative border-bottom border-primary
-                    {% if forloop.parentloop.first %}
-                        border-top
-                    {% endif %}
-
-                    {% if forloop.first %}
-                        border-start
-                    {% endif %}
-
-                    border-end
-                "
-            >
-                {% if forloop.parentloop.first %}
-                    <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%; cursor: default;">
-                        {{ forloop.counter0 }}h
-                    </div>
-
-                    {% if forloop.last %}
-                        <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%; cursor: default;">
-                            {{ forloop.counter }}h
-                        </div>
-                    {% endif %}
-                {% endif %}
-            </div>
-        {% endfor %}
-    {% endfor %}
-</div>
-<div class="d-flex justify-content-end">
-    <a type="button" class="link-primary" onclick="limparGrade()">Limpar grade</a>
-</div>
-
-<input type="{{ widget.type }}" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}/>
-
-{% load static %}
-<script>
-    disponibilidadeInput = document.querySelector('input[name="{{ widget.name }}"]')
+disponibilidadeInput = document.querySelector('input[name="{{ widget.name }}"]')
 
 document.querySelectorAll('[draggable="false"]').forEach((item) => {
     item.classList.add('prevent-select')
@@ -271,4 +192,3 @@ function getTabelaDisponibilidadeComoHtml() {
 
     return tbodyInnerHtml
 }
-</script>
