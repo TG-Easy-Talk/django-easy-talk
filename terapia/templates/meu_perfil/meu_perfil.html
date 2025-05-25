@@ -1,8 +1,6 @@
 {% extends 'geral/base.html' %}
 {% block titulo %} {{ psicologo }} {% endblock %}
 
-{% load static %}
-
 {% block conteudo %}
 <form id="PsicologoChangeForm" enctype="multipart/form-data" method="post">
     {% csrf_token %}

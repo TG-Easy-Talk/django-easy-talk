@@ -49,11 +49,9 @@
             Segure e arraste o mouse para preencher várias células de uma vez.
         </div>
         {{ form.disponibilidade }} {{ form.disponibilidade.errors }}
-        {% comment %} {% include "meu_perfil/componentes/disponibilidade_widget.html" %} {% endcomment %}
-
 
         <div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
-        {% include 'geral/tabela_disponibilidade.html' with tbody_inner_html=form.instance.get_tabela_disponibilidade_como_html %}
+        {% include 'geral/tabela_disponibilidade.html' with disponibilidade=form.instance.disponibilidade %}
     </div>
 
     {% comment %} <div class="vstack gap-2">

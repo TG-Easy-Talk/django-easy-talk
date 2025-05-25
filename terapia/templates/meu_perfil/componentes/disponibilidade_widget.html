@@ -70,32 +70,149 @@
     {% endfor %}
 </div>
 <div class="d-flex justify-content-end">
-    <a type="button" class="link-primary" onclick="limparGrade()">Limpar grade</a>
+    <a type="button" class="link-primary" onclick="Disponibilidade.limparGrade()">Limpar grade</a>
+    <a type="button" class="link-primary" onclick="Disponibilidade.limparGrade()">Limpar grade</a>
 </div>
 
 <input type="{{ widget.type }}" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}>
 
-{% load static %}
 <script>
-    disponibilidadeInput = document.querySelector('input[name="{{ widget.name }}"]')
-</script>
-<script src="{% static 'js/disp.js' %}"></script>
-<script>
-    disp_json = {{ widget.value|safe }}
-    console.log(disp_json)
-    const matriz = transformarJsonEmMatriz(disp_json)
+    document.querySelectorAll('[draggable="false"]').forEach((item) => {
+        item.classList.add('prevent-select')
 
-    celulasGrade.forEach((item) => {
-        atualizarItemPelaMatriz(item)
-
-        item.addEventListener('mouseover', (e) => {
-            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-                selecionarOuTirar(item)
-        })
-
-        item.addEventListener('mousedown', (e) => {
-            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-                selecionarOuTirar(item)
-        })
+        // Prevenir que elementos sejam arrastados quando o usuário estiver arrastando o mouse na grade
+        item.addEventListener('dragstart', (e) => e.preventDefault())
     })
+
+    class Disponibilidade {
+        static widget = document.querySelector('input[name="{{ widget.name }}"]')
+        static celulas = document.querySelectorAll('[data-grade]')
+        static classesNaoSelecionado = ["bg-body-secondary"]
+        static classesSelecionado = ["bg-secondary"]
+        static matriz = []
+        static disponibilidade = []
+
+        static preencherMatrizPeloJson(json) {
+            for (let i = 0; i < 7; i++) {
+                this.matriz[i] = []
+                for (let j = 0; j < 24; j++) {
+                    if (!this.matriz[i][j])
+                        this.matriz[i][j] = false
+                }
+            }
+
+            json.forEach((disp) => {
+                const i = Number(disp.dia_semana - 1)
+                const intervalos = disp.intervalos
+
+                intervalos.forEach((intervalo) => {
+                    const inicio = Number(intervalo.horario_inicio.split(':')[0])
+                    const fim = Number(intervalo.horario_fim.split(':')[0])
+
+                    for (let j = inicio; j < fim; j++) {
+                        this.matriz[i][j] = true
+                    }
+                })
+            })
+        }
+
+        static transformarMatrizEmJson() {
+            const disponibilidade = []
+
+            for (let i = 0; i < 7; i++) {
+                const intervalos = []
+                let intervaloAtual = null
+
+                for (let j = 0; j < 24; j++) {
+
+                    if (this.matriz[i][j]) {
+                        if (!intervaloAtual)
+                            intervaloAtual = {
+                                horario_inicio: `${j.toString().padStart(2, '0')}:00`,
+                                horario_fim: `${(j + 1).toString().padStart(2, '0')}:00`
+                            }
+                        else
+                            intervaloAtual.horario_fim = `${(j + 1).toString().padStart(2, '0')}:00`
+                    }
+                    else {
+                        if (intervaloAtual) {
+                            intervalos.push(intervaloAtual)
+                            intervaloAtual = null
+                        }
+                    }
+                }
+
+                if (intervaloAtual)
+                    intervalos.push(intervaloAtual)
+                    intervaloAtual = null
+
+                if (intervalos.length > 0)
+                    disponibilidade.push({ dia_semana: i + 1, intervalos: intervalos })
+            }
+
+            return JSON.stringify(disponibilidade)
+        }
+
+        static atualizarItemPelaMatriz(item) {
+            const linha = Number(item.dataset.linha)
+            const coluna = Number(item.dataset.coluna)
+
+            if (this.matriz[linha][coluna])
+                this.selecionar(item)
+            else
+                this.tirar(item)
+        }
+
+        static atualizarMatrizPeloItem(item) {
+            const linha = Number(item.dataset.linha)
+            const coluna = Number(item.dataset.coluna)
+            this.matriz[linha][coluna] = item.dataset.selecionado === "true" ? true : false
+        }
+
+        static selecionar(item) {
+            item.dataset.selecionado = "true"
+            this.classesNaoSelecionado.forEach(classe => item.classList.remove(classe))
+            this.classesSelecionado.forEach(classe => item.classList.add(classe))
+        }
+
+        static tirar(item) {
+            item.dataset.selecionado = "false"
+            this.classesSelecionado.forEach(classe => item.classList.remove(classe))
+            this.classesNaoSelecionado.forEach(classe => item.classList.add(classe))
+        }
+
+        static selecionarOuTirar(item) {
+            if (item.dataset.selecionado === "false")
+                this.selecionar(item)
+            else
+                this.tirar(item)
+
+            this.atualizarMatrizPeloItem(item)
+            this.widget.value = this.transformarMatrizEmJson()
+        }
+
+        static limparGrade() {
+            this.celulas.forEach((item) => this.tirar(item))
+        }
+
+        static preparar() {
+            this.preencherMatrizPeloJson({{ widget.value|safe }})
+            
+            this.celulas.forEach((item) => {
+                this.atualizarItemPelaMatriz(item)
+
+                item.addEventListener('mouseover', (e) => {
+                    if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
+                        this.selecionarOuTirar(item)
+                })
+
+                item.addEventListener('mousedown', (e) => {
+                    if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
+                        this.selecionarOuTirar(item)
+                })
+            })
+        }
+    }
+
+    Disponibilidade.preparar()
 </script>

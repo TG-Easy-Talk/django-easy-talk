@@ -56,7 +56,8 @@ function getTabelaDisponibilidadeComoMatriz() {
             horariosDoDia.push(`${intervalo.horario_inicio} - ${intervalo.horario_fim}`)
 
         if (horariosDoDia.length < numeroMaximoIntervalos)
-            horariosDoDia.push("-".repeat(numeroMaximoIntervalos - horariosDoDia.length))
+            for (let j = horariosDoDia.length; j < numeroMaximoIntervalos; j++)
+                horariosDoDia.push("-")
 
         matriz.push(horariosDoDia)
     }
@@ -71,7 +72,6 @@ function getTabelaDisponibilidadeComoMatriz() {
         for (let j = 0; j < qtdColunasTransp; j++)
             matrizTransp[i][j] = matriz[j][i]
     }
-
     return matrizTransp
 }
 
