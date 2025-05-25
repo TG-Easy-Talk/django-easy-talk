@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import datetime as _dt
-from datetime import datetime, time
-from typing import TypedDict, List, Optional, Any
+from datetime import timedelta
+from typing import TypedDict, List, Optional
 from django.core.exceptions import ValidationError
 
 
@@ -22,39 +21,43 @@ class Disponibilidade(TypedDict):
     Representa a disponibilidade semanal de um psicólogo,
     associando dia da semana a uma lista de intervalos.
     """
-    dia_semana: int  # ISO weekday: 1 (segunda) … 7 (domingo)
+    dia_semana: int  #  1 (domingo) … 7 (sábado)
     intervalos: List[Intervalo]
 
 
-def parse_time(s: str) -> time | None:
+def to_timedelta(horario: str) -> timedelta:
     """
-    Converte string "HH:MM" para datetime.time.
+    Converte string "HH:MM" para timedelta.
     Retorna None se o formato for inválido.
-    Aceita "24:00", retornando time(0, 0).
     """
-    if s == "24:00":
-        return time(0, 0)
     try:
-        return datetime.strptime(s, TIME_FMT).time()
-    except (ValueError, TypeError):
-        return None
+        h, m = map(int, horario.split(":"))
+        td = timedelta(hours=h, minutes=m)
 
+        if td > timedelta(days=1):
+            raise ValueError
+        
+        return td
+
+    except ValueError:
+        return None
+    
 
 def esta_no_intervalo(
-        hora: time,
-        intervalo: Intervalo | None,
+    instante: timedelta,
+    intervalo: Intervalo | None,
 ) -> bool:
     """
-    Retorna True se hora estiver entre inicio e fim, incluindo limites.
-    Se inicio ou fim forem None, retorna False.
+    Verifica se o instante está contido no intervalo, incluindo limites.
+    Se o intervalo for None, retorna False.
     """
     if intervalo is None:
         return False
     
-    inicio = parse_time(intervalo["horario_inicio"])
-    fim = parse_time(intervalo["horario_fim"])
+    inicio = to_timedelta(intervalo["horario_inicio"])
+    fim = to_timedelta(intervalo["horario_fim"])
 
-    return inicio <= hora <= fim
+    return inicio <= instante <= fim
 
 
 def validate_disponibilidade(
@@ -115,13 +118,8 @@ def validate_disponibilidade_horarios(data):
     """
     for i, item in enumerate(data):
         for j, intervalo in enumerate(item["intervalos"]):
-            if intervalo["horario_inicio"] == "24:00":
-                raise ValidationError(
-                    f"Item #{i}.intervalos[{j}]: '24:00' só pode ser usado como horário de fim"
-                )
-            
-            horario_inicio = parse_time(intervalo["horario_inicio"])
-            horario_fim = parse_time(intervalo["horario_fim"])
+            horario_inicio = to_timedelta(intervalo["horario_inicio"])
+            horario_fim = to_timedelta(intervalo["horario_fim"])
 
             # Valida o formato de horário
             if horario_inicio is None or horario_fim is None:
@@ -129,26 +127,29 @@ def validate_disponibilidade_horarios(data):
                     f"Item #{i}.intervalos[{j}]: formato de horário inválido"
                 )
             
-            datetime_inicio = datetime.combine(datetime.today(), horario_inicio)
-            hoje_ou_amanha = datetime.today() if intervalo["horario_fim"] != "24:00" else datetime.today() + _dt.timedelta(days=1)
-            datetime_fim = datetime.combine(hoje_ou_amanha, horario_fim)
-
             # Valida que o horário de início é menor que o horário de fim
-            if datetime_inicio >= datetime_fim:
+            if horario_inicio >= horario_fim:
                 raise ValidationError(
                     f"Item #{i}.intervalos[{j}]: o horário de início deve ser menor que o horário de fim"
                 )
 
-            if (datetime_fim - datetime_inicio).total_seconds() < 3600:
+            # Valida que o intervalo tem pelo menos 1 hora de duração
+            if horario_fim - horario_inicio < timedelta(hours=1):
                 raise ValidationError(
                     f"Item #{i}.intervalos[{j}]: o horário de fim deve ser, no mínimo, 1 hora depois do horário de início"
+                )
+            
+            # Valida que o horário termine em :00
+            if not (horario_inicio.seconds % 3600 == 0 and horario_fim.seconds % 3600 == 0):
+                raise ValidationError(
+                    f"Item #{i}.intervalos[{j}]: os horários devem terminar em :00"
                 )
             
             
         # Valida que não há sobreposição de intervalos
         for j, intervalo in enumerate(item["intervalos"]):
-            horario_inicio = parse_time(intervalo["horario_inicio"])
-            horario_fim = parse_time(intervalo["horario_fim"])
+            horario_inicio = to_timedelta(intervalo["horario_inicio"])
+            horario_fim = to_timedelta(intervalo["horario_fim"])
 
             for k in range(len(item["intervalos"])):
                 if k == j:
@@ -380,6 +381,26 @@ def main():
             "dia_semana": 5,
             "intervalos": [
                 {"horario_inicio": "00:00", "horario_fim": "24:00"},
+            ]
+        }],
+
+        # 25
+        [{
+            "dia_semana": 5,
+            "intervalos": [
+                {"horario_inicio": "13:00", "horario_fim": "14:00"},
+                {"horario_inicio": "08:00", "horario_fim": "12:00"},
+                {"horario_inicio": "06:00", "horario_fim": "07:00"},
+            ]
+        }],
+
+        # 26
+        [{
+            "dia_semana": 5,
+            "intervalos": [
+                {"horario_inicio": "13:00", "horario_fim": "14:00"},
+                {"horario_inicio": "08:00", "horario_fim": "12:00"},
+                {"horario_inicio": "06:00", "horario_fim": "07:00"},
             ]
         }],
     ]
