@@ -19,7 +19,7 @@
                 <div class="hstack gap-5">
                     <div>
                         <h6 class="text-body-secondary">Valor da consulta</h6>
-                        <h6 class="fw-semibold">R${{ psicologo.valor_consulta }}</h6>
+                        <h6 class="fw-semibold">R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}</h6>
                     </div>
                     <div>
                         <h6 class="text-body-secondary">CRP</h6>

@@ -229,6 +229,8 @@
                 item.addEventListener('mouseover', (e) => this.lidarComEvento(e, item))
                 item.addEventListener('mousedown', (e) => this.lidarComEvento(e, item))
             })
+
+            this.widget.value = this.transformarMatrizEmJson()
         }
     }
 

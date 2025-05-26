@@ -136,7 +136,7 @@ class PsicologoChangeForm(forms.ModelForm):
             'placeholder': 'Apresente-se para os pacientes do EasyTalk...',
         })
         self.fields['foto'].widget = forms.FileInput()
-        self.fields['disponibilidade'].widget = DisponibilidadeInput()
+        self.fields['disponibilidade'].widget = DisponibilidadeInput(self.instance.disponibilidade)
 
 
 class ConsultaCreationForm(forms.ModelForm):
