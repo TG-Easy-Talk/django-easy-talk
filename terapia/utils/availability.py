@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TypedDict, List, Optional
 from django.core.exceptions import ValidationError
+from terapia.constants import CONSULTA_DURACAO_MAXIMA
 
 
 TIME_FMT = "%H:%M"
@@ -66,7 +67,7 @@ def validate_disponibilidade(
     """
     Valida o atributo disponibilidade em dois aspectos:
     1) estrutura do JSON;
-    2) horários (formato correto, início < fim, duração mínima de 1 hora, sem sobreposição de intervalos).
+    2) horários (formato correto, início < fim, duração mínima de 1 consulta, sem sobreposição de intervalos).
     """
     validate_disponibilidade_json(data)
     validate_disponibilidade_horarios(data)
@@ -113,7 +114,7 @@ def validate_disponibilidade_horarios(data):
     - Garante que o horário esteja no formato "HH:MM".
     - Garante que o horário esteja dentro do intervalo de 00:00 a 23:59.
     - Garante que o horário de início seja menor que o horário de fim.
-    - Garante que o intervalo tenha pelo menos 1 hora de duração.
+    - Garante que o intervalo tenha pelo menos 1 consulta de duração.
     - Garante que não haja sobreposição de intervalos.
     """
     for i, item in enumerate(data):
@@ -133,10 +134,10 @@ def validate_disponibilidade_horarios(data):
                     f"Item #{i}.intervalos[{j}]: o horário de início deve ser menor que o horário de fim"
                 )
 
-            # Valida que o intervalo tem pelo menos 1 hora de duração
-            if horario_fim - horario_inicio < timedelta(hours=1):
+            # Valida que o intervalo tem pelo menos 1 consulta de duração
+            if horario_fim - horario_inicio < CONSULTA_DURACAO_MAXIMA:
                 raise ValidationError(
-                    f"Item #{i}.intervalos[{j}]: o horário de fim deve ser, no mínimo, 1 hora depois do horário de início"
+                    f"Item #{i}.intervalos[{j}]: o intervalo deve ter pelo menos 1 consulta ({CONSULTA_DURACAO_MAXIMA.total_seconds() / 60:.0f} minutos) de duração"
                 )
             
             # Valida que o horário termine em :00

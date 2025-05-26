@@ -10,22 +10,23 @@ from terapia.utils.availability import (
     esta_no_intervalo,
 )
 from terapia.utils.validators import (
-    validate_uma_hora_antecedencia,
+    validate_antecedencia,
     validate_valor_consulta,
 )
 from datetime import datetime, timedelta
 from django.contrib import admin
+from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
 
 
 class BasePacienteOuPsicologo(models.Model):
     def ja_tem_consulta_que_ocupa_o_tempo(self, consulta):
         """
         Verifica se o psicólogo já tem alguma consulta marcada que tomará tempo da
-        consulta que se deseja marcar na data e hora especificados.
+        consulta que se deseja marcar.
         """
         return self.consultas.filter(
-            Q(data_hora_marcada__gt = consulta.data_hora_marcada - timedelta(hours=1)) &
-            Q(data_hora_marcada__lt = consulta.data_hora_marcada + timedelta(hours=1)) &
+            Q(data_hora_marcada__gt = consulta.data_hora_marcada - CONSULTA_DURACAO_MAXIMA) &
+            Q(data_hora_marcada__lt = consulta.data_hora_marcada + CONSULTA_DURACAO_MAXIMA) &
             ~ Q(estado=EstadoConsulta.CANCELADA) & # Desconsiderar consultas canceladas
             ~ Q(pk=consulta.pk) # Desconsiderar a própria consulta
         ).exists()
@@ -126,11 +127,38 @@ class Psicologo(BasePacienteOuPsicologo):
     @property
     @admin.display(boolean=True)
     def esta_com_perfil_completo(self):
+        """
+        Retorna True se o psicólogo tem perfil completo, ou seja,
+        se possui valor de consulta, pelo menos uma especialização e disponibilidade definida.
+        """
         return bool(
             self.valor_consulta and
             self.especializacoes.exists() and
             self.disponibilidade
         )
+    
+    @property
+    def proximo_intervalo_disponivel(self):
+        """
+        Retorna o próximo intervalo de disponibilidade do psicólogo.
+        Se não houver disponibilidade, retorna None.
+        """
+        pass
+        # if not self.disponibilidade:
+        #     return None
+
+        # agora = datetime.now()
+
+        # for _ in range(1, 8):
+        #     instante = timedelta(hours=agora.hour, minutes=agora.minute) + CONSULTA_ANTECEDENCIA_MINIMA
+
+        #     # Considerar apenas horário, ignorando o dia
+        #     if instante >= timedelta(days=1):
+        #         instante.days = 0 
+
+        #     dia_semana = (instante.isoweekday() % 7) + 1
+
+        #     intervalo = self.get_intervalo_para_essa_consulta(instante, dia_semana)
             
 
     class Meta:
@@ -160,46 +188,50 @@ class Psicologo(BasePacienteOuPsicologo):
         return reverse("perfil", kwargs={"pk": self.pk})
     
 
-    def get_intervalo_dessa_hora(self, hora, dia_semana):
+    def get_intervalo_para_essa_consulta(self, consulta):
         """
-        Dentre os intervalos de disponibilidade de um dia da semana específico,
-        retorna o intervalo em que a hora enviada está.
+        Retorna o intervalo da disponibilidade em que a consulta se encaixa, se houver.
 
-        @param hora: Hora a ser verificada (datetime.time)
+        @param horario: Horário a ser verificado (timedelta)
         @param dia_semana: Dia da semana do intervalo (1 = domingo, 7 = sábado)
-        @return: Intervalo em que a hora está ou None se não estiver em nenhum intervalo.
+        @return: Intervalo em que a consulta se encaixa ou None se não houver.
         """
-        if self.disponibilidade is None:
+        if not self.disponibilidade:
             return None
+        
+        dhm = consulta.data_hora_marcada
+        dia_semana = (dhm.isoweekday() % 7) + 1 # 1 (domingo) a 7 (sábado)
+        horario_inicio = timedelta(hours=dhm.hour, minutes=dhm.minute)
+
+        intervalo_encontrado = None
 
         for disp in self.disponibilidade:
             if disp["dia_semana"] == dia_semana:
                 for intervalo in disp["intervalos"]:
-                    if esta_no_intervalo(hora, intervalo):
-                        return intervalo
-        return None
+                    if esta_no_intervalo(horario_inicio, intervalo):
+                        intervalo_encontrado = intervalo
+        
+        if intervalo_encontrado is None:
+            return None
+        
+        horario_fim = horario_inicio + CONSULTA_DURACAO_MAXIMA
+
+        if not esta_no_intervalo(horario_fim, intervalo_encontrado):
+            return None
+        
+        return intervalo_encontrado
 
 
-    def tem_intervalo_para_essa_data_hora(self, data_hora_marcada):
+    def tem_intervalo_para_essa_consulta(self, consulta):
         """
-        Verifica se há algum intervalo de disponibilidade para a data e hora marcadas.
-        Além disso, verifica se a consulta terminará antes do fim do intervalo.
+        Retorna True se há algum intervalo de disponibilidade para a consulta que se deseja marcar.
+        Caso contrário, retorna False.
         """
-        # Verificar se o início da consulta está em algum intervalo
-        dia_semana = (data_hora_marcada.isoweekday() % 7) + 1 # 1 (domingo) a 7 (sábado)
-        hora_inicio = data_hora_marcada.time()
-
-        intervalo = self.get_intervalo_dessa_hora(hora_inicio, dia_semana)
+        intervalo = self.get_intervalo_para_essa_consulta(consulta)
 
         if intervalo is None:
             return False
-        
-        # Verificar se a consulta terminará antes do fim do intervalo
-        data_hora_inicio = datetime.combine(datetime.today(), hora_inicio) # Passar para datetime para poder somar 1 hora
-        data_hora_final = data_hora_inicio + timedelta(hours=1)
-        hora_final = data_hora_final.time()
-
-        return esta_no_intervalo(hora_final, intervalo)
+        return True
 
 
     def tem_disponibilidade_para_essa_consulta(self, consulta):
@@ -207,76 +239,10 @@ class Psicologo(BasePacienteOuPsicologo):
         Verifica se o psicólogo tem disponibilidade para uma consulta em um determinado dia e horário.
         """
         return (
-            self.disponibilidade is not None
-            and self.tem_intervalo_para_essa_data_hora(consulta.data_hora_marcada)
-            and not self.ja_tem_consulta_que_ocupa_o_tempo(consulta)
+            self.disponibilidade and
+            self.tem_intervalo_para_essa_consulta(consulta) and
+            not self.ja_tem_consulta_que_ocupa_o_tempo(consulta)
         )
-
-
-    def get_intervalos_do_dia(self, dia_semana):
-        if (1 <= dia_semana <= 7) is False:
-            raise ValueError("O dia da semana deve ser um número entre 1 (domingo) e 7 (sábado).")
-
-        for disp in self.disponibilidade:
-            if disp["dia_semana"] == dia_semana:
-                return disp["intervalos"]
-        return []
-
-
-    def get_numero_maximo_intervalos(self):
-        return max(len(disp["intervalos"]) for disp in self.disponibilidade)
-
-
-    def get_tabela_disponibilidade_como_matriz(self):
-        """
-        Monta a tabela de disponibilidade na forma de matriz,
-        onde cada coluna representa um dia da semana.
-        """
-        numero_maximo_intervalos = self.get_numero_maximo_intervalos()
-        matriz = []
-        
-        for i in range(1, 8):
-            intervalos_do_dia = self.get_intervalos_do_dia(i)
-            horarios_do_dia = []
-
-            for intervalo in intervalos_do_dia:
-                horarios_do_dia.append(f"{intervalo['horario_inicio']} - {intervalo['horario_fim']}")
-
-            if len(horarios_do_dia) < numero_maximo_intervalos:
-                horarios_do_dia += ["-"] * (numero_maximo_intervalos - len(horarios_do_dia))
-
-            matriz.append(horarios_do_dia)
-
-        # Transpor a matriz
-        qtd_colunas_transp = 7
-        qtd_linhas_transp = numero_maximo_intervalos
-        matriz_transp = [['' for _ in range(qtd_colunas_transp)] for _ in range(qtd_linhas_transp)]
-
-        for i in range(len(matriz)):
-            for j in range(len(matriz[i])):
-                matriz_transp[j][i] = matriz[i][j]
-
-        return matriz_transp
-    
-
-    def get_tabela_disponibilidade_como_html(self):
-        """
-        Monta o HTML do corpo da tabela de disponibilidade do psicólogo.
-        """
-        if not self.disponibilidade:
-            return "<tr>" + "<td colspan='7'>Nenhum horário disponível</td>" + "</tr>"
-
-        tbody_inner_html = ""
-
-        for linha in self.get_tabela_disponibilidade_como_matriz():
-            tbody_inner_html += "<tr>"
-
-            for intervalo in linha:
-                tbody_inner_html += f"<td>{intervalo}</td>"
-
-            tbody_inner_html += "</tr>"
-
-        return tbody_inner_html
 
 
 class EstadoConsulta(models.TextChoices):
@@ -290,7 +256,7 @@ class EstadoConsulta(models.TextChoices):
 class Consulta(models.Model):
     data_hora_marcada = models.DateTimeField(
         "Data e hora marcadas para a consulta",
-        validators=[validate_uma_hora_antecedencia],
+        validators=[validate_antecedencia],
     )
     duracao = models.IntegerField(
         "Duração que a consulta teve em minutos",
@@ -311,7 +277,6 @@ class Consulta(models.Model):
     class Meta:
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
-        ordering = ['-data_hora_marcada']
 
     def clean(self):
         super().clean()

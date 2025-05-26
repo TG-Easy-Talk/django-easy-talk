@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='consulta',
             name='data_hora_marcada',
-            field=models.DateTimeField(validators=[terapia.utils.validators.validate_uma_hora_antecedencia], verbose_name='Data e hora para as quais a consulta foi marcada'),
+            field=models.DateTimeField(validators=[terapia.utils.validators.validate_antecedencia], verbose_name='Data e hora para as quais a consulta foi marcada'),
         ),
         migrations.AlterField(
             model_name='consulta',

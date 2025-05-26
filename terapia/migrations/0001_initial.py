@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             name='Consulta',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_hora_marcada', models.DateTimeField(validators=[terapia.utils.validators.validate_uma_hora_antecedencia], verbose_name='Data e Hora Marcada')),
+                ('data_hora_marcada', models.DateTimeField(validators=[terapia.utils.validators.validate_antecedencia], verbose_name='Data e Hora Marcada')),
                 ('duracao', models.IntegerField(verbose_name='Duração que a consulta teve em minutos')),
                 ('estado', models.CharField(choices=[('SOLICITADA', 'Solicitada'), ('CONFIRMADA', 'Confirmada'), ('CANCELADA', 'Cancelada'), ('EM_ANDAMENTO', 'Em andamento'), ('FINALIZADA', 'Finalizada')], default='SOLICITADA', max_length=20, verbose_name='Estado')),
                 ('anotacoes', models.TextField(blank=True, null=True, verbose_name='Anotações')),
