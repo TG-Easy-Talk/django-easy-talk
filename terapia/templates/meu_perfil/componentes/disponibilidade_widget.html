@@ -69,30 +69,27 @@
         {% endfor %}
     {% endfor %}
 </div>
-<div class="d-flex justify-content-end">
-    <a type="button" class="link-primary" onclick="Disponibilidade.limparGrade()">Limpar grade</a>
-    <a type="button" class="link-primary" onclick="Disponibilidade.limparGrade()">Limpar grade</a>
+<div class="d-flex justify-content-end gap-3">
+    <a type="button" class="link-primary" onclick="DisponibilidadeWidget.limparGrade()">Limpar grade</a>
+    <a type="button" class="link-primary" onclick="DisponibilidadeWidget.redefinir()">Redefinir</a>
 </div>
 
 <input type="{{ widget.type }}" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}>
 
+<div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
+{% include 'geral/tabela_disponibilidade.html' with disponibilidade=widget.value|safe %}
+
 <script>
-    document.querySelectorAll('[draggable="false"]').forEach((item) => {
-        item.classList.add('prevent-select')
 
-        // Prevenir que elementos sejam arrastados quando o usuário estiver arrastando o mouse na grade
-        item.addEventListener('dragstart', (e) => e.preventDefault())
-    })
-
-    class Disponibilidade {
+    class DisponibilidadeWidget {
         static widget = document.querySelector('input[name="{{ widget.name }}"]')
         static celulas = document.querySelectorAll('[data-grade]')
         static classesNaoSelecionado = ["bg-body-secondary"]
         static classesSelecionado = ["bg-secondary"]
         static matriz = []
-        static disponibilidade = []
+        static disponibilidade = {{ widget.value|safe }}
 
-        static preencherMatrizPeloJson(json) {
+        static preencherMatrizPelaDisponibilidade() {
             for (let i = 0; i < 7; i++) {
                 this.matriz[i] = []
                 for (let j = 0; j < 24; j++) {
@@ -101,7 +98,7 @@
                 }
             }
 
-            json.forEach((disp) => {
+            this.disponibilidade.forEach((disp) => {
                 const i = Number(disp.dia_semana - 1)
                 const intervalos = disp.intervalos
 
@@ -188,31 +185,53 @@
                 this.tirar(item)
 
             this.atualizarMatrizPeloItem(item)
+            this.atualizarInputETabela()
+        }
+
+        static atualizarInputETabela() {
             this.widget.value = this.transformarMatrizEmJson()
+            DisponibilidadeTabela.disponibilidade = JSON.parse(this.widget.value)
+            DisponibilidadeTabela.atualizar()
         }
 
         static limparGrade() {
-            this.celulas.forEach((item) => this.tirar(item))
+            this.celulas.forEach((item) => {
+                this.tirar(item)
+                this.atualizarMatrizPeloItem(item)
+            })
+
+            this.atualizarInputETabela()
+        }
+
+        static redefinir() {
+            this.preencherMatrizPelaDisponibilidade()
+            this.celulas.forEach((item) => this.atualizarItemPelaMatriz(item))
+            this.atualizarInputETabela()
+        }
+
+        static lidarComEvento(e, item) {
+            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
+                this.selecionarOuTirar(item)
         }
 
         static preparar() {
-            this.preencherMatrizPeloJson({{ widget.value|safe }})
-            
+            document.querySelectorAll('[draggable="false"]').forEach((item) => {
+                item.classList.add('prevent-select')
+
+                // Prevenir que elementos sejam arrastados quando o usuário estiver arrastando o mouse na grade
+                item.addEventListener('dragstart', (e) => e.preventDefault())
+            })
+
+            this.preencherMatrizPelaDisponibilidade()
+
             this.celulas.forEach((item) => {
                 this.atualizarItemPelaMatriz(item)
-
-                item.addEventListener('mouseover', (e) => {
-                    if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-                        this.selecionarOuTirar(item)
-                })
-
-                item.addEventListener('mousedown', (e) => {
-                    if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-                        this.selecionarOuTirar(item)
-                })
+                item.addEventListener('mouseover', (e) => this.lidarComEvento(e, item))
+                item.addEventListener('mousedown', (e) => this.lidarComEvento(e, item))
             })
         }
     }
 
-    Disponibilidade.preparar()
+    DisponibilidadeWidget.preparar()
+
 </script>

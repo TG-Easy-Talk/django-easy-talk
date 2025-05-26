@@ -50,8 +50,6 @@
         </div>
         {{ form.disponibilidade }} {{ form.disponibilidade.errors }}
 
-        <div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
-        {% include 'geral/tabela_disponibilidade.html' with disponibilidade=form.instance.disponibilidade %}
     </div>
 
     {% comment %} <div class="vstack gap-2">

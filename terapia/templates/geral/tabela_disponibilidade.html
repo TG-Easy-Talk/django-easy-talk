@@ -26,62 +26,70 @@
 </div>
 
 <script>
-disponibilidade = {{ disponibilidade|safe }}
 
-function getIntervalosDoDia(diaSemana) {
-    if (!(1 <= diaSemana <= 7)) {
-        throw new Error("O dia da semana deve ser um número entre 1 (domingo) e 7 (sábado).")
+    class DisponibilidadeTabela {
+        static disponibilidade = {{ disponibilidade|safe }}
+        static tbody = document.getElementById('tbodyDisponibilidade')
+
+        static getIntervalosDoDia(diaSemana) {
+            for (const disp of this.disponibilidade)
+                if (disp.dia_semana === diaSemana)
+                    return disp.intervalos
+
+            return []
+        }
+
+        static getNumeroMaximoIntervalos() {
+            return Math.max(...this.disponibilidade.map(disp => disp.intervalos.length))
+        }
+
+        static getTabelaDisponibilidadeComoMatriz() {
+            const numeroMaximoIntervalos = this.getNumeroMaximoIntervalos()
+            const matriz = []
+
+            for (let i = 1; i <= 7; i++) {
+                const intervalosDoDia = this.getIntervalosDoDia(i)
+                const horariosDoDia = []
+
+                for (const intervalo of intervalosDoDia)
+                    horariosDoDia.push(`${intervalo.horario_inicio} - ${intervalo.horario_fim}`)
+
+                if (horariosDoDia.length < numeroMaximoIntervalos)
+                    for (let j = horariosDoDia.length; j < numeroMaximoIntervalos; j++)
+                        horariosDoDia.push("-")
+
+                matriz.push(horariosDoDia)
+            }
+
+            // Transpor a matriz
+            const qtdColunasTransp = 7
+            const qtdLinhasTransp = numeroMaximoIntervalos
+            const matrizTransp = []
+
+            for (let i = 0; i < qtdLinhasTransp; i++) {
+                matrizTransp[i] = []
+                for (let j = 0; j < qtdColunasTransp; j++)
+                    matrizTransp[i][j] = matriz[j][i]
+            }
+            return matrizTransp
+        }
+
+        static getTabelaDisponibilidadeComoHtml() {
+            if (this.disponibilidade.length === 0)
+                return `<tr>` + `<td>-</td>`.repeat(7) + `</tr>`
+
+            const tbodyInnerHtml = this.getTabelaDisponibilidadeComoMatriz()
+                .map(linha => `<tr>${linha.map(intervalo => `<td>${intervalo}</td>`).join('')}</tr>`)
+                .join('')
+
+            return tbodyInnerHtml
+        }
+
+        static atualizar() {
+            this.tbody.innerHTML = this.getTabelaDisponibilidadeComoHtml()
+        }
     }
 
-    for (disp of disponibilidade)
-        if (disp.dia_semana === diaSemana)
-            return disp.intervalos
+    DisponibilidadeTabela.atualizar()
 
-    return []
-}
-
-function getNumeroMaximoIntervalos() {
-    return Math.max(...disponibilidade.map(disp => disp.intervalos.length))
-}
-
-function getTabelaDisponibilidadeComoMatriz() {
-    const numeroMaximoIntervalos = getNumeroMaximoIntervalos()
-    const matriz = []
-
-    for (let i = 1; i <= 7; i++) {
-        const intervalosDoDia = getIntervalosDoDia(i)
-        const horariosDoDia = []
-
-        for (const intervalo of intervalosDoDia)
-            horariosDoDia.push(`${intervalo.horario_inicio} - ${intervalo.horario_fim}`)
-
-        if (horariosDoDia.length < numeroMaximoIntervalos)
-            for (let j = horariosDoDia.length; j < numeroMaximoIntervalos; j++)
-                horariosDoDia.push("-")
-
-        matriz.push(horariosDoDia)
-    }
-
-    // Transpor a matriz
-    const qtdColunasTransp = 7
-    const qtdLinhasTransp = numeroMaximoIntervalos
-    const matrizTransp = []
-
-    for (let i = 0; i < qtdLinhasTransp; i++) {
-        matrizTransp[i] = []
-        for (let j = 0; j < qtdColunasTransp; j++)
-            matrizTransp[i][j] = matriz[j][i]
-    }
-    return matrizTransp
-}
-
-function getTabelaDisponibilidadeComoHtml() {
-    const tbodyInnerHtml = getTabelaDisponibilidadeComoMatriz()
-        .map(linha => `<tr>${linha.map(intervalo => `<td>${intervalo}</td>`).join('')}</tr>`)
-        .join('')
-
-    return tbodyInnerHtml
-}
-
-document.getElementById('tbodyDisponibilidade').innerHTML = getTabelaDisponibilidadeComoHtml()
 </script>
