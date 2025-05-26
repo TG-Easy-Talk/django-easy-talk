@@ -14,6 +14,7 @@ from terapia.utils.validators import (
     validate_valor_consulta,
 )
 from datetime import datetime, timedelta
+from django.contrib import admin
 
 
 class BasePacienteOuPsicologo(models.Model):
@@ -74,32 +75,39 @@ class Especializacao(models.Model):
         return self.titulo
 
 
+class PsicologoCompletosManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            Q(valor_consulta__isnull=False) &
+            Q(especializacoes__isnull=False) &
+            ~ Q(disponibilidade__exact=[])
+        ).distinct()
+
+
 class Psicologo(BasePacienteOuPsicologo):
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='psicologo'
+        related_name='psicologo',
     )
     nome_completo = models.CharField("Nome Completo", max_length=50)
     crp = models.CharField("CRP", max_length=20, unique=True, validators=[validate_crp])
     foto = models.ImageField("Foto", upload_to='psicologos/fotos/', blank=True, null=True)
-    sobre_mim = models.TextField("Sobre Mim", blank=True)
+    sobre_mim = models.TextField("Sobre Mim", blank=True, null=True)
     valor_consulta = models.DecimalField(
         "Valor da Consulta",
         max_digits=10,
         decimal_places=2,
         blank=True,
         null=True,
-        validators=[
-            validate_valor_consulta,
-        ],
+        validators=[validate_valor_consulta],
         help_text="Entre R$ 20,00 e R$ 4.999,99",
     )
     disponibilidade = models.JSONField(
         "Disponibilidade",
         default=list,
         blank=True,
-        validators=[validate_disponibilidade]
+        validators=[validate_disponibilidade],
     )
     especializacoes = models.ManyToManyField(
         Especializacao,
@@ -108,10 +116,22 @@ class Psicologo(BasePacienteOuPsicologo):
         blank=True,
     )
 
+    objects = models.Manager() # Manager padrão (deve ser declarado explicitamente por conta do manager customizado abaixo)
+    completos = PsicologoCompletosManager() # Manager para psicólogos com perfil completo
+
     @property
     def primeiro_nome(self):
         return self.nome_completo.split()[0]
-
+    
+    @property
+    @admin.display(boolean=True)
+    def esta_com_perfil_completo(self):
+        return bool(
+            self.valor_consulta and
+            self.especializacoes.exists() and
+            self.disponibilidade
+        )
+            
 
     class Meta:
         verbose_name = "Psicólogo"
@@ -286,7 +306,7 @@ class Consulta(models.Model):
     anotacoes = models.TextField("Anotações", blank=True, null=True)
     checklist_tarefas = models.TextField("Checklist de tarefas", blank=True, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='consultas')
-    psicologo = models.ForeignKey(Psicologo, verbose_name="Psicólogo", on_delete=models.CASCADE, related_name='consultas')
+    psicologo = models.ForeignKey(Psicologo, on_delete=models.CASCADE, related_name='consultas')
 
     class Meta:
         verbose_name = "Consulta"

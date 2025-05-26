@@ -167,7 +167,7 @@ class PesquisaView(ListView, GetFormMixin):
     allow_empty = True
 
     def get_queryset(self):
-        queryset = Psicologo.objects.all()
+        queryset = Psicologo.completos.all()
 
         form = self.get_form()
 

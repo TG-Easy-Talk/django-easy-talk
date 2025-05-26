@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils import timezone
+from django.contrib import admin
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin, BaseUserManager
 
@@ -41,10 +41,12 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         ordering = ['email']
 
     @property
+    @admin.display(boolean=True)
     def is_psicologo(self):
         return hasattr(self, 'psicologo')
 
     @property
+    @admin.display(boolean=True)
     def is_paciente(self):
         return hasattr(self, 'paciente')
 
