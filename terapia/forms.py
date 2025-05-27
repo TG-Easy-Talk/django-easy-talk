@@ -151,7 +151,7 @@ class ConsultaCreationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
         self.psicologo = psicologo
-        self.fields['data_hora_marcada'].widget = CustomDateTimeInput()
+        self.fields['data_hora_marcada'].widget = CustomDateTimeInput(attrs={"step": "3600"})
 
     def _post_clean(self):
         # Setar os campos de paciente e psicólogo antes da validação da model

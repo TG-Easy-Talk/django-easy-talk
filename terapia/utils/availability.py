@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import timedelta
-from typing import TypedDict, List, Optional
+from datetime import timedelta, date, datetime, time
+from typing import TypedDict, List
 from django.core.exceptions import ValidationError
 from terapia.constants import CONSULTA_DURACAO_MAXIMA
 
@@ -26,10 +26,11 @@ class Disponibilidade(TypedDict):
     intervalos: List[Intervalo]
 
 
-def to_timedelta(horario: str) -> timedelta:
+def str_horario_to_timedelta(horario: str) -> timedelta | None:
     """
     Converte string "HH:MM" para timedelta.
-    Retorna None se o formato for inválido.
+    Só aceita horários de 00:00 a 24:00.
+    Retorna None se o formato da string for inválido.
     """
     try:
         h, m = map(int, horario.split(":"))
@@ -40,8 +41,46 @@ def to_timedelta(horario: str) -> timedelta:
         
         return td
 
-    except ValueError:
+    except (ValueError, TypeError):
         return None
+
+
+def combinar_data_com_str_horario(data: date, horario: str) -> datetime | None:
+    """
+    Combina uma data com uma string "HH:MM", retornando o datetime resultante.
+    Só aceita horários de 00:00 a 24:00.
+    Retorna None se o formato da string for inválido.
+    """
+    try:
+        h, m = map(int, horario.split(":"))
+        td = timedelta(hours=h, minutes=m)
+
+        if td > timedelta(days=1):
+            raise ValueError
+
+        return datetime.combine(data, time(0, 0)) + td
+
+    except (ValueError, TypeError):
+        return None
+
+
+def get_horas_intervalo(intervalo: Intervalo) -> List[int]:
+    """
+    Retorna uma lista de horas (0-23) representando o intervalo de tempo.
+    Exemplo: {"horario_inicio": "08:00", "horario_fim": "11:00"} retorna [8, 9, 10].
+    """
+    inicio = str_horario_to_timedelta(intervalo["horario_inicio"])
+    fim = str_horario_to_timedelta(intervalo["horario_fim"])
+
+    if inicio is None or fim is None:
+        return []
+
+    horas = []
+
+    for hora in range(inicio.seconds // 3600, fim.seconds // 3600):
+        horas.append(hora)
+
+    return horas
     
 
 def esta_no_intervalo(
@@ -55,14 +94,14 @@ def esta_no_intervalo(
     if intervalo is None:
         return False
     
-    inicio = to_timedelta(intervalo["horario_inicio"])
-    fim = to_timedelta(intervalo["horario_fim"])
+    inicio = str_horario_to_timedelta(intervalo["horario_inicio"])
+    fim = str_horario_to_timedelta(intervalo["horario_fim"])
 
     return inicio <= instante <= fim
 
 
 def validate_disponibilidade(
-        data: Optional[List[Disponibilidade]]
+        data: List[Disponibilidade]
 ) -> None:
     """
     Valida o atributo disponibilidade em dois aspectos:
@@ -119,8 +158,8 @@ def validate_disponibilidade_horarios(data):
     """
     for i, item in enumerate(data):
         for j, intervalo in enumerate(item["intervalos"]):
-            horario_inicio = to_timedelta(intervalo["horario_inicio"])
-            horario_fim = to_timedelta(intervalo["horario_fim"])
+            horario_inicio = str_horario_to_timedelta(intervalo["horario_inicio"])
+            horario_fim = str_horario_to_timedelta(intervalo["horario_fim"])
 
             # Valida o formato de horário
             if horario_inicio is None or horario_fim is None:
@@ -141,7 +180,7 @@ def validate_disponibilidade_horarios(data):
                 )
             
             # Valida que o horário termine em :00
-            if not (horario_inicio.seconds % 3600 == 0 and horario_fim.seconds % 3600 == 0):
+            if not (horario_inicio.total_seconds() % 3600 == 0 and horario_fim.total_seconds() % 3600 == 0):
                 raise ValidationError(
                     f"Item #{i}.intervalos[{j}]: os horários devem terminar em :00"
                 )
@@ -149,8 +188,8 @@ def validate_disponibilidade_horarios(data):
             
         # Valida que não há sobreposição de intervalos
         for j, intervalo in enumerate(item["intervalos"]):
-            horario_inicio = to_timedelta(intervalo["horario_inicio"])
-            horario_fim = to_timedelta(intervalo["horario_fim"])
+            horario_inicio = str_horario_to_timedelta(intervalo["horario_inicio"])
+            horario_fim = str_horario_to_timedelta(intervalo["horario_fim"])
 
             for k in range(len(item["intervalos"])):
                 if k == j:

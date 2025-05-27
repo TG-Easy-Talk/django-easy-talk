@@ -21,7 +21,15 @@
         <div class="hstack justify-content-between gap-3 flex-wrap">
             <div class="hstack gap-3 flex-wrap flex-grow-1">
                 <h6 class="fw-semibold mb-0">R${{ psicologo.valor_consulta }}</h6>
-                <div>Disponível em <span class="text-primary fw-medium text-wrap text-nowrap">06/04/2025, 15:00</span></div>
+                <div>Disponível em
+                    <span class="text-primary fw-medium text-wrap text-nowrap">
+                        {% if psicologo.proxima_data_hora_agendavel %}
+                            {{ psicologo.proxima_data_hora_agendavel }}
+                        {% else %}
+                            2 meses ou mais
+                        {% endif %}
+                    </span>
+                </div>
             </div>
         
             <div class="flex-grow-1">

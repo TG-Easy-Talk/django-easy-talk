@@ -8,18 +8,20 @@ from terapia.utils.cpf import validate_cpf
 from terapia.utils.availability import (
     validate_disponibilidade,
     esta_no_intervalo,
+    combinar_data_com_str_horario, get_horas_intervalo,
 )
 from terapia.utils.validators import (
-    validate_antecedencia,
+    validate_data_hora_marcada,
     validate_valor_consulta,
 )
-from datetime import datetime, timedelta
+from datetime import timedelta, datetime
 from django.contrib import admin
-from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
+from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
+from django.utils import timezone
 
 
 class BasePacienteOuPsicologo(models.Model):
-    def get_consulta_que_ocupa_essa_data_hora(self, data_hora):
+    def _get_consulta_que_ocupa_essa_data_hora(self, data_hora):
         """
         Retorna o queryset da consulta que ocupa o tempo da data e hora enviadas.
         """
@@ -35,7 +37,7 @@ class BasePacienteOuPsicologo(models.Model):
         Retorna True se há alguma consulta marcada que tomará o tempo da data e hora enviadas.
         Caso contrário, retorna False.
         """
-        return self.get_consulta_que_ocupa_essa_data_hora(data_hora).exists()
+        return self._get_consulta_que_ocupa_essa_data_hora(data_hora).exists()
 
 
     def ja_tem_consulta_que_ocupa_essa_outra(self, consulta):
@@ -43,7 +45,7 @@ class BasePacienteOuPsicologo(models.Model):
         Retorna True se o psicólogo já tem alguma consulta marcada que tomará o tempo da que se deseja agendar.
         Caso contrário, retorna False.
         """
-        return self.get_consulta_que_ocupa_essa_data_hora(consulta.data_hora_marcada).exclude(pk=consulta.pk).exists()
+        return self._get_consulta_que_ocupa_essa_data_hora(consulta.data_hora_marcada).exclude(pk=consulta.pk).exists()
     
 
     def get_url_foto_propria_ou_padrao(self):
@@ -153,30 +155,44 @@ class Psicologo(BasePacienteOuPsicologo):
         )
     
     @property
-    def proximo_intervalo_agendavel(self):
+    def proxima_data_hora_agendavel(self):
         """
-        Retorna o próximo intervalo agendável do psicólogo.
+        Retorna a data e hora agendáveis mais próximas do psicólogo.
         """
-        pass
-        # if not self.disponibilidade:
-        #     return None
+        if not self.disponibilidade:
+            return None
 
-        # agora = datetime.now()
-        # i = 0
+        i = 0
+        agora = datetime.now()
+        data_hora_agendavel_mais_proxima = agora + CONSULTA_ANTECEDENCIA_MINIMA
 
-        # while True:
-        #     instante = timedelta(hours=agora.hour, minutes=agora.minute) + CONSULTA_ANTECEDENCIA_MINIMA
+        if agora.day < data_hora_agendavel_mais_proxima.day:
+            i += 1
 
-        #     # Considerar apenas horário, ignorando o dia
-        #     if instante >= timedelta(days=1):
-        #         instante.days = 0 
+        while i < CONSULTA_ANTECEDENCIA_MAXIMA.days:
+            hoje = agora.date() + timedelta(days=i)
+            dia_semana = hoje.isoweekday() % 7 + 1  # 1 (domingo) a 7 (sábado)
 
-        #     dia_semana = (instante.isoweekday() % 7) + 1
+            for intervalo in self._get_intervalos_do_dia_semana(dia_semana):
+                for hora in get_horas_intervalo(intervalo):
+                    data_hora_inicio = combinar_data_com_str_horario(hoje, f"{hora}:00")
 
-        #     intervalo = self.get_intervalo_dessa_data_hora(instante, dia_semana)
+                    if (
+                        data_hora_inicio >= data_hora_agendavel_mais_proxima and
+                        not self.ja_tem_consulta_que_ocupa_essa_data_hora(data_hora_inicio)
+                    ):
+                        return data_hora_inicio
 
-        #     i += 1
-            
+            i += 1
+
+        return None
+
+        # Começando hoje, até 2 meses à frente
+         # Pra cada intervalo do dia da semana
+          # Do início do intervalo, até o fim do intervalo (andado a passos de duração de uma consulta)
+           # Verificar se o intervalo é agendável (ja tem consulta?)
+        # Não achou. Retorna None
+
 
     class Meta:
         verbose_name = "Psicólogo"
@@ -205,7 +221,7 @@ class Psicologo(BasePacienteOuPsicologo):
        
         return reverse("perfil", kwargs={"pk": self.pk})
     
-    def get_intervalos_do_dia_semana(self, dia_semana):
+    def _get_intervalos_do_dia_semana(self, dia_semana):
         """
         Retorna os intervalos de disponibilidade do psicólogo para um dia da semana específico.
 
@@ -218,7 +234,7 @@ class Psicologo(BasePacienteOuPsicologo):
         
         return None
 
-    def get_intervalo_dessa_data_hora(self, data_hora, dia_semana):
+    def _get_intervalo_dessa_data_hora(self, data_hora):
         """
         Retorna o intervalo de disponibilidade no qual se encaixaria uma consulta
         hipotética que começa na data e hora enviadas.
@@ -250,12 +266,12 @@ class Psicologo(BasePacienteOuPsicologo):
         return intervalo_encontrado
 
 
-    def tem_intervalo_para_essa_consulta(self, consulta):
+    def _tem_intervalo_para_essa_consulta(self, consulta):
         """
         Retorna True se há algum intervalo de disponibilidade para a consulta que se deseja agendar.
         Caso contrário, retorna False.
         """
-        intervalo = self.get_intervalo_dessa_data_hora(consulta.data_hora_marcada)
+        intervalo = self._get_intervalo_dessa_data_hora(consulta.data_hora_marcada)
 
         if intervalo is None:
             return False
@@ -267,9 +283,9 @@ class Psicologo(BasePacienteOuPsicologo):
         Retorna True se o psicólogo tem disponibilidade para a consulta que se deseja agendar.
         Caso contrário, retorna False.
         """
-        return (
+        return bool(
             self.disponibilidade and
-            self.tem_intervalo_para_essa_consulta(consulta) and
+            self._tem_intervalo_para_essa_consulta(consulta) and
             not self.ja_tem_consulta_que_ocupa_essa_outra(consulta)
         )
 
@@ -285,7 +301,7 @@ class EstadoConsulta(models.TextChoices):
 class Consulta(models.Model):
     data_hora_marcada = models.DateTimeField(
         "Data e hora marcadas para a consulta",
-        validators=[validate_antecedencia],
+        validators=[validate_data_hora_marcada],
     )
     duracao = models.IntegerField(
         "Duração que a consulta teve em minutos",
