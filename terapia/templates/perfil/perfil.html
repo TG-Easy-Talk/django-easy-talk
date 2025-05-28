@@ -75,7 +75,11 @@
 
                     {{ form }}
 
-                    {% if not request.user.is_paciente %}
+                    {% if request.user.is_anonymous %}
+                        <div class="text-body-secondary">
+                            Você precisa estar logado para agendar uma consulta.
+                        </div>
+                    {% elif not request.user.is_paciente %}
                         <div class="text-body-secondary">
                             Sua conta não é de paciente para poder agendar uma consulta.
                         </div>

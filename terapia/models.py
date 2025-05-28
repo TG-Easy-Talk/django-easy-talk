@@ -17,7 +17,6 @@ from terapia.utils.validators import (
 from datetime import timedelta, datetime
 from django.contrib import admin
 from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
-from django.utils import timezone
 
 
 class BasePacienteOuPsicologo(models.Model):
@@ -137,6 +136,10 @@ class Psicologo(BasePacienteOuPsicologo):
     objects = models.Manager() # Manager padrão (deve ser declarado explicitamente por conta do manager customizado abaixo)
     completos = PsicologoCompletosManager() # Manager para psicólogos com perfil completo
 
+    class Meta:
+        verbose_name = "Psicólogo"
+        verbose_name_plural = "Psicólogos"
+
     @property
     def primeiro_nome(self):
         return self.nome_completo.split()[0]
@@ -187,12 +190,6 @@ class Psicologo(BasePacienteOuPsicologo):
 
         return None
 
-
-    class Meta:
-        verbose_name = "Psicólogo"
-        verbose_name_plural = "Psicólogos"
-
-
     def clean(self):
         super().clean()
         # Checar se já há paciente relacionado
@@ -206,13 +203,10 @@ class Psicologo(BasePacienteOuPsicologo):
                 intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
                 disp["intervalos"] = intervalos
 
-
     def __str__(self):
         return self.nome_completo
-    
 
     def get_absolute_url(self):
-       
         return reverse("perfil", kwargs={"pk": self.pk})
     
     def _get_intervalos_do_dia_semana(self, dia_semana):
@@ -259,7 +253,6 @@ class Psicologo(BasePacienteOuPsicologo):
         
         return intervalo_encontrado
 
-
     def _tem_intervalo_para_essa_consulta(self, consulta):
         """
         Retorna True se há algum intervalo de disponibilidade para a consulta que se deseja agendar.
@@ -270,7 +263,6 @@ class Psicologo(BasePacienteOuPsicologo):
         if intervalo is None:
             return False
         return True
-
 
     def tem_disponibilidade_para_essa_consulta(self, consulta):
         """
