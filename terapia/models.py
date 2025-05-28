@@ -164,9 +164,9 @@ class Psicologo(BasePacienteOuPsicologo):
 
         i = 0
         agora = datetime.now()
-        data_hora_agendavel_mais_proxima = agora + CONSULTA_ANTECEDENCIA_MINIMA
+        suposta_data_hora_agendavel_mais_proxima = agora + CONSULTA_ANTECEDENCIA_MINIMA
 
-        if agora.day < data_hora_agendavel_mais_proxima.day:
+        if agora.day < suposta_data_hora_agendavel_mais_proxima.day:
             i += 1
 
         while i < CONSULTA_ANTECEDENCIA_MAXIMA.days:
@@ -178,7 +178,7 @@ class Psicologo(BasePacienteOuPsicologo):
                     data_hora_inicio = combinar_data_com_str_horario(hoje, f"{hora}:00")
 
                     if (
-                        data_hora_inicio >= data_hora_agendavel_mais_proxima and
+                        data_hora_inicio >= suposta_data_hora_agendavel_mais_proxima and
                         not self.ja_tem_consulta_que_ocupa_essa_data_hora(data_hora_inicio)
                     ):
                         return data_hora_inicio
@@ -186,12 +186,6 @@ class Psicologo(BasePacienteOuPsicologo):
             i += 1
 
         return None
-
-        # Começando hoje, até 2 meses à frente
-         # Pra cada intervalo do dia da semana
-          # Do início do intervalo, até o fim do intervalo (andado a passos de duração de uma consulta)
-           # Verificar se o intervalo é agendável (ja tem consulta?)
-        # Não achou. Retorna None
 
 
     class Meta:
@@ -226,13 +220,13 @@ class Psicologo(BasePacienteOuPsicologo):
         Retorna os intervalos de disponibilidade do psicólogo para um dia da semana específico.
 
         @param dia_semana: Dia da semana (1 = domingo, 7 = sábado).
-        @return: Lista de intervalos de disponibilidade ou None se não houver.
+        @return: Lista de intervalos de disponibilidade ou [] se não houver.
         """
         for disp in self.disponibilidade:
             if disp["dia_semana"] == dia_semana:
                 return disp["intervalos"]
         
-        return None
+        return []
 
     def _get_intervalo_dessa_data_hora(self, data_hora):
         """
