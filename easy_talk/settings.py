@@ -29,8 +29,6 @@ INSTALLED_APPS = [
     'terapia.apps.TerapiaConfig',
 ]
 
-AUTH_USER_MODEL = "usuario.Usuario"
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -71,7 +69,7 @@ DATABASES = {
     }
 }
 
-# Password validation
+# Authentication
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -89,6 +87,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = "usuario.Usuario"
+
+LOGIN_REDIRECT_URL = LOGOUT_REDIRECT_URL = 'home'
+LOGIN_URL = reverse_lazy('login')
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -100,10 +103,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-LOGIN_REDIRECT_URL = LOGOUT_REDIRECT_URL = 'home'
-LOGIN_URL = reverse_lazy('login')
-
-# Static files (CSS, JavaScript, Images)
+# Static and media files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
@@ -119,5 +119,7 @@ MEDIA_URL = 'media/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Other settings
 
 FORM_RENDERER = 'easy_talk.renderers.CustomFormRenderer'
