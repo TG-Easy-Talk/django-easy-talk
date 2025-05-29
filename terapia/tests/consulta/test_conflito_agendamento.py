@@ -47,13 +47,13 @@ class ConsultaModelTest(TestCase):
         Consulta.objects.create(
             paciente=self.paciente,
             psicologo=self.psicologo,
-            data_hora_marcada=self.base_dt,
+            data_hora_agendada=self.base_dt,
             duracao=60
         )
         dup = Consulta(
             paciente=self.paciente,
             psicologo=self.psicologo,
-            data_hora_marcada=self.base_dt,
+            data_hora_agendada=self.base_dt,
             duracao=60
         )
         with self.assertRaises(ValidationError) as cm:

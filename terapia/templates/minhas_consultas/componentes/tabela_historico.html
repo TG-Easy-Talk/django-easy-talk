@@ -50,7 +50,7 @@
                             {{ consulta.get_estado_display }}
                         </span>
                     </td>
-                    <td>{{ consulta.data_hora_marcada|date:"d/m/Y" }} às {{ consulta.data_hora_marcada|time }}</td>
+                    <td>{{ consulta.data_hora_agendada|date:"d/m/Y" }} às {{ consulta.data_hora_agendada|time }}</td>
                     <td>
                         {% if usuario.is_psicologo and consulta.get_estado_display == "Solicitada" %}
                             <button class="btn btn-success btn-sm text-white" onclick="naoImplementado()">Aceitar</button>

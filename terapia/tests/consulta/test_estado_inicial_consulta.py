@@ -49,7 +49,7 @@ class ConsultaModelTest(TestCase):
         consulta = Consulta(
             paciente=self.paciente,
             psicologo=self.psicologo,
-            data_hora_marcada=self.base_dt,
+            data_hora_agendada=self.base_dt,
             duracao=60,
         )
         self.assertEqual(consulta.estado, EstadoConsulta.SOLICITADA)

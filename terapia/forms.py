@@ -75,6 +75,10 @@ class PsicologoFiltrosForm(forms.Form):
         queryset=Especializacao.objects.all(),
         label="Especialização",
     )
+    disponibilidade = forms.DateTimeField(
+        required=False,
+        widget=CustomDateTimeInput(),
+    )
     valor_minimo = forms.DecimalField(
         required=False,
         min_value=0,
@@ -145,13 +149,13 @@ class ConsultaCreationForm(forms.ModelForm):
     
     class Meta:
         model = Consulta
-        fields = ['data_hora_marcada']
+        fields = ['data_hora_agendada']
 
     def __init__(self, *args, usuario, psicologo, **kwargs):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
         self.psicologo = psicologo
-        self.fields['data_hora_marcada'].widget = CustomDateTimeInput(attrs={"step": "3600"})
+        self.fields['data_hora_agendada'].widget = CustomDateTimeInput(attrs={"step": "3600"})
 
     def _post_clean(self):
         # Setar os campos de paciente e psicólogo antes da validação da model

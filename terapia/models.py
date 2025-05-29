@@ -8,10 +8,11 @@ from terapia.utils.cpf import validate_cpf
 from terapia.utils.availability import (
     validate_disponibilidade,
     esta_no_intervalo,
-    combinar_data_com_str_horario, get_horas_intervalo,
+    combinar_data_com_str_horario,
+    get_horas_intervalo,
 )
 from terapia.utils.validators import (
-    validate_data_hora_marcada,
+    validate_data_hora_agendada,
     validate_valor_consulta,
 )
 from datetime import timedelta, datetime
@@ -20,32 +21,19 @@ from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MAXIMA, CO
 
 
 class BasePacienteOuPsicologo(models.Model):
-    def _get_consulta_que_ocupa_essa_data_hora(self, data_hora):
+    def ja_tem_consulta_em(self, data_hora):
         """
-        Retorna o queryset da consulta que ocupa o tempo da data e hora enviadas.
+        Verifica se o psicólogo tem um intervalo de disponibilidade no qual se
+        encaixa uma consulta que começa na data e hora enviadas.
+        
+        @param data_hora: Data e hora em que a consulta começa.
+        @return: True se a consulta se encaixa no intervalo, False caso contrário.
         """
         return self.consultas.filter(
-            Q(data_hora_marcada__gt = data_hora - CONSULTA_DURACAO_MAXIMA) &
-            Q(data_hora_marcada__lt = data_hora + CONSULTA_DURACAO_MAXIMA) &
+            Q(data_hora_agendada__gt = data_hora - CONSULTA_DURACAO_MAXIMA) &
+            Q(data_hora_agendada__lt = data_hora + CONSULTA_DURACAO_MAXIMA) &
             ~ Q(estado=EstadoConsulta.CANCELADA) # Desconsiderar consultas canceladas
-        )
-
-
-    def ja_tem_consulta_que_ocupa_essa_data_hora(self, data_hora):
-        """
-        Retorna True se há alguma consulta marcada que tomará o tempo da data e hora enviadas.
-        Caso contrário, retorna False.
-        """
-        return self._get_consulta_que_ocupa_essa_data_hora(data_hora).exists()
-
-
-    def ja_tem_consulta_que_ocupa_essa_outra(self, consulta):
-        """
-        Retorna True se o psicólogo já tem alguma consulta marcada que tomará o tempo da que se deseja agendar.
-        Caso contrário, retorna False.
-        """
-        return self._get_consulta_que_ocupa_essa_data_hora(consulta.data_hora_marcada).exclude(pk=consulta.pk).exists()
-    
+        ).exists()
 
     def get_url_foto_propria_ou_padrao(self):
         if self.foto:
@@ -182,7 +170,7 @@ class Psicologo(BasePacienteOuPsicologo):
 
                     if (
                         data_hora_inicio >= suposta_data_hora_agendavel_mais_proxima and
-                        not self.ja_tem_consulta_que_ocupa_essa_data_hora(data_hora_inicio)
+                        not self.ja_tem_consulta_em(data_hora_inicio)
                     ):
                         return data_hora_inicio
 
@@ -222,15 +210,15 @@ class Psicologo(BasePacienteOuPsicologo):
         
         return []
 
-    def _get_intervalo_dessa_data_hora(self, data_hora):
+    def _get_intervalo_em(self, data_hora):
         """
-        Retorna o intervalo de disponibilidade no qual se encaixaria uma consulta
-        hipotética que começa na data e hora enviadas.
-
-        O intervalo deve ser suficiente para caber toda a duração da consulta.
-
+        Retorna, se houver, o intervalo no qual se encaixa uma consulta que começa
+        na data e hora enviadas.
+        
+        (A consulta deve caber completamente no intervalo para que ele seja retornado).
+        
         @param data_hora: Data e hora em que a consulta começa.
-        @return: Intervalo em que a consulta se encaixa ou None se não houver.
+        @return: O intervalo no qual a consulta se encaixa, None caso não exista.
         """
         dia_semana = (data_hora.isoweekday() % 7) + 1 # 1 (domingo) a 7 (sábado)
         horario_inicio = timedelta(hours=data_hora.hour, minutes=data_hora.minute)
@@ -253,26 +241,31 @@ class Psicologo(BasePacienteOuPsicologo):
         
         return intervalo_encontrado
 
-    def _tem_intervalo_para_essa_consulta(self, consulta):
+    def _tem_intervalo_em(self, data_hora):
         """
-        Retorna True se há algum intervalo de disponibilidade para a consulta que se deseja agendar.
-        Caso contrário, retorna False.
-        """
-        intervalo = self._get_intervalo_dessa_data_hora(consulta.data_hora_marcada)
+        Verifica se o psicólogo tem um intervalo de disponibilidade no qual se
+        encaixa uma consulta que começa na data e hora enviadas.
+        
+        (A consulta deve caber completamente no intervalo para que ele seja válido).
 
-        if intervalo is None:
-            return False
-        return True
-
-    def tem_disponibilidade_para_essa_consulta(self, consulta):
+        @param data_hora: Data e hora em que a consulta começa.
+        @return: True se a consulta se encaixa no intervalo, False caso contrário.
         """
-        Retorna True se o psicólogo tem disponibilidade para a consulta que se deseja agendar.
-        Caso contrário, retorna False.
+        intervalo = self._get_intervalo_em(data_hora)
+        return False if intervalo is None else True
+
+    def esta_agendavel_em(self, data_hora):
+        """
+        Verifica se o psicólogo tem disponibilidade para uma consulta que começa na
+        data e hora enviadas.
+        
+        @param data_hora: Data e hora em que a consulta começa.
+        @return: True se o psicólogo tem disponibilidade, False caso contrário.
         """
         return bool(
             self.disponibilidade and
-            self._tem_intervalo_para_essa_consulta(consulta) and
-            not self.ja_tem_consulta_que_ocupa_essa_outra(consulta)
+            self._tem_intervalo_em(data_hora) and
+            not self.ja_tem_consulta_em(data_hora)
         )
 
 
@@ -285,9 +278,16 @@ class EstadoConsulta(models.TextChoices):
 
 
 class Consulta(models.Model):
-    data_hora_marcada = models.DateTimeField(
-        "Data e hora marcadas para a consulta",
-        validators=[validate_data_hora_marcada],
+    data_hora_solicitada = models.DateTimeField(
+        "Data e hora em que a consulta foi solicitada",
+        # Essa linha de auto_now_add talvez precise mudar quando formos implementar fuso-horários diferentes.
+        # Ler a segunda "Note" em:
+        # https://docs.djangoproject.com/en/5.1/ref/models/fields/#django.db.models.DateField.auto_now_add
+        auto_now_add=True,
+    )
+    data_hora_agendada = models.DateTimeField(
+        "Data e hora agendadas para a consulta",
+        validators=[validate_data_hora_agendada],
     )
     duracao = models.IntegerField(
         "Duração que a consulta teve em minutos",
@@ -311,11 +311,11 @@ class Consulta(models.Model):
 
     def clean(self):
         super().clean()
-        if not self.psicologo.tem_disponibilidade_para_essa_consulta(self):
-            raise ValidationError({"data_hora_marcada": "O psicólogo não tem disponibilidade nessa data e horário"})
-        if self.paciente.ja_tem_consulta_que_ocupa_essa_outra(self):
-            raise ValidationError({"data_hora_marcada": "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar"})
+        if not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
+            raise ValidationError({"data_hora_agendada": "O psicólogo não tem disponibilidade nessa data e horário"})
+        if self.paciente.ja_tem_consulta_em(self.data_hora_agendada):
+            raise ValidationError({"data_hora_agendada": "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar"})
         
     def __str__(self):
-        return f"Consulta {self.estado.upper()} em {self.data_hora_marcada:%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
+        return f"Consulta {self.estado.upper()} em {self.data_hora_agendada:%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
     

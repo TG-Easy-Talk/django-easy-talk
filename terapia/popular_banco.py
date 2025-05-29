@@ -222,7 +222,7 @@ def popular_psicologos(sender, **kwargs):
                 "valor_consulta": item["valor_consulta"],
                 "sobre_mim": item["sobre_mim"],
                 "foto": item.get("foto"),
-                "disponibilidade": item.get("disponibilidade"),
+                "disponibilidade": item.get("disponibilidade", []),
             }
         )
         if created:

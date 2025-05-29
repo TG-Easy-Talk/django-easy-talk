@@ -41,6 +41,7 @@ class EspecializacaoAdmin(admin.ModelAdmin):
 
 @admin.register(Consulta)
 class ConsultaAdmin(admin.ModelAdmin):
-    list_display = ['data_hora_marcada', 'estado', 'paciente', 'psicologo']
+    readonly_fields = ['data_hora_agendada']
+    list_display = ['data_hora_agendada', 'estado', 'paciente', 'psicologo']
     search_fields = ['paciente__nome', 'psicologo__nome_completo']
-    list_filter = ['estado', 'data_hora_marcada']
+    list_filter = ['estado', 'data_hora_agendada']

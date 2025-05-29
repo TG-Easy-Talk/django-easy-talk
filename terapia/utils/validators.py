@@ -25,7 +25,7 @@ def validate_final_horario(value):
         raise ValidationError("O horário deve terminar em :00.")
 
 
-def validate_data_hora_marcada(value):
+def validate_data_hora_agendada(value):
     """
     - Garante que a data e hora atenda a antecedência mínima e máxima para agendamento.
     - Garante que o final do horário seja :00.
@@ -44,5 +44,5 @@ def validate_valor_consulta(value):
     max_value = Decimal('4999.99')
     if value < min_value or value > max_value:
         raise ValidationError(
-            f"O valor da consulta deve ser entre R$ {min_value:.2f} e R$ {max_value:.2f}"
+            f"O valor da consulta deve ser entre R${min_value:.2f} e R${max_value:.2f}"
         )

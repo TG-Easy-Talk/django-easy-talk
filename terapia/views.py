@@ -173,10 +173,11 @@ class PesquisaView(ListView, GetFormMixin):
 
         if form.is_valid():
             especializacao = form.cleaned_data.get("especializacao")
+            disponibilidade = form.cleaned_data.get("disponibilidade")
             valor_minimo = form.cleaned_data.get("valor_minimo")
             valor_maximo = form.cleaned_data.get("valor_maximo")
 
-            if especializacao:
+            if especializacao is not None:
                 queryset = queryset.filter(especializacoes=especializacao)
 
             if valor_minimo is not None:
@@ -184,6 +185,10 @@ class PesquisaView(ListView, GetFormMixin):
 
             if valor_maximo is not None:
                 queryset = queryset.filter(valor_consulta__lte=valor_maximo)
+
+            if disponibilidade is not None:
+                psicologo_ids = [psicologo.id for psicologo in queryset if psicologo.esta_agendavel_em(disponibilidade)]
+                queryset = queryset.filter(id__in=psicologo_ids)
 
         return queryset
 
@@ -204,7 +209,7 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
 
         if self.request.user.is_paciente:
             queryset = Consulta.objects.filter(paciente=self.request.user.paciente)
-        else:
+        elif self.request.user.is_psicologo:
             queryset = Consulta.objects.filter(psicologo=self.request.user.psicologo)
 
         form = self.get_form()
@@ -225,11 +230,11 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
                     queryset = queryset.filter(paciente=paciente_ou_psicologo)
 
             if data_inicial:
-                queryset = queryset.filter(data_hora_marcada__gte=data_inicial)
+                queryset = queryset.filter(data_hora_agendada__gte=data_inicial)
 
             if data_final:
                 # Somar 1 dia para incluir até as 23:59 da data final especificada
-                queryset = queryset.filter(data_hora_marcada__lte=data_final + timedelta(days=1))
+                queryset = queryset.filter(data_hora_agendada__lte=data_final + timedelta(days=1))
 
         return queryset
 
