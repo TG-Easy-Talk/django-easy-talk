@@ -4,18 +4,20 @@ from django.views.generic import TemplateView, FormView, ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import (
     PacienteCreationForm,
-    PsicologoCreationForm,
+    FakePsicologoCreationForm,
     PsicologoChangeForm,
     PsicologoFiltrosForm,
+    PsicologoInlineFormSet,
     ConsultaCreationForm,
     ConsultaFiltrosForm,
 )
-from django.urls import reverse_lazy
-from usuario.forms import EmailAuthenticationForm
+from django.urls import reverse_lazy, reverse
+from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 from .models import Psicologo, Consulta, EstadoConsulta
 from django.http import HttpResponseForbidden
 from datetime import timedelta
+from django.shortcuts import redirect
 
 
 class DeveTerCargoMixin(LoginRequiredMixin):
@@ -53,15 +55,14 @@ class FluxoAlternativoLoginContextMixin(ContextMixin):
     
     
 class CadastroEscolhaView(TemplateView, FluxoAlternativoLoginContextMixin):
-    template_name = 'conta/acesso/cadastro_escolha.html'
+    template_name = 'conta/cadastro_escolha.html'
 
 
 class CadastroView(FormView, FluxoAlternativoLoginContextMixin):
     """
     Superclasse para as views de cadastro de Paciente e Psicólogo. Não deve ser instanciada diretamente.
     """
-    template_name = 'conta/acesso/cadastro.html'
-    success_url = reverse_lazy('home')
+    template_name = 'conta/cadastro.html'
 
     def form_valid(self, form):
         user = form.save()
@@ -71,6 +72,7 @@ class CadastroView(FormView, FluxoAlternativoLoginContextMixin):
 
 class PacienteCadastroView(CadastroView):
     form_class = PacienteCreationForm
+    success_url = reverse_lazy('pesquisa')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -86,28 +88,54 @@ class PacienteCadastroView(CadastroView):
         return context
 
 
-class PsicologoCadastroView(CadastroView):
-    form_class = PsicologoCreationForm
+# class PsicologoCadastroView(CadastroView):
+#     form_class = FakePsicologoCreationForm
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["heading_form"] = "Cadastro de Profissional"
-        context["fluxos_alternativos"].append(
-            {
-                'url': reverse_lazy('cadastro_paciente'),
-                'pergunta': 'É paciente',
-                'link_texto': 'Cadastre-se como paciente',
-            }
-        )
-        return context
+#     def get_success_url(self):
+#         return reverse('pesquisa')
 
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context["heading_form"] = "Cadastro de Profissional"
+#         context["fluxos_alternativos"].append(
+#             {
+#                 'url': reverse_lazy('cadastro_paciente'),
+#                 'pergunta': 'É paciente',
+#                 'link_texto': 'Cadastre-se como paciente',
+#             }
+#         )
+#         return context
+
+
+class PsicologoCadastroView(TemplateView):
+    template_name = 'conta/cadastro.html'
+
+    def get(self, request, *args, **kwargs):
+        form_usuario = UsuarioCreationForm()
+        inlineformset = PsicologoInlineFormSet()
+        return self.render_to_response({'form': form_usuario, 'inlineformset': inlineformset})
+
+    def post(self, request, *args, **kwargs):
+        form_usuario = UsuarioCreationForm(request.POST)
+        inlineformset = PsicologoInlineFormSet(request.POST)
+        if form_usuario.is_valid() and inlineformset.is_valid():
+            usuario = form_usuario.save()
+            psicologos = inlineformset.save(commit=False)
+            for psicologo in psicologos:
+                psicologo.usuario = usuario
+                psicologo.save()
+
+            login(self.request, usuario)
+            return redirect('home')
+        return self.render_to_response({'form': form_usuario, 'inlineformset': inlineformset})
+    
 
 class CustomLoginView(LoginView):
     """
     Exibe o formulário de login e, em caso de sucesso,
     redireciona para LOGIN_REDIRECT_URL.
     """
-    template_name = 'conta/acesso/login.html'
+    template_name = 'conta/login.html'
     authentication_form = EmailAuthenticationForm
 
     def get_context_data(self, **kwargs):

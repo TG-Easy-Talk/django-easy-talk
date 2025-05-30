@@ -40,7 +40,17 @@ class PacienteCreationForm(UsuarioCreationForm):
         return usuario
 
 
-class PsicologoCreationForm(UsuarioCreationForm):
+PsicologoInlineFormSet = forms.inlineformset_factory(
+    Usuario,
+    Psicologo,
+    fields=['crp', 'nome_completo'],
+    extra=1,
+    can_delete=False,
+    renderer=FormComValidacaoRenderer(),
+)
+
+
+class FakePsicologoCreationForm(UsuarioCreationForm):
     default_renderer = FormComValidacaoRenderer
 
     nome_completo = forms.CharField(

@@ -33,7 +33,9 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
                         </li>
                         {% if request.user.is_psicologo %}
                             <li class="nav-item">
-                                <a class="nav-link text-nowrap" href="{% url 'meu_perfil' %}">Meu perfil</a>
+                                <a class="nav-link text-nowrap position-relative" href="{% url 'meu_perfil' %}">
+                                    Meu perfil
+                                </a>
                             </li>
                         {% endif %}
                         <li class="nav-item">

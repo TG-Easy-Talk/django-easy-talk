@@ -13,12 +13,13 @@
     </h1>
     <h3>{% block heading_form %}{% endblock %}</h3>
 
+    {% block inlineformset %}{% endblock %}
     {% block form %}{{ form }}{% endblock %}
 
     <button class="btn text-white btn-primary {% block classes_adicionais_submit %}{% endblock %}" type="submit">{% block texto_submit %}{% endblock %}</button>
 
     <div class="mt-3">
-        {% include 'conta/acesso/componentes/fluxos_alternativos.html' %}
+        {% include 'conta/componentes/fluxos_alternativos.html' %}
     </div>
 </form>
 

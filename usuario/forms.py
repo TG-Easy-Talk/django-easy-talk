@@ -7,6 +7,7 @@ from .models import Usuario
 
 
 class UsuarioCreationForm(forms.ModelForm):
+    default_renderer = FormComValidacaoRenderer
     password1 = forms.CharField(label="Senha", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Confirmar senha", widget=forms.PasswordInput)
 
@@ -32,6 +33,7 @@ class UsuarioCreationForm(forms.ModelForm):
 
 
 class UsuarioChangeForm(forms.ModelForm):
+    default_renderer = FormComValidacaoRenderer
     password = ReadOnlyPasswordHashField()
 
     class Meta:

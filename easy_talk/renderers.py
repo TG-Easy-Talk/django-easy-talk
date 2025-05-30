@@ -79,7 +79,8 @@ class FormDeFiltrosRenderer(CustomFormRenderer):
                 # Adicionar o label do próprio campo como empty_label para os ModelChoiceFields
                 # Em vez de aparecer "-------" como opção selecionada, aparece a label do campo
                 elif isinstance(bound_field.field, forms.ModelChoiceField):
-                    bound_field.field.empty_label = bound_field.field.label
+                    if not bound_field.field.empty_label:
+                        bound_field.field.empty_label = bound_field.field.label
 
                 self.update_widget_classes(bound_field.field.widget, classes)
 

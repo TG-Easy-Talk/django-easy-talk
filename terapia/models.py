@@ -114,7 +114,6 @@ class Psicologo(BasePacienteOuPsicologo):
     disponibilidade = models.JSONField(
         "Disponibilidade",
         default=list,
-        blank=True,
         validators=[validate_disponibilidade],
     )
     especializacoes = models.ManyToManyField(
