@@ -266,6 +266,7 @@ class Psicologo(BasePacienteOuPsicologo):
         @return: True se o psicólogo tem disponibilidade, False caso contrário.
         """
         return bool(
+            data_hora >= timezone.now() + CONSULTA_ANTECEDENCIA_MINIMA and
             self.disponibilidade and
             self._tem_intervalo_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
