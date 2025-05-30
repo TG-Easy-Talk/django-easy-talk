@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
+from django.contrib import admin
+from django.utils import timezone
 from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
 from terapia.utils.availability import (
@@ -15,8 +17,7 @@ from terapia.utils.validators import (
     validate_data_hora_agendada,
     validate_valor_consulta,
 )
-from datetime import timedelta, datetime
-from django.contrib import admin
+from datetime import timedelta
 from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
 
 
@@ -81,13 +82,15 @@ class Especializacao(models.Model):
 
 
 class PsicologoCompletosManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(
+    def get_filtros(self):
+        return (
             Q(valor_consulta__isnull=False) &
             Q(especializacoes__isnull=False) &
             ~ Q(disponibilidade__exact=[])
-        ).distinct()
-
+        )
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(self.get_filtros()).distinct()
 
 class Psicologo(BasePacienteOuPsicologo):
     usuario = models.OneToOneField(
@@ -154,7 +157,7 @@ class Psicologo(BasePacienteOuPsicologo):
             return None
 
         i = 0
-        agora = datetime.now()
+        agora = timezone.now()
         suposta_data_hora_agendavel_mais_proxima = agora + CONSULTA_ANTECEDENCIA_MINIMA
 
         if agora.day < suposta_data_hora_agendavel_mais_proxima.day:
@@ -166,7 +169,7 @@ class Psicologo(BasePacienteOuPsicologo):
 
             for intervalo in self._get_intervalos_do_dia_semana(dia_semana):
                 for hora in get_horas_intervalo(intervalo):
-                    data_hora_inicio = combinar_data_com_str_horario(hoje, f"{hora}:00")
+                    data_hora_inicio = combinar_data_com_str_horario(hoje, f"{hora}:00", agora.tzinfo)
 
                     if (
                         data_hora_inicio >= suposta_data_hora_agendavel_mais_proxima and
@@ -268,7 +271,6 @@ class Psicologo(BasePacienteOuPsicologo):
             not self.ja_tem_consulta_em(data_hora)
         )
 
-
 class EstadoConsulta(models.TextChoices):
     SOLICITADA = 'SOLICITADA', 'Solicitada'
     CONFIRMADA = 'CONFIRMADA', 'Confirmada'
@@ -303,11 +305,17 @@ class Consulta(models.Model):
     anotacoes = models.TextField("Anotações", blank=True, null=True)
     checklist_tarefas = models.TextField("Checklist de tarefas", blank=True, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='consultas')
-    psicologo = models.ForeignKey(Psicologo, on_delete=models.CASCADE, related_name='consultas')
+    psicologo = models.ForeignKey(
+        Psicologo,
+        on_delete=models.CASCADE,
+        related_name='consultas',
+        limit_choices_to=Psicologo.completos.get_filtros(),
+    )
 
     class Meta:
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
+        ordering = ['-data_hora_solicitada', '-data_hora_agendada']
 
     def clean(self):
         super().clean()

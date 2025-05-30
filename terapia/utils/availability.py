@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta, date, datetime, time
+from datetime import timedelta, date, datetime, time, tzinfo
 from typing import TypedDict, List
 from django.core.exceptions import ValidationError
 from terapia.constants import CONSULTA_DURACAO_MAXIMA
@@ -45,7 +45,7 @@ def str_horario_to_timedelta(horario: str) -> timedelta | None:
         return None
 
 
-def combinar_data_com_str_horario(data: date, horario: str) -> datetime | None:
+def combinar_data_com_str_horario(data: date, horario: str, fuso_horario: tzinfo) -> datetime | None:
     """
     Combina uma data com uma string "HH:MM", retornando o datetime resultante.
     Só aceita horários de 00:00 a 24:00.
@@ -58,7 +58,7 @@ def combinar_data_com_str_horario(data: date, horario: str) -> datetime | None:
         if td > timedelta(days=1):
             raise ValueError
 
-        return datetime.combine(data, time(0, 0)) + td
+        return datetime.combine(data, time(0, 0), fuso_horario) + td
 
     except (ValueError, TypeError):
         return None
