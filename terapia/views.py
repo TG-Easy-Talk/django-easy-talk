@@ -4,14 +4,13 @@ from django.views.generic import TemplateView, FormView, ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import (
     PacienteCreationForm,
-    FakePsicologoCreationForm,
+    PsicologoCreationForm,
     PsicologoChangeForm,
     PsicologoFiltrosForm,
-    PsicologoInlineFormSet,
     ConsultaCreationForm,
     ConsultaFiltrosForm,
 )
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse_lazy
 from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 from .models import Psicologo, Consulta, EstadoConsulta
@@ -22,7 +21,11 @@ from django.shortcuts import redirect
 
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_psicologo and not request.user.is_paciente:
+        if (
+            request.user.is_authenticated and
+            not request.user.is_psicologo and
+            not request.user.is_paciente
+        ):
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
 
@@ -58,77 +61,50 @@ class CadastroEscolhaView(TemplateView, FluxoAlternativoLoginContextMixin):
     template_name = 'conta/cadastro_escolha.html'
 
 
-class CadastroView(FormView, FluxoAlternativoLoginContextMixin):
-    """
-    Superclasse para as views de cadastro de Paciente e Psicólogo. Não deve ser instanciada diretamente.
-    """
-    template_name = 'conta/cadastro.html'
-
-    def form_valid(self, form):
-        user = form.save()
-        login(self.request, user)
-        return super().form_valid(form)
-
-
-class PacienteCadastroView(CadastroView):
-    form_class = PacienteCreationForm
-    success_url = reverse_lazy('pesquisa')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["heading_form"] = "Cadastro de Paciente"
-        context["fluxos_alternativos"].append(
-            {
-                'url': reverse_lazy('cadastro_psicologo'),
-                'pergunta': 'É psicólogo',
-                'link_texto': 'Cadastre-se como profissional',
-            }
-        )
-
-        return context
-
-
-# class PsicologoCadastroView(CadastroView):
-#     form_class = FakePsicologoCreationForm
-
-#     def get_success_url(self):
-#         return reverse('pesquisa')
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context["heading_form"] = "Cadastro de Profissional"
-#         context["fluxos_alternativos"].append(
-#             {
-#                 'url': reverse_lazy('cadastro_paciente'),
-#                 'pergunta': 'É paciente',
-#                 'link_texto': 'Cadastre-se como paciente',
-#             }
-#         )
-#         return context
-
-
-class PsicologoCadastroView(TemplateView):
+class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
     template_name = 'conta/cadastro.html'
 
     def get(self, request, *args, **kwargs):
         form_usuario = UsuarioCreationForm()
-        inlineformset = PsicologoInlineFormSet()
-        return self.render_to_response({'form': form_usuario, 'inlineformset': inlineformset})
+        form_inline = self.get_form_inline_class()()
+        return self.render_to_response({'form': form_usuario, 'form_inline': form_inline})
 
     def post(self, request, *args, **kwargs):
         form_usuario = UsuarioCreationForm(request.POST)
-        inlineformset = PsicologoInlineFormSet(request.POST)
-        if form_usuario.is_valid() and inlineformset.is_valid():
+        form_inline = self.get_form_inline_class()(request.POST)
+        if form_usuario.is_valid() and form_inline.is_valid():
             usuario = form_usuario.save()
-            psicologos = inlineformset.save(commit=False)
-            for psicologo in psicologos:
-                psicologo.usuario = usuario
-                psicologo.save()
-
+            inline = form_inline.save(commit=False)
+            inline.usuario = usuario
+            inline.save()
+                
             login(self.request, usuario)
-            return redirect('home')
-        return self.render_to_response({'form': form_usuario, 'inlineformset': inlineformset})
+            return self.get_redirect()
+        
+        return self.render_to_response({'form': form_usuario, 'form_inline': form_inline})
+
+    def get_form_inline(self):
+        raise NotImplementedError("Subclasses devem implementar o método get_form_inline para retornar o formulário inline específico.")
     
+    def get_redirect(self):
+        raise NotImplementedError("Subclasses devem implementar o método get_redirect para retornar a URL de redirecionamento.")
+
+
+class PacienteCadastroView(CadastroView):
+    def get_form_inline_class(self):
+        return PacienteCreationForm
+
+    def get_redirect(self):
+        return redirect('pesquisa')
+
+
+class PsicologoCadastroView(CadastroView):
+    def get_form_inline_class(self):
+        return PsicologoCreationForm
+
+    def get_redirect(self):
+        return redirect('meu_perfil')
+
 
 class CustomLoginView(LoginView):
     """
@@ -154,7 +130,7 @@ class HomeView(TemplateView):
     template_name = "home.html"
 
 
-class ConsultaView(LoginRequiredMixin, TemplateView):
+class ConsultaView(DeveTerCargoMixin, TemplateView):
     template_name = "consulta/consulta.html"
 
 

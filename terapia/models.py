@@ -61,8 +61,8 @@ class Paciente(BasePacienteOuPsicologo):
 
     def clean(self):
         super().clean()
-        # Primeiro, verifica se o usuário já é psicólogo
-        if self.usuario.is_psicologo:
+        # Caso já exista no banco, checar se já há psicólogo relacionado
+        if self.pk and self.usuario.is_psicologo:
             raise ValidationError("Este usuário já está relacionado a um psicólogo.")
 
     def __str__(self):
@@ -182,8 +182,8 @@ class Psicologo(BasePacienteOuPsicologo):
 
     def clean(self):
         super().clean()
-        # Checar se já há paciente relacionado
-        if self.usuario.is_paciente:
+        # Caso já exista no banco, checar se já há paciente relacionado
+        if self.pk and self.usuario.is_paciente:
             raise ValidationError("Este usuário já está relacionado a um paciente.")
 
         # Ordenar os intervalos de cada dia em ordem cronológica crescente

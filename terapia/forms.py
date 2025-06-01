@@ -6,74 +6,25 @@ from easy_talk.renderers import (
     FormDeFiltrosRenderer
 )
 from .models import Paciente, Psicologo, Especializacao, Consulta, EstadoConsulta
-from usuario.forms import UsuarioCreationForm
-from .utils.crp import validate_crp
-from .utils.cpf import validate_cpf
 
 
 Usuario = get_user_model()
 
 
-class PacienteCreationForm(UsuarioCreationForm):
+class PacienteCreationForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
 
-    nome = forms.CharField(
-        max_length=50,
-    )
-    cpf = forms.CharField(
-        label="CPF",
-        max_length=14,
-        validators=[validate_cpf],
-    )
-
-    class Meta(UsuarioCreationForm.Meta):
-        model = Usuario
-        fields = ['cpf', 'nome', 'email'] # password1/password2 já vêm do pai
-
-    def save(self, commit=True):
-        usuario = super().save(commit=commit)
-        Paciente.objects.create(
-            usuario=usuario,
-            nome=self.cleaned_data['nome'],
-            cpf=self.cleaned_data['cpf']
-        )
-        return usuario
+    class Meta:
+        model = Paciente
+        fields = ['cpf', 'nome']
 
 
-PsicologoInlineFormSet = forms.inlineformset_factory(
-    Usuario,
-    Psicologo,
-    fields=['crp', 'nome_completo'],
-    extra=1,
-    can_delete=False,
-    renderer=FormComValidacaoRenderer(),
-)
-
-
-class FakePsicologoCreationForm(UsuarioCreationForm):
+class PsicologoCreationForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
 
-    nome_completo = forms.CharField(
-        max_length=50,
-    )
-    crp = forms.CharField(
-        label="CRP",
-        max_length=20,
-        validators=[validate_crp]
-    )
-
-    class Meta(UsuarioCreationForm.Meta):
-        model = Usuario
-        fields = ['crp', 'nome_completo', 'email'] # password1/password2 já vêm do pai
-
-    def save(self, commit=True):
-        usuario = super().save(commit=commit)
-        Psicologo.objects.create(
-            usuario=usuario,
-            nome_completo=self.cleaned_data["nome_completo"],
-            crp=self.cleaned_data["crp"],
-        )
-        return usuario
+    class Meta:
+        model = Psicologo
+        fields = ["crp", "nome_completo"]
 
 
 class PsicologoFiltrosForm(forms.Form):

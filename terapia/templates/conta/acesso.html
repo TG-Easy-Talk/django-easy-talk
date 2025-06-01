@@ -1,7 +1,5 @@
 {% extends 'geral/base.html' %}
 
-{% load static %}
-
 {% block div_conteudo_atributos %} class="container-fluid hstack justify-content-center flex-grow-1 p-5" {% endblock %}
 
 {% block conteudo %}
@@ -13,7 +11,7 @@
     </h1>
     <h3>{% block heading_form %}{% endblock %}</h3>
 
-    {% block inlineformset %}{% endblock %}
+    {% block form_inline %}{% endblock %}
     {% block form %}{{ form }}{% endblock %}
 
     <button class="btn text-white btn-primary {% block classes_adicionais_submit %}{% endblock %}" type="submit">{% block texto_submit %}{% endblock %}</button>
