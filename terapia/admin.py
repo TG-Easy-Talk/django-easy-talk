@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from usuario.admin import UsuarioAdmin
 
-from .models import Paciente, Psicologo, Consulta, Especializacao
+from .models import Paciente, Psicologo, Consulta, Especializacao, IntervaloDisponibilidade
 
 Usuario = get_user_model()
 
@@ -45,3 +45,8 @@ class ConsultaAdmin(admin.ModelAdmin):
     list_display = ['data_hora_agendada', 'estado', 'paciente', 'psicologo', 'data_hora_solicitada']
     search_fields = ['paciente__nome', 'psicologo__nome_completo']
     list_filter = ['estado', 'data_hora_agendada']
+
+
+@admin.register(IntervaloDisponibilidade)
+class IntervaloDisponibilidadeAdmin(admin.ModelAdmin):
+    pass

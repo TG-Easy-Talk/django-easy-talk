@@ -60,7 +60,7 @@ class ConsultaFiltrosForm(forms.Form):
 
     estado = forms.ChoiceField(
         required=False,
-        choices=[("", "Estado")] + EstadoConsulta.choices,
+        choices=EstadoConsulta.choices,
     )
     paciente_ou_psicologo = forms.ModelChoiceField(
         required=False,

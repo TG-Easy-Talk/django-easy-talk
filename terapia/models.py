@@ -48,12 +48,13 @@ class BasePacienteOuPsicologo(models.Model):
 class Paciente(BasePacienteOuPsicologo):
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
+        verbose_name="Usuário",
         on_delete=models.CASCADE,
-        related_name='paciente'
+        related_name="paciente",
     )
     nome = models.CharField("Nome", max_length=50)
     cpf = models.CharField("CPF", max_length=14, unique=True, validators=[validate_cpf])
-    foto = models.ImageField("Foto", upload_to='pacientes/fotos/', blank=True, null=True)
+    foto = models.ImageField("Foto", upload_to="pacientes/fotos/", blank=True, null=True)
 
     class Meta:
         verbose_name = "Paciente"
@@ -81,6 +82,18 @@ class Especializacao(models.Model):
         return self.titulo
 
 
+class DiasSemana(models.IntegerChoices):
+    # Segue o padrão do datetime.isoweekday() (1 = segunda, 7 = domingo)
+    SEGUNDA = 1, 'Segunda-feira'
+    TERCA = 2, 'Terça-feira'
+    QUARTA = 3, 'Quarta-feira'
+    QUINTA = 4, 'Quinta-feira'
+    SEXTA = 5, 'Sexta-feira'
+    SABADO = 6, 'Sábado'
+    DOMINGO = 7, 'Domingo'
+    __empty__ = "Dia da semana"
+
+
 class PsicologoCompletosManager(models.Manager):
     def get_filtros(self):
         return (
@@ -95,6 +108,7 @@ class PsicologoCompletosManager(models.Manager):
 class Psicologo(BasePacienteOuPsicologo):
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
+        verbose_name="Usuário",
         on_delete=models.CASCADE,
         related_name='psicologo',
     )
@@ -271,12 +285,41 @@ class Psicologo(BasePacienteOuPsicologo):
             not self.ja_tem_consulta_em(data_hora)
         )
 
+class IntervaloDisponibilidade(models.Model):
+    dia_semana_inicio = models.PositiveSmallIntegerField(
+        "Dia da semana do início do intervalo",
+        choices=DiasSemana.choices,
+    )
+    horario_inicio = models.TimeField("Horário de início do intervalo")
+    dia_semana_fim = models.PositiveSmallIntegerField(
+        "Dia da semana do fim do intervalo",
+        choices=DiasSemana.choices,
+    )
+    horario_fim = models.TimeField("Horário de fim do intervalo")
+    psicologo = models.ForeignKey(
+        Psicologo,
+        verbose_name="Psicólogo",
+        on_delete=models.CASCADE,
+        related_name="disp",
+        null=True,
+        blank=True,
+    )
+    
+    class Meta:
+        verbose_name = "Intervalo de Disponibilidade"
+        verbose_name_plural = "Intervalos de Disponibilidade"
+
+    def __str__(self):
+        return f"{self.get_dia_semana_inicio_display()} às {self.horario_inicio} - {self.get_dia_semana_fim_display()} às {self.horario_fim}"
+
+
 class EstadoConsulta(models.TextChoices):
-    SOLICITADA = 'SOLICITADA', 'Solicitada'
-    CONFIRMADA = 'CONFIRMADA', 'Confirmada'
-    CANCELADA = 'CANCELADA', 'Cancelada'
-    EM_ANDAMENTO = 'EM_ANDAMENTO', 'Em andamento'
-    FINALIZADA = 'FINALIZADA', 'Finalizada'
+    SOLICITADA = "SOLICITADA", "Solicitada"
+    CONFIRMADA = "CONFIRMADA", "Confirmada"
+    CANCELADA = "CANCELADA", "Cancelada"
+    EM_ANDAMENTO = "EM_ANDAMENTO", "Em andamento"
+    FINALIZADA = "FINALIZADA", "Finalizada"
+    __empty__ = "Estado"
 
 
 class Consulta(models.Model):
