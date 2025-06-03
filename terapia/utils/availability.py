@@ -176,7 +176,7 @@ def validate_disponibilidade_horarios(data):
             # Valida que o intervalo tem pelo menos 1 consulta de duração
             if horario_fim - horario_inicio < CONSULTA_DURACAO_MAXIMA:
                 raise ValidationError(
-                    f"Item #{i}.intervalos[{j}]: o intervalo deve ter pelo menos 1 consulta ({CONSULTA_DURACAO_MAXIMA.total_seconds() / 60:.0f} minutos) de duração"
+                    f"Item #{i}.intervalos[{j}]: o intervalo deve ter pelo menos 1 consulta ({CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos) de duração"
                 )
             
             # Valida que o horário termine em :00

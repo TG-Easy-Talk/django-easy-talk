@@ -10,7 +10,7 @@ def validate_antecedencia(value):
 
     if value < agora + CONSULTA_ANTECEDENCIA_MINIMA:
         raise ValidationError(
-            f"A consulta deve ser agendada com, no mínimo, {CONSULTA_ANTECEDENCIA_MINIMA.total_seconds() / 60:.0f} minutos de antecedência."
+            f"A consulta deve ser agendada com, no mínimo, {CONSULTA_ANTECEDENCIA_MINIMA.total_seconds() // 60} minutos de antecedência."
         )
     elif value > agora + CONSULTA_ANTECEDENCIA_MAXIMA:
         raise ValidationError(

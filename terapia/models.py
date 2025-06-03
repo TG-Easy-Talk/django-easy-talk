@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django.contrib import admin
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
@@ -80,18 +81,6 @@ class Especializacao(models.Model):
 
     def __str__(self):
         return self.titulo
-
-
-class DiasSemana(models.IntegerChoices):
-    # Segue o padrão do datetime.isoweekday() (1 = segunda, 7 = domingo)
-    SEGUNDA = 1, 'Segunda-feira'
-    TERCA = 2, 'Terça-feira'
-    QUARTA = 3, 'Quarta-feira'
-    QUINTA = 4, 'Quinta-feira'
-    SEXTA = 5, 'Sexta-feira'
-    SABADO = 6, 'Sábado'
-    DOMINGO = 7, 'Domingo'
-    __empty__ = "Dia da semana"
 
 
 class PsicologoCompletosManager(models.Manager):
@@ -285,17 +274,41 @@ class Psicologo(BasePacienteOuPsicologo):
             not self.ja_tem_consulta_em(data_hora)
         )
 
+
+INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (
+    "A data deste campo é apenas utilizada para obter o dia da semana do intervalo,"
+    " o que significa que a data em si não importa desde que o dia da semana esteja correto."
+    " Por conveniência, usa-se a semana de 01/jan/0007 até 07/jan/0007, isto é,"
+    " datetime(7, 1, 1) até datetime(7, 1, 7). A razão para isso é que nessa semana, o número do dia"
+    " do mês é o mesmo do dia da semana no formato ISO, ou seja:"
+    " 01/jan/0007 é segunda (1),"
+    " 02/jan/0007 é terça (2) ..."
+    " 07/jan/0007 é domingo (7)."
+)
+INTERVALO_DISPONIBILIDADE_DATA_HORA_RANGE_ERRO_MENSAGEM = "A data deve estar entre 01/jan/0007 e 07/jan/0007."
+INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDATORS = [
+    MinValueValidator(
+        timezone.datetime(7, 1, 1, 0, 0, 0, tzinfo=timezone.get_current_timezone()),
+        message=INTERVALO_DISPONIBILIDADE_DATA_HORA_RANGE_ERRO_MENSAGEM
+    ),
+    MaxValueValidator(
+        timezone.datetime(7, 1, 7, 23, 59, 59, tzinfo=timezone.get_current_timezone()),
+        message=INTERVALO_DISPONIBILIDADE_DATA_HORA_RANGE_ERRO_MENSAGEM
+    ),
+]
+
+
 class IntervaloDisponibilidade(models.Model):
-    dia_semana_inicio = models.PositiveSmallIntegerField(
-        "Dia da semana do início do intervalo",
-        choices=DiasSemana.choices,
+    data_hora_inicio = models.DateTimeField(
+        "Dia da semana e hora do início do intervalo",
+        help_text=INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT,
+        validators=INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDATORS,
     )
-    horario_inicio = models.TimeField("Horário de início do intervalo")
-    dia_semana_fim = models.PositiveSmallIntegerField(
-        "Dia da semana do fim do intervalo",
-        choices=DiasSemana.choices,
+    data_hora_fim = models.DateTimeField(
+        "Dia da semana e hora do fim do intervalo",
+        help_text=INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT,
+        validators=INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDATORS,
     )
-    horario_fim = models.TimeField("Horário de fim do intervalo")
     psicologo = models.ForeignKey(
         Psicologo,
         verbose_name="Psicólogo",
@@ -304,7 +317,7 @@ class IntervaloDisponibilidade(models.Model):
         null=True,
         blank=True,
     )
-    
+
     class Meta:
         verbose_name = "Intervalo de Disponibilidade"
         verbose_name_plural = "Intervalos de Disponibilidade"
@@ -312,6 +325,18 @@ class IntervaloDisponibilidade(models.Model):
     def __str__(self):
         return f"{self.get_dia_semana_inicio_display()} às {self.horario_inicio} - {self.get_dia_semana_fim_display()} às {self.horario_fim}"
 
+    def clean(self):
+        super().clean()
+        if self.data_hora_inicio is not None and self.data_hora_fim is not None:
+            if self.data_hora_fim < self.data_hora_inicio + CONSULTA_DURACAO_MAXIMA:
+                raise ValidationError(f"O fim do intervalo deve ser posterior ao início por, pelo menos, {CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos.")
+
+            self.data_hora_inicio.replace(second=0, microsecond=0)
+            self.data_hora_fim.replace(second=0, microsecond=0)
+            
+        if self.psicologo:
+            pass
+        
 
 class EstadoConsulta(models.TextChoices):
     SOLICITADA = "SOLICITADA", "Solicitada"
