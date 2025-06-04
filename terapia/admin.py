@@ -45,7 +45,12 @@ class ConsultaAdmin(admin.ModelAdmin):
     search_fields = ['paciente__nome', 'psicologo__nome_completo']
     list_filter = ['estado', 'data_hora_agendada']
 
+    def get_readonly_fields(self, request, obj=None):
+        if obj is not None:
+            return ['data_hora_agendada']
+        return []
+
 
 @admin.register(IntervaloDisponibilidade)
 class IntervaloDisponibilidadeAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['__str__', 'psicologo']
