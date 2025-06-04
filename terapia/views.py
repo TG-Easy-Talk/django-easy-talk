@@ -227,16 +227,16 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
             if estado:
                 queryset = queryset.filter(estado=estado)
 
-            if paciente_ou_psicologo:
+            if paciente_ou_psicologo is not None:
                 if self.request.user.is_paciente:
                     queryset = queryset.filter(psicologo=paciente_ou_psicologo)
                 else:
                     queryset = queryset.filter(paciente=paciente_ou_psicologo)
 
-            if data_inicial:
+            if data_inicial is not None:
                 queryset = queryset.filter(data_hora_agendada__gte=data_inicial)
 
-            if data_final:
+            if data_final is not None:
                 # Somar 1 dia para incluir até as 23:59 da data final especificada
                 queryset = queryset.filter(data_hora_agendada__lte=data_final + timedelta(days=1))
 

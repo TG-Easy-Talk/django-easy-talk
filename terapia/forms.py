@@ -16,7 +16,7 @@ class PacienteCreationForm(forms.ModelForm):
 
     class Meta:
         model = Paciente
-        fields = ['cpf', 'nome']
+        fields = ["cpf", "nome"]
 
 
 class PsicologoCreationForm(forms.ModelForm):
