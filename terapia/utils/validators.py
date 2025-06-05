@@ -1,8 +1,9 @@
 from decimal import Decimal
-
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from terapia.constants import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
+from datetime import datetime
+from datetime import UTC
     
 
 def validate_antecedencia(value):
@@ -45,4 +46,18 @@ def validate_valor_consulta(value):
     if value < min_value or value > max_value:
         raise ValidationError(
             f"O valor da consulta deve ser entre R${min_value:.2f} e R${max_value:.2f}"
+        )
+    
+
+def validate_intervalo_disponibilidade_datetime_range(value):
+    """
+    Garante que a data e hora estejam entre 00:00 de 01/07/2024 e 00:00 de 08/07/2024.
+    """
+    fuso_atual = timezone.get_current_timezone()
+    data_hora_minima = datetime(2024, 7, 1, 0, 0, tzinfo=fuso_atual)
+    data_hora_maxima = datetime(2024, 7, 8, 0, 0, tzinfo=fuso_atual)
+
+    if not (data_hora_minima <= value <= data_hora_maxima):
+        raise ValidationError(
+            "A data e hora devem estar entre 00:00 de 01/07/2024 e 00:00 de 08/07/2024."
         )

@@ -4,7 +4,6 @@ from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django.contrib import admin
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
@@ -17,6 +16,7 @@ from terapia.utils.availability import (
 from terapia.utils.validators import (
     validate_data_hora_agendada,
     validate_valor_consulta,
+    validate_intervalo_disponibilidade_datetime_range,
 )
 from datetime import timedelta, datetime, date
 from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
@@ -277,37 +277,25 @@ class Psicologo(BasePacienteOuPsicologo):
 INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (
     "A data deste campo é apenas utilizada para obter o dia da semana do intervalo,"
     " o que significa que a data em si não importa desde que o dia da semana esteja correto."
-    " Por conveniência, usa-se a semana de 01/01/0007 até 08/01/0007, isto é,"
-    " datetime(7, 1, 1) até datetime(7, 1, 8). A razão para isso é que nessa semana, o número do dia"
-    " do mês é o mesmo do dia da semana no formato ISO, ou seja:"
-    " 01/01/0007 é segunda (1),"
-    " 02/01/0007 é terça (2) ..."
-    " 07/01/0007 é domingo (7),"
-    " e 08/01/0007 é segunda (1) novamente."
+    " Por conveniência, usa-se a semana de 01/07/2024 até 08/07/2024, isto é,"
+    " datetime(2024, 7, 1, 0, 0) até datetime(2024, 7, 8, 0, 0). A razão para isso é que nessa semana,"
+    " o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja:"
+    " 01/07/2024 é segunda (1),"
+    " 02/07/2024 é terça (2) ..."
+    " 07/07/2024 é domingo (7),"
+    " e 08/07/2024 é segunda (1) novamente."
 )
-INTERVALO_DISPONIBILIDADE_DATA_HORA_RANGE_ERRO_MENSAGEM = "A data deve estar entre 01/01/0007 e 08/01/0007."
-INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDATORS = [
-    MinValueValidator(
-        datetime(7, 1, 1, 0, 0, 0, tzinfo=timezone.get_current_timezone()),
-        message=INTERVALO_DISPONIBILIDADE_DATA_HORA_RANGE_ERRO_MENSAGEM
-    ),
-    MaxValueValidator(
-        datetime(8, 1, 7, 0, 0, 0, tzinfo=timezone.get_current_timezone()),
-        message=INTERVALO_DISPONIBILIDADE_DATA_HORA_RANGE_ERRO_MENSAGEM
-    ),
-]
-
 
 class IntervaloDisponibilidade(models.Model):
     data_hora_inicio = models.DateTimeField(
         "Dia da semana e hora do início do intervalo",
         help_text=INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT,
-        validators=INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDATORS,
+        validators=[validate_intervalo_disponibilidade_datetime_range],
     )
     data_hora_fim = models.DateTimeField(
         "Dia da semana e hora do fim do intervalo",
         help_text=INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT,
-        validators=INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDATORS,
+        validators=[validate_intervalo_disponibilidade_datetime_range],
     )
     psicologo = models.ForeignKey(
         Psicologo,
@@ -317,20 +305,28 @@ class IntervaloDisponibilidade(models.Model):
     )
 
     @property
-    def dia_semana_inicio(self):
-        return self.data_hora_inicio.isoweekday()
+    def data_hora_inicio_local(self):
+        return self.data_hora_inicio.astimezone(tz=timezone.get_current_timezone())
     
     @property
-    def dia_semana_fim(self):
-        return self.data_hora_fim.isoweekday()
+    def data_hora_fim_local(self):
+        return self.data_hora_fim.astimezone(tz=timezone.get_current_timezone())
+
+    @property
+    def dia_semana_inicio_local(self):
+        return self.data_hora_inicio_local.isoweekday()
     
     @property
-    def hora_inicio(self):
-        return self.data_hora_inicio.time()
+    def dia_semana_fim_local(self):
+        return self.data_hora_fim_local.isoweekday()
     
     @property
-    def hora_fim(self):
-        return self.data_hora_fim.time()
+    def hora_inicio_local(self):
+        return self.data_hora_inicio_local.time()
+    
+    @property
+    def hora_fim_local(self):
+        return self.data_hora_fim_local.time()
     
     dias_semana_iso = {
         1: "Segunda",
@@ -343,23 +339,19 @@ class IntervaloDisponibilidade(models.Model):
     }
 
     @property
-    def nome_dia_semana_inicio(self):
-        return self.dias_semana_iso[self.dia_semana_inicio]
+    def nome_dia_semana_inicio_local(self):
+        return self.dias_semana_iso[self.dia_semana_inicio_local]
     
     @property
-    def nome_dia_semana_fim(self):
-        return self.dias_semana_iso[self.dia_semana_fim]
-    
-    @property
-    def datas_hora(self):
-        return (self.data_hora_inicio, self.data_hora_fim)
+    def nome_dia_semana_fim_local(self):
+        return self.dias_semana_iso[self.dia_semana_fim_local]
 
     class Meta:
         verbose_name = "Intervalo de Disponibilidade"
         verbose_name_plural = "Intervalos de Disponibilidade"
 
     def __str__(self):
-        return f"{self.nome_dia_semana_inicio} às {self.hora_inicio} - {self.nome_dia_semana_fim} às {self.hora_fim}"
+        return f"{self.nome_dia_semana_inicio_local} às {self.hora_inicio_local} - {self.nome_dia_semana_fim_local} às {self.hora_fim_local}"
 
     def contem(self, data_hora):
         """
@@ -368,31 +360,28 @@ class IntervaloDisponibilidade(models.Model):
         @param data_hora: A data e hora (a data em si será desprezada, considerando-se apenas o dia da semana)
         @return: True se estiver contido, False caso contrário.
         """
-        data_para_comparacao = date(7, 1, data_hora.isoweekday())
-        hora_para_comparacao = data_hora.time()
-        data_hora_para_comparacao = datetime.combine(data_para_comparacao, hora_para_comparacao, tzinfo=timezone.get_current_timezone())
-
-        return self.data_hora_inicio <= data_hora_para_comparacao <= self.data_hora_fim
+        return self.data_hora_inicio <= data_hora <= self.data_hora_fim
 
     def clean(self):
         super().clean()
-        # if self.data_hora_inicio is not None and self.data_hora_fim is not None:
-        #     if self.data_hora_fim < self.data_hora_inicio + CONSULTA_DURACAO_MAXIMA:
-        #         raise ValidationError(f"O fim do intervalo deve ser posterior ao início por, pelo menos, {CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos.")
-        #
-        #     # for data in self.datas_hora:
-        #     #     data.replace(second=0, microsecond=0)
-        #
-        #     if hasattr(self, "psicologo") and self.psicologo:
-        #         # Verificar se há sobreposição de intervalos
-        #         intervalos = self.psicologo.disp.exclude(pk=self.pk if self.pk else None)
-        #
-        #         for intervalo in intervalos:
-        #             if (
-        #                 self.contem(intervalo.data_hora_inicio) or self.contem(intervalo.data_hora_fim) or
-        #                 intervalo.contem(self.data_hora_inicio) or intervalo.contem(self.data_hora_fim)
-        #             ):
-        #                 raise ValidationError(f"Este intervalo sobrepõe este outro intervalo: {intervalo}")
+        if self.data_hora_inicio is not None and self.data_hora_fim is not None:
+            if self.data_hora_fim < self.data_hora_inicio + CONSULTA_DURACAO_MAXIMA:
+                raise ValidationError(f"O fim do intervalo deve ser posterior ao início por, pelo menos, {CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos.")
+        
+            # Desconsiderar segundos e microssegundos
+            self.data_hora_inicio = self.data_hora_inicio.replace(second=0, microsecond=0)
+            self.data_hora_fim = self.data_hora_fim.replace(second=0, microsecond=0)
+        
+            if hasattr(self, "psicologo") and self.psicologo:
+                # Verificar se há sobreposição de intervalos
+                intervalos = self.psicologo.disp.exclude(pk=self.pk if self.pk else None)
+        
+                for intervalo in intervalos:
+                    if (
+                        self.contem(intervalo.data_hora_inicio) or self.contem(intervalo.data_hora_fim) or
+                        intervalo.contem(self.data_hora_inicio) or intervalo.contem(self.data_hora_fim)
+                    ):
+                        raise ValidationError(f"Este intervalo sobrepõe este outro intervalo: {intervalo}")
         
 
 class EstadoConsulta(models.TextChoices):

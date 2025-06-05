@@ -2,7 +2,13 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from usuario.admin import UsuarioAdmin
 
-from .models import Paciente, Psicologo, Consulta, Especializacao, IntervaloDisponibilidade
+from .models import (
+    Paciente,
+    Psicologo,
+    Consulta,
+    Especializacao,
+    IntervaloDisponibilidade,
+)
 
 Usuario = get_user_model()
 
