@@ -299,8 +299,8 @@ class IntervaloDisponibilidade(models.Model):
                 raise ValidationError(f"O fim do intervalo deve ser posterior ao início por, pelo menos, {CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos.")
         
             # Desconsiderar segundos e microssegundos
-            self.data_hora_inicio = self.data_hora_inicio.replace(minutes=0, second=0, microsecond=0)
-            self.data_hora_fim = self.data_hora_fim.replace(minutes=0, second=0, microsecond=0)
+            self.data_hora_inicio = self.data_hora_inicio.replace(minute=0, second=0, microsecond=0)
+            self.data_hora_fim = self.data_hora_fim.replace(minute=0, second=0, microsecond=0)
         
             if hasattr(self, "psicologo") and self.psicologo:
                 # Verificar se há sobreposição de intervalos
