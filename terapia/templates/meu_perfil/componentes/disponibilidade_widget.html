@@ -74,12 +74,12 @@
     <a type="button" class="link-primary" onclick="DisponibilidadeWidget.redefinir()">Redefinir</a>
 </div>
 
-<input type="{{ widget.type }}" name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}>
+{% include "django/forms/widgets/input.html" with widget=widget %}
 
 <div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
 {% include 'geral/tabela_disponibilidade.html' with disponibilidade=widget.value|safe %}
 
-<script>
+{% comment %} <script>
 
     class DisponibilidadeWidget {
         static widget = document.querySelector('input[name="{{ widget.name }}"]')
@@ -236,4 +236,4 @@
 
     DisponibilidadeWidget.preparar()
 
-</script>
+</script> {% endcomment %}

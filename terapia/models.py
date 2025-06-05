@@ -7,29 +7,18 @@ from django.contrib import admin
 from django.utils import timezone
 from terapia.utils.crp import validate_crp
 from terapia.utils.cpf import validate_cpf
-from terapia.utils.availability import (
-    validate_disponibilidade,
-    esta_no_intervalo,
-    combinar_data_com_str_horario,
-    get_horas_intervalo,
-)
 from terapia.utils.validators import (
     validate_data_hora_agendada,
     validate_valor_consulta,
     validate_intervalo_disponibilidade_datetime_range,
 )
-from datetime import timedelta, datetime, date
-from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
+from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
 
 
 class BasePacienteOuPsicologo(models.Model):
     def ja_tem_consulta_em(self, data_hora):
         """
-        Verifica se o psicólogo tem um intervalo de disponibilidade no qual se
-        encaixa uma consulta que começa na data e hora enviadas.
-        
-        @param data_hora: Data e hora em que a consulta começa.
-        @return: True se a consulta se encaixa no intervalo, False caso contrário.
+        Verifica se já há alguma consulta que tomaria tempo da data e hora enviadas.
         """
         return self.consultas.filter(
             Q(data_hora_agendada__gt = data_hora - CONSULTA_DURACAO_MAXIMA) &
@@ -88,7 +77,7 @@ class PsicologoCompletosManager(models.Manager):
         return (
             Q(valor_consulta__isnull=False) &
             Q(especializacoes__isnull=False) &
-            ~ Q(disponibilidade__exact=[])
+            Q(disponibilidade__isnull=False)
         )
     
     def get_queryset(self):
@@ -99,11 +88,11 @@ class Psicologo(BasePacienteOuPsicologo):
         settings.AUTH_USER_MODEL,
         verbose_name="Usuário",
         on_delete=models.CASCADE,
-        related_name='psicologo',
+        related_name="psicologo",
     )
     nome_completo = models.CharField("Nome Completo", max_length=50)
     crp = models.CharField("CRP", max_length=20, unique=True, validators=[validate_crp])
-    foto = models.ImageField("Foto", upload_to='psicologos/fotos/', blank=True, null=True)
+    foto = models.ImageField("Foto", upload_to="psicologos/fotos/", blank=True, null=True)
     sobre_mim = models.TextField("Sobre Mim", blank=True, null=True)
     valor_consulta = models.DecimalField(
         "Valor da Consulta",
@@ -114,15 +103,10 @@ class Psicologo(BasePacienteOuPsicologo):
         validators=[validate_valor_consulta],
         help_text="Entre R$ 20,00 e R$ 4.999,99",
     )
-    disponibilidade = models.JSONField(
-        "Disponibilidade",
-        default=list,
-        validators=[validate_disponibilidade],
-    )
     especializacoes = models.ManyToManyField(
         Especializacao,
         verbose_name="Especializações",
-        related_name='psicologos',
+        related_name="psicologos",
         blank=True,
     )
 
@@ -147,7 +131,7 @@ class Psicologo(BasePacienteOuPsicologo):
         return bool(
             self.valor_consulta and
             self.especializacoes.exists() and
-            self.disponibilidade
+            self.disponibilidade.exists()
         )
     
     @property
@@ -155,31 +139,8 @@ class Psicologo(BasePacienteOuPsicologo):
         """
         Retorna a data e hora agendáveis mais próximas do psicólogo.
         """
-        if not self.disponibilidade:
+        if not self.disponibilidade.exists():
             return None
-
-        i = 0
-        agora = timezone.now()
-        suposta_data_hora_agendavel_mais_proxima = agora + CONSULTA_ANTECEDENCIA_MINIMA
-
-        if agora.day < suposta_data_hora_agendavel_mais_proxima.day:
-            i += 1
-
-        while i < CONSULTA_ANTECEDENCIA_MAXIMA.days:
-            hoje = agora.date() + timedelta(days=i)
-            dia_semana = hoje.isoweekday() % 7 + 1  # 1 (domingo) a 7 (sábado)
-
-            for intervalo in self._get_intervalos_do_dia_semana(dia_semana):
-                for hora in get_horas_intervalo(intervalo):
-                    data_hora_inicio = combinar_data_com_str_horario(hoje, f"{hora}:00", agora.tzinfo)
-
-                    if (
-                        data_hora_inicio >= suposta_data_hora_agendavel_mais_proxima and
-                        not self.ja_tem_consulta_em(data_hora_inicio)
-                    ):
-                        return data_hora_inicio
-
-            i += 1
 
         return None
 
@@ -189,62 +150,29 @@ class Psicologo(BasePacienteOuPsicologo):
         if self.pk and self.usuario.is_paciente:
             raise ValidationError("Este usuário já está relacionado a um paciente.")
 
-        # Ordenar os intervalos de cada dia em ordem cronológica crescente
-        if self.disponibilidade:
-            for disp in self.disponibilidade:
-                intervalos = disp["intervalos"]
-                intervalos.sort(key=lambda x: (x["horario_inicio"], x["horario_fim"]))
-                disp["intervalos"] = intervalos
-
     def __str__(self):
         return self.nome_completo
 
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
-    
-    def _get_intervalos_do_dia_semana(self, dia_semana):
-        """
-        Retorna os intervalos de disponibilidade do psicólogo para um dia da semana específico.
-
-        @param dia_semana: Dia da semana (1 = domingo, 7 = sábado).
-        @return: Lista de intervalos de disponibilidade ou [] se não houver.
-        """
-        for disp in self.disponibilidade:
-            if disp["dia_semana"] == dia_semana:
-                return disp["intervalos"]
-        
-        return []
 
     def _get_intervalo_em(self, data_hora):
         """
-        Retorna, se houver, o intervalo no qual se encaixa uma consulta que começa
-        na data e hora enviadas.
+        Retorna, se houver, o intervalo no qual se encaixa uma consulta hipotética
+        que começa na data e hora enviadas.
         
         (A consulta deve caber completamente no intervalo para que ele seja retornado).
         
         @param data_hora: Data e hora em que a consulta começa.
-        @return: O intervalo no qual a consulta se encaixa, None caso não exista.
+        @return: O intervalo no qual a consulta se encaixa ou None caso não exista.
         """
-        dia_semana = (data_hora.isoweekday() % 7) + 1 # 1 (domingo) a 7 (sábado)
-        horario_inicio = timedelta(hours=data_hora.hour, minutes=data_hora.minute)
-
-        intervalo_encontrado = None
-
-        for disp in self.disponibilidade:
-            if disp["dia_semana"] == dia_semana:
-                for intervalo in disp["intervalos"]:
-                    if esta_no_intervalo(horario_inicio, intervalo):
-                        intervalo_encontrado = intervalo
-        
-        if intervalo_encontrado is None:
+        try:
+            return self.disponibilidade.get(
+                data_hora_inicio__lte=data_hora,
+                data_hora_fim__gte=data_hora + CONSULTA_DURACAO_MAXIMA,
+            )
+        except IntervaloDisponibilidade.DoesNotExist:
             return None
-        
-        horario_fim = horario_inicio + CONSULTA_DURACAO_MAXIMA
-
-        if not esta_no_intervalo(horario_fim, intervalo_encontrado):
-            return None
-        
-        return intervalo_encontrado
 
     def _tem_intervalo_em(self, data_hora):
         """
@@ -256,8 +184,10 @@ class Psicologo(BasePacienteOuPsicologo):
         @param data_hora: Data e hora em que a consulta começa.
         @return: True se a consulta se encaixa no intervalo, False caso contrário.
         """
-        intervalo = self._get_intervalo_em(data_hora)
-        return False if intervalo is None else True
+        return self.disponibilidade.filter(
+            data_hora_inicio__lte=data_hora,
+            data_hora_fim__gte=data_hora + CONSULTA_DURACAO_MAXIMA,
+        ).exists()
 
     def esta_agendavel_em(self, data_hora):
         """
@@ -267,10 +197,10 @@ class Psicologo(BasePacienteOuPsicologo):
         @param data_hora: Data e hora em que a consulta começa.
         @return: True se o psicólogo tem disponibilidade, False caso contrário.
         """
-        return bool(True
-            # self.disponibilidade and
-            # self._tem_intervalo_em(data_hora) and
-            # not self.ja_tem_consulta_em(data_hora)
+        return bool(
+            self.disponibilidade.exists() and
+            self._tem_intervalo_em(data_hora) and
+            not self.ja_tem_consulta_em(data_hora)
         )
 
 
@@ -301,7 +231,7 @@ class IntervaloDisponibilidade(models.Model):
         Psicologo,
         verbose_name="Psicólogo",
         on_delete=models.CASCADE,
-        related_name="disp",
+        related_name="disponibilidade",
     )
 
     @property
@@ -369,12 +299,12 @@ class IntervaloDisponibilidade(models.Model):
                 raise ValidationError(f"O fim do intervalo deve ser posterior ao início por, pelo menos, {CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos.")
         
             # Desconsiderar segundos e microssegundos
-            self.data_hora_inicio = self.data_hora_inicio.replace(second=0, microsecond=0)
-            self.data_hora_fim = self.data_hora_fim.replace(second=0, microsecond=0)
+            self.data_hora_inicio = self.data_hora_inicio.replace(minutes=0, second=0, microsecond=0)
+            self.data_hora_fim = self.data_hora_fim.replace(minutes=0, second=0, microsecond=0)
         
             if hasattr(self, "psicologo") and self.psicologo:
                 # Verificar se há sobreposição de intervalos
-                intervalos = self.psicologo.disp.exclude(pk=self.pk if self.pk else None)
+                intervalos = self.psicologo.disponibilidade.exclude(pk=self.pk if self.pk else None)
         
                 for intervalo in intervalos:
                     if (
@@ -422,14 +352,14 @@ class Consulta(models.Model):
     psicologo = models.ForeignKey(
         Psicologo,
         on_delete=models.CASCADE,
-        related_name='consultas',
+        related_name="consultas",
         limit_choices_to=Psicologo.completos.get_filtros(),
     )
 
     class Meta:
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
-        ordering = ['-data_hora_solicitada', '-data_hora_agendada']
+        ordering = ["-data_hora_solicitada", "-data_hora_agendada"]
 
     def clean(self):
         super().clean()

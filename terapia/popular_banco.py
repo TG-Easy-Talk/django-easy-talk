@@ -82,82 +82,8 @@ def popular_usuarios(sender, **kwargs):
 
 
 
-disp1 = [
-    {
-        "dia_semana": 2,
-        "intervalos": [
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "14:00", "horario_fim": "18:00"}
-        ]
-    },
-    {
-        "dia_semana": 3,
-        "intervalos": [
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "14:00", "horario_fim": "18:00"}
-        ]
-    },
-    {
-        "dia_semana": 4,
-        "intervalos": [
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "14:00", "horario_fim": "18:00"},
-            {"horario_inicio": "19:00", "horario_fim": "21:00"}
-        ]
-    },
-    {
-        "dia_semana": 5,
-        "intervalos": [
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "14:00", "horario_fim": "18:00"}
-        ]
-    },
-    {
-        "dia_semana": 6,
-        "intervalos": [
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "14:00", "horario_fim": "18:00"}
-        ]
-    }
-]
 
-disp2 = [
-    {
-        "dia_semana": 6,
-        "intervalos": [
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-        ]
-    },
-    {
-        "dia_semana": 1,
-        "intervalos": [
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "15:00", "horario_fim": "18:00"},
-        ]
-    },
-]
 
-disp3 = [
-    {
-        "dia_semana": 3,
-        "intervalos": [
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "14:00", "horario_fim": "15:00"},
-            {"horario_inicio": "17:00", "horario_fim": "20:00"},
-        ]
-    },
-]
-
-disp4 = [
-    {
-        "dia_semana": 3,
-        "intervalos": [
-            {"horario_inicio": "17:00", "horario_fim": "20:00"},
-            {"horario_inicio": "08:00", "horario_fim": "12:00"},
-            {"horario_inicio": "14:00", "horario_fim": "15:00"},
-        ]
-    },
-]
 
 def popular_psicologos(sender, **kwargs):
     from .models import Psicologo
@@ -173,7 +99,6 @@ def popular_psicologos(sender, **kwargs):
             "valor_consulta": round(random.uniform(100, 300), 0),
             "sobre_mim": "Tenho ampla experiência em diversas áreas da psicologia e estou aqui para ajudar você a superar seus desafios.",
             "especializacoes": [1, 2, 3, 4, 5],  # IDs das especializações
-            "disponibilidade": disp2,
         },
         {
             "nome_completo": "Maria Oliveira",
@@ -183,7 +108,6 @@ def popular_psicologos(sender, **kwargs):
             "sobre_mim": "Sou especialista em terapia familiar e de casal, e meu objetivo é fortalecer os laços e resolver conflitos.",
             "especializacoes": [6, 7, 8, 9, 10],  # IDs das especializações
             "foto": "psicologos/fotos/maria.oliveira.jpg",
-            "disponibilidade": disp1,
         },
         {
             "nome_completo": "Pedro Santos",
@@ -192,7 +116,6 @@ def popular_psicologos(sender, **kwargs):
             "valor_consulta": round(random.uniform(100, 300), 0),
             "sobre_mim": "Trabalho com psicologia organizacional e do trabalho, ajudando pessoas a alcançarem seu potencial no ambiente profissional.",
             "especializacoes": [11, 12, 13, 14, 15],  # IDs das especializações
-            "disponibilidade": disp3,
         },
         {
             "nome_completo": "Ana Costa",
@@ -201,7 +124,6 @@ def popular_psicologos(sender, **kwargs):
             "valor_consulta": round(random.uniform(100, 300), 0),
             "sobre_mim": "Atuo com psicologia infantil e desenvolvimento pessoal, ajudando crianças e adultos a crescerem emocionalmente.",
             "especializacoes": [16, 17, 18, 19, 20],  # IDs das especializações
-            "disponibilidade": disp4,
         },
         {
             "nome_completo": "Lucas Almeida",
@@ -222,7 +144,6 @@ def popular_psicologos(sender, **kwargs):
                 "valor_consulta": item["valor_consulta"],
                 "sobre_mim": item["sobre_mim"],
                 "foto": item.get("foto"),
-                "disponibilidade": item.get("disponibilidade", []),
             }
         )
         if created:

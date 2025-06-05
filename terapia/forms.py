@@ -90,9 +90,13 @@ class PsicologoChangeForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
     template_name = 'meu_perfil/componentes/form.html'
 
+    disponibilidade = forms.Field(
+        required=False,
+    )
+
     class Meta:
         model = Psicologo
-        fields = ['valor_consulta', 'sobre_mim', 'foto', 'especializacoes', 'disponibilidade']
+        fields = ['valor_consulta', 'sobre_mim', 'foto', 'especializacoes']
 
 
     def __init__(self, *args, **kwargs):
@@ -101,8 +105,10 @@ class PsicologoChangeForm(forms.ModelForm):
             'placeholder': 'Apresente-se para os pacientes do EasyTalk...',
         })
         self.fields['foto'].widget = forms.FileInput()
-        self.fields['disponibilidade'].widget = DisponibilidadeInput(self.instance.disponibilidade)
         self.fields['especializacoes'].widget.attrs.update({'class': 'h-100'})
+        self.fields['disponibilidade'].widget = DisponibilidadeInput(
+            disponibilidade=self.instance.disponibilidade
+        )
         self.fields['sobre_mim'].widget.attrs.update({'rows': '8'})
 
 

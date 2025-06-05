@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from usuario.admin import UsuarioAdmin
-
 from .models import (
     Paciente,
     Psicologo,
@@ -9,6 +8,7 @@ from .models import (
     Especializacao,
     IntervaloDisponibilidade,
 )
+
 
 Usuario = get_user_model()
 
@@ -21,6 +21,11 @@ class PsicologoInline(admin.StackedInline):
     model = Psicologo
 
 
+class IntervaloDisponibilidadeInline(admin.TabularInline):
+    model = IntervaloDisponibilidade
+    extra = 0
+
+
 @admin.register(Usuario)
 class UsuarioAdminComInlines(UsuarioAdmin):
     inlines = [PsicologoInline, PacienteInline]
@@ -31,6 +36,7 @@ class PsicologoAdmin(admin.ModelAdmin):
     list_display = ['nome_completo', 'crp', 'valor_consulta', 'usuario', 'esta_com_perfil_completo']
     search_fields = ['nome_completo', 'crp']
     filter_horizontal = ['especializacoes']
+    inlines = [IntervaloDisponibilidadeInline]
 
 
 @admin.register(Paciente)

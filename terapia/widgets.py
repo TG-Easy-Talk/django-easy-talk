@@ -1,7 +1,4 @@
 from django import forms
-from django.core.exceptions import ValidationError
-from .utils.availability import validate_disponibilidade
-import json
 
 
 class CustomDateInput(forms.DateInput):
@@ -15,16 +12,20 @@ class CustomDateTimeInput(forms.DateTimeInput):
 class DisponibilidadeInput(forms.HiddenInput):
     template_name = 'meu_perfil/componentes/disponibilidade_widget.html'
 
-    def __init__(self, disponibilidade=list, attrs=None):
+    def __init__(self, disponibilidade=None, attrs=None):
         super().__init__(attrs)
         self.disponibilidade = disponibilidade
 
-    def get_context(self, name, value, attrs):
-        context = super().get_context(name, value, attrs)
-        
-        try:
-            validate_disponibilidade(json.loads(context['widget']['value']))
-        except (ValidationError, json.JSONDecodeError):
-            context['widget']['value'] = self.disponibilidade
+    def format_value(self, value):
+        matriz = [[False] * 24 for _ in range(7)]
 
-        return context
+        if self.disponibilidade.exists():
+            for intervalo in self.disponibilidade.all():
+                dia = intervalo.data_hora_inicio.isoweekday() % 7 # Ajusta para 0 = Domingo, 6 = Sábado
+                hora_inicio = intervalo.data_hora_inicio.hour
+                hora_fim = intervalo.data_hora_fim.hour
+                for hora in range(hora_inicio, hora_fim):
+                    matriz[dia][hora] = True
+
+        print(matriz)
+        return matriz
