@@ -1,4 +1,5 @@
 from django import forms
+from .utils.disponibilidade import get_matriz_disponibilidade_em_javascript
 
 
 class CustomDateInput(forms.DateInput):
@@ -17,15 +18,4 @@ class DisponibilidadeInput(forms.HiddenInput):
         self.disponibilidade = disponibilidade
 
     def format_value(self, value):
-        matriz = [[False] * 24 for _ in range(7)]
-
-        if self.disponibilidade.exists():
-            for intervalo in self.disponibilidade.all():
-                dia = intervalo.data_hora_inicio.isoweekday() % 7 # Ajusta para 0 = Domingo, 6 = Sábado
-                hora_inicio = intervalo.data_hora_inicio.hour
-                hora_fim = intervalo.data_hora_fim.hour
-                for hora in range(hora_inicio, hora_fim):
-                    matriz[dia][hora] = True
-
-        print(matriz)
-        return matriz
+        return get_matriz_disponibilidade_em_javascript(self.disponibilidade)

@@ -5,9 +5,10 @@ from django.db.models import Q
 from django.urls import reverse
 from django.contrib import admin
 from django.utils import timezone
-from terapia.utils.crp import validate_crp
-from terapia.utils.cpf import validate_cpf
-from terapia.utils.validators import (
+from .utils.disponibilidade import get_matriz_disponibilidade_em_javascript
+from .utils.crp import validate_crp
+from .utils.cpf import validate_cpf
+from .utils.validators import (
     validate_data_hora_agendada,
     validate_valor_consulta,
     validate_intervalo_disponibilidade_datetime_range,
@@ -202,6 +203,9 @@ class Psicologo(BasePacienteOuPsicologo):
             self._tem_intervalo_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
         )
+    
+    def get_matriz_disponibilidade_em_javascript(self):
+        return get_matriz_disponibilidade_em_javascript(self.disponibilidade)
 
 
 INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (
@@ -299,8 +303,8 @@ class IntervaloDisponibilidade(models.Model):
                 raise ValidationError(f"O fim do intervalo deve ser posterior ao início por, pelo menos, {CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos.")
         
             # Desconsiderar segundos e microssegundos
-            self.data_hora_inicio = self.data_hora_inicio.replace(minutes=0, second=0, microsecond=0)
-            self.data_hora_fim = self.data_hora_fim.replace(minutes=0, second=0, microsecond=0)
+            self.data_hora_inicio = self.data_hora_inicio.replace(minute=0, second=0, microsecond=0)
+            self.data_hora_fim = self.data_hora_fim.replace(minute=0, second=0, microsecond=0)
         
             if hasattr(self, "psicologo") and self.psicologo:
                 # Verificar se há sobreposição de intervalos
