@@ -2,8 +2,8 @@
 
 const APP_ID = '5c894664474548608bf0dfc4cd6c5c1e';
 const TOKEN = sessionStorage.getItem('token')
-    || '007eJxTYAje0BT30vv91igV0T1mN/tz5CskNP+6bLaUWfyAax/7py8KDKbJFpYmZmYmJuYmpiYWZgYWSWkGKWnJJskpZsmmyYapuxS0MhoCGRkS5HlYGRkgEMRnYchNzMxjYAAABEwdnQ==';
-const CHANNEL = sessionStorage.getItem('room') || 'main';
+    || '007eJxTYCjyWyK14cGTFSXGT0TK5TQ2TfmXzSRawpXNpaBwKIpLXEOBwTTZwtLEzMzExNzE1MTCzMAiKc0gJS3ZJDnFLNk02TB1eoZxRkMgI4OWhAYDIxSC+NwM/iUZqUV+ibmpzhkMDAD1XB0c';
+const CHANNEL = sessionStorage.getItem('room') || 'OtherNameCh';
 let UID = sessionStorage.getItem('UID');
 const NAME = sessionStorage.getItem('name');
 
@@ -12,6 +12,7 @@ const client = AgoraRTC.createClient({mode: 'rtc', codec: 'vp8'});
 
 let localTracks = [];
 let remoteUsers = {};
+let hasJoined = false;
 
 // Registra eventos antes do join para não perder callbacks
 client.on('user-published', handleUserJoined);
@@ -24,11 +25,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Anexa listeners de controle
     document.getElementById('leave-btn')?.addEventListener('click', leaveAndRemoveLocalStream);
-    document.getElementById('camera-btn')?.addEventListener('click', toggleCamera);
-    document.getElementById('mic-btn')?.addEventListener('click', toggleMic);
-
-    // Inicia o fluxo principal
-    joinAndDisplayLocalStream();
+    document.getElementById('camera-btn')?.addEventListener('click', async (e) => {
+        if (!hasJoined) {
+            await joinAndDisplayLocalStream();
+            hasJoined = true;
+        }
+        await toggleCamera(e);
+    });
+    document.getElementById('mic-btn')?.addEventListener('click', async (e) => {
+        if (!hasJoined) {
+            await joinAndDisplayLocalStream();
+            hasJoined = true;
+        }
+        await toggleMic(e);
+    });
 });
 
 window.addEventListener('beforeunload', deleteMember);
@@ -58,7 +68,6 @@ async function joinAndDisplayLocalStream() {
     document.getElementById('video-streams')?.insertAdjacentHTML('beforeend', playerHTML);
     localTracks[1].play(`user-${UID}`);
 
-    // Publica trilhas locais
     await client.publish([localTracks[0], localTracks[1]]);
 }
 
