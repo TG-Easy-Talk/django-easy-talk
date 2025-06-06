@@ -28,11 +28,11 @@
 <script>
 
     class DisponibilidadeTabela {
-        static disponibilidade = {{ disponibilidade|safe }}
+        static matriz_disponibilidade_booleanos = {{ matriz_disponibilidade_booleanos }}
         static tbody = document.getElementById('tbodyDisponibilidade')
 
         static getIntervalosDoDia(diaSemana) {
-            for (const disp of this.disponibilidade)
+            for (const disp of this.matriz_disponibilidade_booleanos)
                 if (disp.dia_semana === diaSemana)
                     return disp.intervalos
 
@@ -40,25 +40,51 @@
         }
 
         static getNumeroMaximoIntervalos() {
-            return Math.max(...this.disponibilidade.map(disp => disp.intervalos.length))
+            let maximo = 0
+
+            for (const dia of this.matriz_disponibilidade_booleanos) {
+                let atual = 0
+
+                for (let i = 0; i < dia.length; i++) {
+                    if (dia[i] === true) {
+                        atual++
+                        i++
+                        while (dia[i] === true)
+                            i++
+                    } 
+                }
+
+                if (atual > maximo)
+                    maximo = atual
+            }
+
+            return maximo
         }
 
         static getTabelaDisponibilidadeComoMatriz() {
             const numeroMaximoIntervalos = this.getNumeroMaximoIntervalos()
             const matriz = []
 
-            for (let i = 1; i <= 7; i++) {
-                const intervalosDoDia = this.getIntervalosDoDia(i)
-                const horariosDoDia = []
+            for (const dia of this.matriz_disponibilidade_booleanos) {
+                const intervalos = []
 
-                for (const intervalo of intervalosDoDia)
-                    horariosDoDia.push(`${intervalo.horario_inicio} - ${intervalo.horario_fim}`)
+                for (let i = 0; i < dia.length; i++) {
+                    if (dia[i] === true) {
+                        const horarioInicio = `${i.toString().padStart(2, '0')}:00`
+                        i++
+                        while (dia[i] === true)
+                            i++
 
-                if (horariosDoDia.length < numeroMaximoIntervalos)
-                    for (let j = horariosDoDia.length; j < numeroMaximoIntervalos; j++)
-                        horariosDoDia.push("-")
+                        const horarioFim = `${i.toString().padStart(2, '0')}:00`
+                        intervalos.push(`${horarioInicio} até ${horarioFim}`)
+                    } 
+                } 
 
-                matriz.push(horariosDoDia)
+                if (intervalos.length < numeroMaximoIntervalos)
+                    for (let j = intervalos.length; j < numeroMaximoIntervalos; j++)
+                        intervalos.push("-")
+
+                matriz.push(intervalos)
             }
 
             // Transpor a matriz
@@ -75,7 +101,7 @@
         }
 
         static getTabelaDisponibilidadeComoHtml() {
-            if (this.disponibilidade.length === 0)
+            if (this.matriz_disponibilidade_booleanos.length === 0)
                 return `<tr>` + `<td>-</td>`.repeat(7) + `</tr>`
 
             const tbodyInnerHtml = this.getTabelaDisponibilidadeComoMatriz()

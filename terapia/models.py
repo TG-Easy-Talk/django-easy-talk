@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.urls import reverse
 from django.contrib import admin
 from django.utils import timezone
-from .utils.disponibilidade import get_matriz_disponibilidade_em_javascript
+from .utils.disponibilidade import get_matriz_disponibilidade_booleanos_em_javascript
 from .utils.crp import validate_crp
 from .utils.cpf import validate_cpf
 from .utils.validators import (
@@ -204,8 +204,8 @@ class Psicologo(BasePacienteOuPsicologo):
             not self.ja_tem_consulta_em(data_hora)
         )
     
-    def get_matriz_disponibilidade_em_javascript(self):
-        return get_matriz_disponibilidade_em_javascript(self.disponibilidade)
+    def get_matriz_disponibilidade_booleanos_em_javascript(self):
+        return get_matriz_disponibilidade_booleanos_em_javascript(self.disponibilidade)
 
 
 INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (

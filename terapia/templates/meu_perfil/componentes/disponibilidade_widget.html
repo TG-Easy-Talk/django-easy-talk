@@ -77,7 +77,7 @@
 {% include "django/forms/widgets/input.html" with widget=widget %}
 
 <div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
-{% include 'geral/tabela_disponibilidade.html' with disponibilidade=widget.value|safe %}
+{% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=widget.value %}
 
 {% comment %} <script>
 

@@ -1,4 +1,4 @@
-def get_matriz_disponibilidade_em_javascript(disponibilidade):
+def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade):
     """
     Cria uma matriz de booleanos que representa a disponibilidade.
     A ideia é que a matriz seja interpretável nos templates, então
