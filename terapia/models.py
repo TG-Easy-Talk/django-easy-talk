@@ -263,7 +263,7 @@ class IntervaloDisponibilidade(models.Model):
         return self.data_hora_fim_local.time()
     
     dias_semana_iso = {
-        1: "Segunda",
+        1: "Segunda (inicial)",
         2: "Terça",
         3: "Quarta",
         4: "Quinta",

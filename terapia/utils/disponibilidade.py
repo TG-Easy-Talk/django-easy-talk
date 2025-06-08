@@ -35,7 +35,7 @@ def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade):
 
             for i, _range in enumerate(ranges):
                 for hora in _range:
-                    matriz[dia_semana_inicio + i][hora] = True
+                    matriz[dia_semana_inicio % 7 + i][hora] = True
 
     domingo_a_segunda(matriz)
     # Usar str.lower() para o JavaScript interpretar corretamente
