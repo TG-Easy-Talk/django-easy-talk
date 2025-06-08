@@ -5,7 +5,15 @@ from easy_talk.renderers import (
     FormComValidacaoRenderer,
     FormDeFiltrosRenderer
 )
-from .models import Paciente, Psicologo, Especializacao, Consulta, EstadoConsulta
+from .models import (
+    Paciente,
+    Psicologo,
+    Especializacao,
+    Consulta,
+    EstadoConsulta,
+    IntervaloDisponibilidade,
+)
+from .utils.disponibilidade import get_disponibilidade_pela_matriz
 
 
 Usuario = get_user_model()
@@ -79,52 +87,69 @@ class ConsultaFiltrosForm(forms.Form):
         super().__init__(*args, **kwargs)
         
         if usuario.is_paciente:
-            self.fields['paciente_ou_psicologo'].label = "Profissional"
-            self.fields['paciente_ou_psicologo'].queryset = Psicologo.objects.filter(consultas__paciente=usuario.paciente).distinct()
+            self.fields["paciente_ou_psicologo"].label = "Profissional"
+            self.fields["paciente_ou_psicologo"].queryset = Psicologo.objects.filter(consultas__paciente=usuario.paciente).distinct()
         else:
-            self.fields['paciente_ou_psicologo'].label = "Paciente"
-            self.fields['paciente_ou_psicologo'].queryset = Paciente.objects.filter(consultas__psicologo=usuario.psicologo).distinct()
+            self.fields["paciente_ou_psicologo"].label = "Paciente"
+            self.fields["paciente_ou_psicologo"].queryset = Paciente.objects.filter(consultas__psicologo=usuario.psicologo).distinct()
 
 
 class PsicologoChangeForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
-    template_name = 'meu_perfil/componentes/form.html'
+    template_name = "meu_perfil/componentes/form.html"
 
-    disponibilidade = forms.Field(
+    disponibilidade = forms.JSONField(
         required=False,
     )
 
     class Meta:
         model = Psicologo
-        fields = ['valor_consulta', 'sobre_mim', 'foto', 'especializacoes']
-
+        fields = ["valor_consulta", "sobre_mim", "foto", "especializacoes"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['sobre_mim'].widget.attrs.update({
-            'placeholder': 'Apresente-se para os pacientes do EasyTalk...',
+        self.fields["sobre_mim"].widget.attrs.update({
+            "placeholder": "Apresente-se para os pacientes do EasyTalk...",
         })
-        self.fields['foto'].widget = forms.FileInput()
-        self.fields['especializacoes'].widget.attrs.update({'class': 'h-100'})
-        self.fields['disponibilidade'].widget = DisponibilidadeInput(
+        self.fields["foto"].widget = forms.FileInput()
+        self.fields["especializacoes"].widget.attrs.update({"class": "h-100"})
+        self.fields["disponibilidade"].widget = DisponibilidadeInput(
             disponibilidade=self.instance.disponibilidade
         )
-        self.fields['sobre_mim'].widget.attrs.update({'rows': '8'})
+        self.fields["sobre_mim"].widget.attrs.update({"rows": "8"})
+
+    def clean_disponibilidade(self):
+        return get_disponibilidade_pela_matriz(self.cleaned_data.get("disponibilidade"))
+
+    def save(self, commit=True):
+        psicologo = super().save(commit=False)
+        disponibilidade = self.cleaned_data.get("disponibilidade")
+
+        for intervalo in disponibilidade:
+            intervalo.psicologo = psicologo
+
+        IntervaloDisponibilidade.objects.filter(psicologo=psicologo).delete()
+        IntervaloDisponibilidade.objects.bulk_create(disponibilidade)
+
+        if commit:
+            psicologo.save()
+
+        return psicologo
 
 
 class ConsultaCreationForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
-    template_name = 'perfil/componentes/form.html'
+    template_name = "perfil/componentes/form.html"
     
     class Meta:
         model = Consulta
-        fields = ['data_hora_agendada']
+        fields = ["data_hora_agendada"]
 
     def __init__(self, *args, usuario, psicologo, **kwargs):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
         self.psicologo = psicologo
-        self.fields['data_hora_agendada'].widget = CustomDateTimeInput(attrs={"step": "3600"})
+        self.fields["data_hora_agendada"].widget = CustomDateTimeInput(attrs={"step": "3600"})
 
     def _post_clean(self):
         # Setar os campos de paciente e psicólogo antes da validação da model

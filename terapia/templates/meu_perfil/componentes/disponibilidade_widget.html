@@ -79,82 +79,20 @@
 <div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
 {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=widget.value %}
 
-{% comment %} <script>
-
+<script>
     class DisponibilidadeWidget {
         static widget = document.querySelector('input[name="{{ widget.name }}"]')
         static celulas = document.querySelectorAll('[data-grade]')
         static classesNaoSelecionado = ["bg-body-secondary"]
         static classesSelecionado = ["bg-secondary"]
-        static matriz = []
-        static disponibilidade = {{ widget.value|safe }}
-
-        static preencherMatrizPelaDisponibilidade() {
-            for (let i = 0; i < 7; i++) {
-                this.matriz[i] = []
-                for (let j = 0; j < 24; j++) {
-                    if (!this.matriz[i][j])
-                        this.matriz[i][j] = false
-                }
-            }
-
-            this.disponibilidade.forEach((disp) => {
-                const i = Number(disp.dia_semana - 1)
-                const intervalos = disp.intervalos
-
-                intervalos.forEach((intervalo) => {
-                    const inicio = Number(intervalo.horario_inicio.split(':')[0])
-                    const fim = Number(intervalo.horario_fim.split(':')[0])
-
-                    for (let j = inicio; j < fim; j++) {
-                        this.matriz[i][j] = true
-                    }
-                })
-            })
-        }
-
-        static transformarMatrizEmJson() {
-            const disponibilidade = []
-
-            for (let i = 0; i < 7; i++) {
-                const intervalos = []
-                let intervaloAtual = null
-
-                for (let j = 0; j < 24; j++) {
-
-                    if (this.matriz[i][j]) {
-                        if (!intervaloAtual)
-                            intervaloAtual = {
-                                horario_inicio: `${j.toString().padStart(2, '0')}:00`,
-                                horario_fim: `${(j + 1).toString().padStart(2, '0')}:00`
-                            }
-                        else
-                            intervaloAtual.horario_fim = `${(j + 1).toString().padStart(2, '0')}:00`
-                    }
-                    else {
-                        if (intervaloAtual) {
-                            intervalos.push(intervaloAtual)
-                            intervaloAtual = null
-                        }
-                    }
-                }
-
-                if (intervaloAtual)
-                    intervalos.push(intervaloAtual)
-                    intervaloAtual = null
-
-                if (intervalos.length > 0)
-                    disponibilidade.push({ dia_semana: i + 1, intervalos: intervalos })
-            }
-
-            return JSON.stringify(disponibilidade)
-        }
+        static matriz_disponibilidade_booleanos = {{ widget.value }}
+        static matriz_disponibilidade_booleanos_original = {{ widget.value }}
 
         static atualizarItemPelaMatriz(item) {
             const linha = Number(item.dataset.linha)
             const coluna = Number(item.dataset.coluna)
 
-            if (this.matriz[linha][coluna])
+            if (this.matriz_disponibilidade_booleanos[linha][coluna])
                 this.selecionar(item)
             else
                 this.tirar(item)
@@ -163,7 +101,7 @@
         static atualizarMatrizPeloItem(item) {
             const linha = Number(item.dataset.linha)
             const coluna = Number(item.dataset.coluna)
-            this.matriz[linha][coluna] = item.dataset.selecionado === "true" ? true : false
+            this.matriz_disponibilidade_booleanos[linha][coluna] = item.dataset.selecionado === "true" ? true : false
         }
 
         static selecionar(item) {
@@ -189,8 +127,8 @@
         }
 
         static atualizarInputETabela() {
-            this.widget.value = this.transformarMatrizEmJson()
-            DisponibilidadeTabela.disponibilidade = JSON.parse(this.widget.value)
+            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos)
+            DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos
             DisponibilidadeTabela.atualizar()
         }
 
@@ -204,7 +142,7 @@
         }
 
         static redefinir() {
-            this.preencherMatrizPelaDisponibilidade()
+            this.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_original.map((linha) => [...linha])
             this.celulas.forEach((item) => this.atualizarItemPelaMatriz(item))
             this.atualizarInputETabela()
         }
@@ -222,18 +160,16 @@
                 item.addEventListener('dragstart', (e) => e.preventDefault())
             })
 
-            this.preencherMatrizPelaDisponibilidade()
-
             this.celulas.forEach((item) => {
                 this.atualizarItemPelaMatriz(item)
                 item.addEventListener('mouseover', (e) => this.lidarComEvento(e, item))
                 item.addEventListener('mousedown', (e) => this.lidarComEvento(e, item))
             })
 
-            this.widget.value = this.transformarMatrizEmJson()
+            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_original)
         }
     }
 
     DisponibilidadeWidget.preparar()
 
-</script> {% endcomment %}
+</script>

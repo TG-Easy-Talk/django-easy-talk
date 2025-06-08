@@ -248,11 +248,11 @@ class IntervaloDisponibilidade(models.Model):
 
     @property
     def dia_semana_inicio_local(self):
-        return self.data_hora_inicio_local.isoweekday()
+        return self.data_hora_inicio_local.day
     
     @property
     def dia_semana_fim_local(self):
-        return self.data_hora_fim_local.isoweekday()
+        return self.data_hora_fim_local.day
     
     @property
     def hora_inicio_local(self):
@@ -270,6 +270,7 @@ class IntervaloDisponibilidade(models.Model):
         5: "Sexta",
         6: "Sábado",
         7: "Domingo",
+        8: "Segunda (final)", # É usado para quando o intervalo vai até a próxima segunda
     }
 
     @property
@@ -283,6 +284,7 @@ class IntervaloDisponibilidade(models.Model):
     class Meta:
         verbose_name = "Intervalo de Disponibilidade"
         verbose_name_plural = "Intervalos de Disponibilidade"
+        ordering = ["data_hora_inicio"]
 
     def __str__(self):
         return f"{self.nome_dia_semana_inicio_local} às {self.hora_inicio_local} - {self.nome_dia_semana_fim_local} às {self.hora_fim_local}"

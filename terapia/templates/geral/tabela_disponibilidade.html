@@ -31,14 +31,6 @@
         static matriz_disponibilidade_booleanos = {{ matriz_disponibilidade_booleanos }}
         static tbody = document.getElementById('tbodyDisponibilidade')
 
-        static getIntervalosDoDia(diaSemana) {
-            for (const disp of this.matriz_disponibilidade_booleanos)
-                if (disp.dia_semana === diaSemana)
-                    return disp.intervalos
-
-            return []
-        }
-
         static getNumeroMaximoIntervalos() {
             let maximo = 0
 
@@ -49,7 +41,7 @@
                     if (dia[i] === true) {
                         atual++
                         i++
-                        while (dia[i] === true)
+                        while (dia[i] === true && i < dia.length)
                             i++
                     } 
                 }
@@ -72,11 +64,11 @@
                     if (dia[i] === true) {
                         const horarioInicio = `${i.toString().padStart(2, '0')}:00`
                         i++
-                        while (dia[i] === true)
+                        while (dia[i] === true && i < dia.length)
                             i++
 
                         const horarioFim = `${i.toString().padStart(2, '0')}:00`
-                        intervalos.push(`${horarioInicio} até ${horarioFim}`)
+                        intervalos.push(`${horarioInicio} - ${horarioFim}`)
                     } 
                 } 
 
@@ -101,7 +93,7 @@
         }
 
         static getTabelaDisponibilidadeComoHtml() {
-            if (this.matriz_disponibilidade_booleanos.length === 0)
+            if (!this.matriz_disponibilidade_booleanos.some(linha => linha.some(x => x === true)))
                 return `<tr>` + `<td>-</td>`.repeat(7) + `</tr>`
 
             const tbodyInnerHtml = this.getTabelaDisponibilidadeComoMatriz()
