@@ -54,8 +54,8 @@ class Paciente(BasePacienteOuPsicologo):
     def clean(self):
         super().clean()
         # Caso já exista no banco, checar se já há psicólogo relacionado
-        if self.pk and self.usuario.is_psicologo:
-            raise ValidationError("Este usuário já está relacionado a um psicólogo.")
+        if hasattr(self, "usuario") and self.usuario.is_psicologo:
+            raise ValidationError({"usuario": "Este usuário já está relacionado a um psicólogo."})
 
     def __str__(self):
         return self.nome
@@ -148,8 +148,8 @@ class Psicologo(BasePacienteOuPsicologo):
     def clean(self):
         super().clean()
         # Caso já exista no banco, checar se já há paciente relacionado
-        if self.pk and self.usuario.is_paciente:
-            raise ValidationError("Este usuário já está relacionado a um paciente.")
+        if hasattr(self, "usuario") and self.usuario.is_paciente:
+            raise ValidationError({"usuario": "Este usuário já está relacionado a um paciente."})
 
     def __str__(self):
         return self.nome_completo

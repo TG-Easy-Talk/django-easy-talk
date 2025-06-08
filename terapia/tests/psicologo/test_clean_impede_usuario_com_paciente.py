@@ -34,7 +34,7 @@ class PsicologoModelTest(TestCase):
         )
         with self.assertRaises(ValidationError) as ctx:
             psicologo.clean()
-        self.assertEqual(
+        self.assertIn(
+            "['Este usuário já está relacionado a um paciente.']",
             str(ctx.exception),
-            "['Este usuário já está relacionado a um paciente.']"
         )
