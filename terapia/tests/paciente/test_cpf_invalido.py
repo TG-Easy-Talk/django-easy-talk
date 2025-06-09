@@ -25,7 +25,8 @@ class PacienteModelTest(TestCase):
         )
         with self.assertRaises(ValidationError) as ctx:
             paciente.full_clean()
-        self.assertIn(
-            'Este CPF é inválido',
-            ctx.exception.message_dict.get('cpf', [])
+
+        self.assertEqual(
+            'cpf_invalido',
+            ctx.exception.error_dict["cpf"][0].code,
         )

@@ -16,7 +16,7 @@ class PsicologoModelTest(TestCase):
 
     def test_clean_impede_usuario_com_paciente(self):
         """
-        TU02-D: Impedir usuário já vinculado a Paciente.
+        Impedir usuário já vinculado a Paciente.
         """
         usuario_paciente = User.objects.create_user(
             email='paciente2@example.com',
@@ -33,8 +33,9 @@ class PsicologoModelTest(TestCase):
             crp='06/99999'
         )
         with self.assertRaises(ValidationError) as ctx:
-            psicologo.clean()
-        self.assertIn(
-            "['Este usuário já está relacionado a um paciente.']",
-            str(ctx.exception),
+            psicologo.full_clean()
+
+        self.assertEqual(
+            "paciente_ja_relacionado",
+            ctx.exception.error_dict["usuario"][0].code,
         )

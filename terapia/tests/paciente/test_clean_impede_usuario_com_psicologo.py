@@ -33,8 +33,9 @@ class PacienteModelTest(TestCase):
             cpf='111.222.333-44'
         )
         with self.assertRaises(ValidationError) as ctx:
-            paciente.clean()
-        self.assertIn(
-            "['Este usuário já está relacionado a um psicólogo.']",
-            str(ctx.exception),
+            paciente.full_clean()
+
+        self.assertEqual(
+            "psicologo_ja_relacionado",
+            ctx.exception.error_dict["usuario"][0].code,
         )
