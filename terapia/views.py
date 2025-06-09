@@ -1,7 +1,19 @@
+# django-easy-talk/terapia/views.py
+
+import json
+from datetime import datetime, time, timedelta
+
+from django.utils import timezone
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import TemplateView, FormView, ListView, UpdateView
+from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView, FormView, ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponseForbidden
+
+from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
 from .forms import (
     PacienteCreationForm,
     PsicologoCreationForm,
@@ -10,21 +22,16 @@ from .forms import (
     ConsultaCreationForm,
     ConsultaFiltrosForm,
 )
-from django.urls import reverse_lazy
-from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
-from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 from .models import Psicologo, Consulta, EstadoConsulta
-from django.http import HttpResponseForbidden
-from datetime import timedelta
-from django.shortcuts import redirect
+from terapia.utils.disponibilidade import get_disponibilidade_pela_matriz
 
 
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if (
-            request.user.is_authenticated and
-            not request.user.is_psicologo and
-            not request.user.is_paciente
+                request.user.is_authenticated and
+                not request.user.is_psicologo and
+                not request.user.is_paciente
         ):
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
@@ -35,7 +42,7 @@ class DeveSerPsicologoMixin(LoginRequiredMixin):
         if not request.user.is_psicologo:
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
-    
+
 
 class GetFormMixin(FormMixin):
     def get_form_kwargs(self):
@@ -55,8 +62,8 @@ class FluxoAlternativoLoginContextMixin(ContextMixin):
             }
         ]
         return context
-    
-    
+
+
 class CadastroEscolhaView(TemplateView, FluxoAlternativoLoginContextMixin):
     template_name = 'conta/cadastro_escolha.html'
 
@@ -77,17 +84,17 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
             inline = form_inline.save(commit=False)
             inline.usuario = usuario
             inline.save()
-                
+
             login(self.request, usuario)
             return self.get_redirect()
-        
+
         return self.render_to_response({'form': form_usuario, 'form_inline': form_inline})
 
-    def get_form_inline(self):
-        raise NotImplementedError("Subclasses devem implementar o método get_form_inline para retornar o formulário inline específico.")
-    
+    def get_form_inline_class(self):
+        raise NotImplementedError("Subclasses devem implementar get_form_inline_class().")
+
     def get_redirect(self):
-        raise NotImplementedError("Subclasses devem implementar o método get_redirect para retornar a URL de redirecionamento.")
+        raise NotImplementedError("Subclasses devem implementar get_redirect().")
 
 
 class PacienteCadastroView(CadastroView):
@@ -107,10 +114,6 @@ class PsicologoCadastroView(CadastroView):
 
 
 class CustomLoginView(LoginView):
-    """
-    Exibe o formulário de login e, em caso de sucesso,
-    redireciona para LOGIN_REDIRECT_URL.
-    """
     template_name = 'conta/login.html'
     authentication_form = EmailAuthenticationForm
 
@@ -146,23 +149,22 @@ class PerfilView(FormView, SingleObjectMixin):
         kwargs["usuario"] = self.request.user
         kwargs["psicologo"] = self.get_object()
         return kwargs
-    
+
     def get_context_data(self, **kwargs):
-        # Setar self.object para o SingleObjectMixin funcionar
         self.object = self.get_object()
         context = super().get_context_data(**kwargs)
         context[self.context_object_name] = self.object
         return context
-    
+
     def post(self, request, *args, **kwargs):
         if not request.user.is_paciente:
             return HttpResponseForbidden("Sua conta precisa ser do tipo paciente para agendar uma consulta.")
         return super().post(request, *args, **kwargs)
-    
+
     def form_valid(self, form):
         form.save()
         return super().form_valid(form)
-    
+
 
 class PesquisaView(ListView, GetFormMixin):
     template_name = "pesquisa/pesquisa.html"
@@ -172,36 +174,32 @@ class PesquisaView(ListView, GetFormMixin):
 
     def get_queryset(self):
         queryset = Psicologo.completos.all()
-
         form = self.get_form()
 
         if form.is_valid():
-            especializacao = form.cleaned_data.get("especializacao")
-            disponibilidade = form.cleaned_data.get("disponibilidade")
-            valor_minimo = form.cleaned_data.get("valor_minimo")
-            valor_maximo = form.cleaned_data.get("valor_maximo")
+            esp = form.cleaned_data.get("especializacao")
+            disp = form.cleaned_data.get("disponibilidade")
+            vmin = form.cleaned_data.get("valor_minimo")
+            vmax = form.cleaned_data.get("valor_maximo")
 
-            if especializacao is not None:
-                queryset = queryset.filter(especializacoes=especializacao)
-
-            if valor_minimo is not None:
-                queryset = queryset.filter(valor_consulta__gte=valor_minimo)
-
-            if valor_maximo is not None:
-                queryset = queryset.filter(valor_consulta__lte=valor_maximo)
-
-            if disponibilidade is not None:
-                psicologo_ids = [psicologo.id for psicologo in queryset if psicologo.esta_agendavel_em(disponibilidade)]
-                queryset = queryset.filter(id__in=psicologo_ids)
+            if esp is not None:
+                queryset = queryset.filter(especializacoes=esp)
+            if vmin is not None:
+                queryset = queryset.filter(valor_consulta__gte=vmin)
+            if vmax is not None:
+                queryset = queryset.filter(valor_consulta__lte=vmax)
+            if disp is not None:
+                ids = [p.id for p in queryset if p.esta_agendavel_em(disp)]
+                queryset = queryset.filter(id__in=ids)
 
         return queryset
 
 
 class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
     template_name = "minhas_consultas/minhas_consultas.html"
-    allow_empty = True
     context_object_name = "consultas"
     form_class = ConsultaFiltrosForm
+    allow_empty = True
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -209,65 +207,86 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
         return kwargs
 
     def get_queryset(self):
-        queryset = None
-
         if self.request.user.is_paciente:
-            queryset = Consulta.objects.filter(paciente=self.request.user.paciente)
-        elif self.request.user.is_psicologo:
-            queryset = Consulta.objects.filter(psicologo=self.request.user.psicologo)
+            qs = Consulta.objects.filter(paciente=self.request.user.paciente)
+        else:
+            qs = Consulta.objects.filter(psicologo=self.request.user.psicologo)
 
         form = self.get_form()
-
         if form.is_valid():
             estado = form.cleaned_data.get("estado")
-            paciente_ou_psicologo = form.cleaned_data.get("paciente_ou_psicologo")
-            data_inicial = form.cleaned_data.get("data_inicial")
-            data_final = form.cleaned_data.get("data_final")
+            u = form.cleaned_data.get("paciente_ou_psicologo")
+            di = form.cleaned_data.get("data_inicial")
+            df = form.cleaned_data.get("data_final")
 
             if estado:
-                queryset = queryset.filter(estado=estado)
-
-            if paciente_ou_psicologo is not None:
+                qs = qs.filter(estado=estado)
+            if u is not None:
                 if self.request.user.is_paciente:
-                    queryset = queryset.filter(psicologo=paciente_ou_psicologo)
+                    qs = qs.filter(psicologo=u)
                 else:
-                    queryset = queryset.filter(paciente=paciente_ou_psicologo)
+                    qs = qs.filter(paciente=u)
+            if di is not None:
+                qs = qs.filter(data_hora_agendada__gte=di)
+            if df is not None:
+                qs = qs.filter(data_hora_agendada__lte=df + timedelta(days=1))
 
-            if data_inicial is not None:
-                queryset = queryset.filter(data_hora_agendada__gte=data_inicial)
-
-            if data_final is not None:
-                # Somar 1 dia para incluir até as 23:59 da data final especificada
-                queryset = queryset.filter(data_hora_agendada__lte=data_final + timedelta(days=1))
-
-        return queryset
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Adicionar um atributo de classes do Bootstrap
-        consulta_classes_dict = {
+        classes = {
             EstadoConsulta.SOLICITADA: "info",
             EstadoConsulta.CONFIRMADA: "success",
             EstadoConsulta.CANCELADA: "danger",
             EstadoConsulta.EM_ANDAMENTO: "warning",
             EstadoConsulta.FINALIZADA: "completed",
         }
-
-        for consulta in context["consultas"]:
-            consulta.classe = consulta_classes_dict.get(consulta.estado, "")
-
-            if consulta.estado != EstadoConsulta.EM_ANDAMENTO:
-                consulta.classe += " text-white"
-
+        for c in context["consultas"]:
+            c.classe = classes.get(c.estado, "")
+            if c.estado != EstadoConsulta.EM_ANDAMENTO:
+                c.classe += " text-white"
         return context
 
 
-class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
+class PsicologoMeuPerfilView(LoginRequiredMixin, UpdateView):
     template_name = "meu_perfil/meu_perfil.html"
     form_class = PsicologoChangeForm
     context_object_name = "psicologo"
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
-    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        week = int(self.request.GET.get('week', 0))
+        context['week_offset'] = week
+        return context
+
+    def form_valid(self, form):
+        resp = super().form_valid(form)
+
+        # parse disponibilidade e semana (com fallback)
+        matriz = json.loads(self.request.POST.get('disponibilidade', '[]'))
+        week_str = self.request.POST.get('week_offset') or '0'
+        week = int(week_str)
+
+        # remover intervalos antigos a partir desta semana
+        from terapia.models import IntervaloDisponibilidade
+
+        tz = timezone.get_current_timezone()
+        hoje = timezone.localtime(timezone.now(), tz).date()
+        inicio_semana = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week)
+
+        IntervaloDisponibilidade.objects.filter(
+            psicologo=self.object,
+            data_hora_inicio__gte=datetime.combine(inicio_semana, time.min, tzinfo=tz)
+        ).delete()
+
+        # criar e salvar novos intervalos
+        novos = get_disponibilidade_pela_matriz(matriz, week)
+        for intervalo in novos:
+            intervalo.psicologo = self.object
+            intervalo.save()
+
+        return resp
