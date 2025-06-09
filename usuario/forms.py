@@ -5,11 +5,16 @@ from django.core.exceptions import ValidationError
 from easy_talk.renderers import FormComValidacaoRenderer
 from .models import Usuario
 
+from django_password_eye.fields import PasswordEye
+from django_password_eye.widgets import PasswordEyeWidget
+
 
 class UsuarioCreationForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
-    password1 = forms.CharField(label="Senha", widget=forms.PasswordInput)
-    password2 = forms.CharField(label="Confirmar senha", widget=forms.PasswordInput)
+
+    # Use PasswordEye em vez de CharField + PasswordInput
+    password1 = PasswordEye(label="")
+    password2 = PasswordEye(label="")
 
     class Meta:
         model = Usuario
@@ -24,7 +29,6 @@ class UsuarioCreationForm(forms.ModelForm):
         return password2
 
     def save(self, commit=True):
-        # Salvar a senha em hash
         usuario = super().save(commit=False)
         usuario.set_password(self.cleaned_data["password1"])
         if commit:
@@ -42,12 +46,12 @@ class UsuarioChangeForm(forms.ModelForm):
 
 
 class EmailAuthenticationForm(AuthenticationForm):
-    """
-    Formulário de autenticação que sobrescreve o username do AuthenticationForm para ser um email.
-    """
     default_renderer = FormComValidacaoRenderer
-        
     username = forms.EmailField(label="E-mail")
+    password = PasswordEye(
+        label="",
+        widget=PasswordEyeWidget(attrs={"placeholder": "Senha"})
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

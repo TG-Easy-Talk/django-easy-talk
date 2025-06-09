@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.forms',
     'usuario',
     'terapia.apps.TerapiaConfig',
+    'django_password_eye',
 ]
 
 MIDDLEWARE = [
@@ -123,3 +124,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Other settings
 
 FORM_RENDERER = 'easy_talk.renderers.CustomFormRenderer'
+DJANGO_PASSWORD_EYE_INCLUDE_FONT_AWESOME = True
