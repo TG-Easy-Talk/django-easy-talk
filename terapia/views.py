@@ -267,17 +267,11 @@ class PsicologoMeuPerfilView(LoginRequiredMixin, UpdateView):
 
     def get_form(self, form_class=None):
         """
-        Sobrescreve o form para injetar o widget com week_offset correto.
+        Injeta o DisponibilidadeInput já ajustado para a semana correta.
         """
         form = super().get_form(form_class)
-
-        # lê o offset da URL (?week=...)
         week = int(self.request.GET.get('week', '0'))
-
-        # usa o related_name 'disponibilidade' para pegar os IntervaloDisponibilidade
         dispo_qs = self.object.disponibilidade.all()
-
-        # recria o widget para refletir a semana correta
         form.fields['disponibilidade'].widget = DisponibilidadeInput(
             disponibilidade=dispo_qs,
             week_offset=week
@@ -300,19 +294,31 @@ class PsicologoMeuPerfilView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         resp = super().form_valid(form)
+
         matriz = json.loads(self.request.POST.get('disponibilidade', '[]'))
         week_str = self.request.POST.get('week_offset') or '0'
         week = int(week_str)
+
         from terapia.models import IntervaloDisponibilidade
+
         tz = timezone.get_current_timezone()
         hoje = timezone.localtime(timezone.now(), tz).date()
         inicio_semana = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week)
+        # Apaga somente os intervalos DESSA semana
         IntervaloDisponibilidade.objects.filter(
             psicologo=self.object,
-            data_hora_inicio__gte=datetime.combine(inicio_semana, time.min, tzinfo=tz)
+            data_hora_inicio__gte=datetime.combine(inicio_semana, time.min, tzinfo=tz),
+            data_hora_inicio__lt=datetime.combine(inicio_semana + timedelta(days=7), time.min, tzinfo=tz),
         ).delete()
-        novos = get_disponibilidade_pela_matriz(matriz, week)
+
+        # Gera apenas para a semana selecionada
+        novos = get_disponibilidade_pela_matriz(
+            matriz,
+            week_offset=week,
+            propagate=False
+        )
         for intervalo in novos:
             intervalo.psicologo = self.object
             intervalo.save()
+
         return resp

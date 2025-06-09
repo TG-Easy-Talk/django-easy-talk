@@ -25,9 +25,9 @@ def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade, week_off
     matriz = [[False] * 24 for _ in range(7)]
 
     # marca True em cada hora disponível
-    for intervalo in semanal.all():
+    for intervalo in semanal:
         start = timezone.localtime(intervalo.data_hora_inicio, tz)
-        end   = timezone.localtime(intervalo.data_hora_fim, tz)
+        end = timezone.localtime(intervalo.data_hora_fim, tz)
         current = start
         while current < end:
             dia_idx = (current.date() - inicio_semana).days
@@ -39,11 +39,14 @@ def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade, week_off
     return str(matriz).lower()
 
 
-def get_disponibilidade_pela_matriz(matriz, week_offset=0):
+def get_disponibilidade_pela_matriz(matriz, week_offset=0, propagate=True):
     """
-    Converte a matriz de booleanos (JSON) em instâncias de IntervaloDisponibilidade,
-    propagando cada intervalo para as semanas seguintes até MAX_PROPAGATION_WEEKS.
+    Converte a matriz de booleanos (JSON) em instâncias de IntervaloDisponibilidade.
+
+    - propagate=True: replica os intervalos para todas as semanas futuras (até MAX_PROPAGATION_WEEKS).
+    - propagate=False: gera apenas os intervalos da semana week_offset.
     """
+    # importa localmente para evitar circular import
     from terapia.models import IntervaloDisponibilidade
 
     tz = timezone.get_current_timezone()
@@ -51,18 +54,19 @@ def get_disponibilidade_pela_matriz(matriz, week_offset=0):
     inicio_semana = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week_offset)
 
     intervalos = []
+    semanas = range(week_offset, MAX_PROPAGATION_WEEKS) if propagate else [week_offset]
+
     for dia, linha in enumerate(matriz):
         j = 0
         while j < 24:
             if linha[j]:
-                # início do bloco contínuo
                 hora_inicio = j
                 while j < 24 and linha[j]:
                     j += 1
                 hora_fim = j
-                # propaga este intervalo para cada semana futura
-                for w in range(week_offset, MAX_PROPAGATION_WEEKS):
-                    semana_base = inicio_semana + timedelta(weeks=w)
+                # para cada semana alvo, crie um IntervaloDisponibilidade
+                for w in semanas:
+                    semana_base = inicio_semana + timedelta(weeks=(w - week_offset))
                     dt_inicio = datetime.combine(
                         semana_base + timedelta(days=dia),
                         time(hora_inicio),
