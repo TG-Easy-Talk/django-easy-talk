@@ -100,6 +100,7 @@ class PsicologoChangeForm(forms.ModelForm):
 
     disponibilidade = forms.JSONField(
         required=False,
+        help_text="Preencha sua disponibilidade na grade semanal acima."
     )
 
     class Meta:
@@ -107,34 +108,37 @@ class PsicologoChangeForm(forms.ModelForm):
         fields = ["valor_consulta", "sobre_mim", "foto", "especializacoes"]
 
     def __init__(self, *args, **kwargs):
+        """
+        Configura campos e widgets, incluindo o DisponibilidadeInput com
+        um week_offset placeholder (será injetado pela view).
+        """
         super().__init__(*args, **kwargs)
+
+        # Placeholder e tamanho do campo sobre_mim
         self.fields["sobre_mim"].widget.attrs.update({
             "placeholder": "Apresente-se para os pacientes do EasyTalk...",
+            "rows": "8",
         })
+
+        # File input para foto
         self.fields["foto"].widget = forms.FileInput()
+
+        # Classe CSS para o campo de especializações
         self.fields["especializacoes"].widget.attrs.update({"class": "h-100"})
+
+        # Widget de disponibilidade; week_offset real virá de PsicologoMeuPerfilView.get_form()
         self.fields["disponibilidade"].widget = DisponibilidadeInput(
-            disponibilidade=self.instance.disponibilidade
+            disponibilidade=self.instance.disponibilidade,
+            week_offset=0
         )
-        self.fields["sobre_mim"].widget.attrs.update({"rows": "8"})
 
     def clean_disponibilidade(self):
-        return get_disponibilidade_pela_matriz(self.cleaned_data.get("disponibilidade"))
-
-    def save(self, commit=True):
-        psicologo = super().save(commit=False)
-        disponibilidade = self.cleaned_data.get("disponibilidade")
-
-        for intervalo in disponibilidade:
-            intervalo.psicologo = psicologo
-
-        IntervaloDisponibilidade.objects.filter(psicologo=psicologo).delete()
-        IntervaloDisponibilidade.objects.bulk_create(disponibilidade)
-
-        if commit:
-            psicologo.save()
-
-        return psicologo
+        """
+        Retorna apenas a matriz JSON de booleanos.
+        A criação e persistência de IntervaloDisponibilidade
+        ocorrerão em PsicologoMeuPerfilView.form_valid().
+        """
+        return self.cleaned_data.get("disponibilidade")
 
 
 class ConsultaCreationForm(forms.ModelForm):

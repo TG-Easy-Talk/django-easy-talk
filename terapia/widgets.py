@@ -29,10 +29,12 @@ class DisponibilidadeInput(forms.HiddenInput):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
+        # Gera matriz JavaScript com a semana correta
         matriz_js = get_matriz_disponibilidade_booleanos_em_javascript(
-            self.disponibilidade, week_offset=self.week_offset
+            self.disponibilidade,
+            week_offset=self.week_offset
         )
-        # injeta variáveis no contexto que o template espera
+        # Injeta variáveis no contexto para template e JS
         context['widget'].update({
             'week_offset': self.week_offset,
             'week_start': self.week_start,
@@ -42,7 +44,8 @@ class DisponibilidadeInput(forms.HiddenInput):
         return context
 
     def format_value(self, value):
-        # gera o JSON da matriz para o input oculto
+        # Retorna JSON da matriz para o input oculto
         return get_matriz_disponibilidade_booleanos_em_javascript(
-            self.disponibilidade, week_offset=self.week_offset
+            self.disponibilidade,
+            week_offset=self.week_offset
         )

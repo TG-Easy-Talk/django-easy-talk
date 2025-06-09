@@ -3,9 +3,9 @@
 <div class="d-flex justify-content-between align-items-center mt-3">
     <button type="button" id="prev-week" class="btn btn-outline-primary">&laquo;</button>
     <span id="week-label">
-    Semana {{ widget.week_offset }}
-    ({{ widget.week_start|date:"d/m/Y" }} – {{ widget.week_end|date:"d/m/Y" }})
-  </span>
+        Semana {{ widget.week_offset }}
+        ({{ widget.week_start|date:"d/m/Y" }} – {{ widget.week_end|date:"d/m/Y" }})
+    </span>
     <button type="button" id="next-week" class="btn btn-outline-primary">&raquo;</button>
 </div>
 
@@ -40,14 +40,14 @@
         </div>
         {% for _ in "123456789012345678901234" %}
             <div
-                    data-grade
-                    data-selecionado="false"
-                    data-linha="{{ forloop.parentloop.counter0 }}"
-                    data-coluna="{{ forloop.counter0 }}"
-                    class="position-relative border-bottom border-primary
-               {% if forloop.parentloop.first %}border-top{% endif %}
-               {% if forloop.first %}border-start{% endif %}
-               border-end"
+                data-grade
+                data-selecionado="false"
+                data-linha="{{ forloop.parentloop.counter0 }}"
+                data-coluna="{{ forloop.counter0 }}"
+                class="position-relative border-bottom border-primary
+                    {% if forloop.parentloop.first %}border-top{% endif %}
+                    {% if forloop.first %}border-start{% endif %}
+                    border-end"
             >
                 {% if forloop.parentloop.first %}
                     <div draggable="false"
@@ -73,14 +73,13 @@
     <a type="button" class="link-primary" onclick="DisponibilidadeWidget.redefinir()">Redefinir</a>
 </div>
 
-<input type="hidden" name="disponibilidade" value="{{ widget.value }}"/>
+<input type="hidden" name="disponibilidade" value="{{ widget.matriz_js }}"/>
 <input type="hidden" id="week_offset" value="{{ widget.week_offset }}"/>
 
 <div class="text-body-secondary mt-4">
     Sua tabela de disponibilidade ficará assim:
 </div>
 
-<!-- Tabela gerada dinamicamente pelo JavaScript abaixo -->
 <div class="table-responsive rounded-3 border border-primary mt-2">
     <table class="table table-borderless text-center mb-0 text-nowrap">
         <colgroup>
@@ -88,15 +87,15 @@
                 <col style="width:14.2857%;">{% endfor %}
         </colgroup>
         <thead class="table-primary">
-        <tr>
-            <th class="text-white">Domingo</th>
-            <th class="text-white">Segunda</th>
-            <th class="text-white">Terça</th>
-            <th class="text-white">Quarta</th>
-            <th class="text-white">Quinta</th>
-            <th class="text-white">Sexta</th>
-            <th class="text-white">Sábado</th>
-        </tr>
+            <tr>
+                <th class="text-white">Domingo</th>
+                <th class="text-white">Segunda</th>
+                <th class="text-white">Terça</th>
+                <th class="text-white">Quarta</th>
+                <th class="text-white">Quinta</th>
+                <th class="text-white">Sexta</th>
+                <th class="text-white">Sábado</th>
+            </tr>
         </thead>
         <tbody id="tbodyDisponibilidade"></tbody>
     </table>
@@ -108,8 +107,8 @@
         static celulas = document.querySelectorAll('[data-grade]');
         static classesOn = ["bg-secondary"];
         static classesOff = ["bg-body-secondary"];
-        static matriz = {{ widget.value }};
-        static original = {{ widget.value }};
+        static matriz = {{ widget.matriz_js }};
+        static original = {{ widget.matriz_js }};
 
         static atualizarItem(item) {
             const l = +item.dataset.linha, c = +item.dataset.coluna;
@@ -157,13 +156,13 @@
                 item.addEventListener('mousedown', e => this.lidar(e, item));
                 item.addEventListener('mouseover', e => this.lidar(e, item));
             });
-            this.widget.value = JSON.stringify(this.original);
+            // não sobrescreve; original já veio de widget.matriz_js
+            // this.widget.value = JSON.stringify(this.original);
             document.getElementById('prev-week').onclick = () => this.changeWeek(-1);
             document.getElementById('next-week').onclick = () => this.changeWeek(1);
         }
 
         static changeWeek(delta) {
-            // sempre lê o parâmetro `week` da URL
             const params = new URLSearchParams(window.location.search);
             const w = parseInt(params.get('week') || '0', 10) + delta;
             params.set('week', w);
@@ -177,9 +176,8 @@
         }
     }
 
-    // lista e atualiza tabela de texto
     class DisponibilidadeTabela {
-        static matriz_disponibilidade_booleanos = {{ widget.value }};
+        static matriz_disponibilidade_booleanos = {{ widget.matriz_js }};
         static tbody = document.getElementById('tbodyDisponibilidade');
 
         static atualizar() {

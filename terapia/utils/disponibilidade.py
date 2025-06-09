@@ -5,6 +5,7 @@ from django.utils import timezone
 
 MAX_PROPAGATION_WEEKS = 52  # Limite anual
 
+
 def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade, week_offset=0):
     """
     Gera a matriz semanal de disponibilidade para a semana atual + offset.
@@ -18,7 +19,7 @@ def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade, week_off
     # filtra apenas os IntervaloDisponibilidade que começam nesta semana
     semanal = disponibilidade.filter(
         data_hora_inicio__gte=datetime.combine(inicio_semana, time.min, tzinfo=tz),
-        data_hora_inicio__lt =datetime.combine(inicio_semana + timedelta(days=7), time.min, tzinfo=tz)
+        data_hora_inicio__lt=datetime.combine(inicio_semana + timedelta(days=7), time.min, tzinfo=tz)
     )
 
     # inicializa matriz 7x24 toda em False
@@ -46,7 +47,7 @@ def get_disponibilidade_pela_matriz(matriz, week_offset=0, propagate=True):
     - propagate=True: replica os intervalos para todas as semanas futuras (até MAX_PROPAGATION_WEEKS).
     - propagate=False: gera apenas os intervalos da semana week_offset.
     """
-    # importa localmente para evitar circular import
+    # import aqui para evitar circular import
     from terapia.models import IntervaloDisponibilidade
 
     tz = timezone.get_current_timezone()
@@ -61,22 +62,30 @@ def get_disponibilidade_pela_matriz(matriz, week_offset=0, propagate=True):
         while j < 24:
             if linha[j]:
                 hora_inicio = j
+                # avança até encontrar fim do bloco contínuo
                 while j < 24 and linha[j]:
                     j += 1
-                hora_fim = j
-                # para cada semana alvo, crie um IntervaloDisponibilidade
+                hora_fim = j  # pode ser de 1 a 24
+
                 for w in semanas:
                     semana_base = inicio_semana + timedelta(weeks=(w - week_offset))
+                    # data e hora de início
                     dt_inicio = datetime.combine(
                         semana_base + timedelta(days=dia),
                         time(hora_inicio),
                         tzinfo=tz
                     )
-                    dt_fim = datetime.combine(
-                        semana_base + timedelta(days=dia),
-                        time(hora_fim),
-                        tzinfo=tz
-                    )
+
+                    # se hora_fim == 24, ajusta para meia-noite do dia seguinte
+                    if hora_fim == 24:
+                        fim_data = semana_base + timedelta(days=dia + 1)
+                        fim_hora = time(0)
+                    else:
+                        fim_data = semana_base + timedelta(days=dia)
+                        fim_hora = time(hora_fim)
+
+                    dt_fim = datetime.combine(fim_data, fim_hora, tzinfo=tz)
+
                     intervalos.append(IntervaloDisponibilidade(
                         data_hora_inicio=dt_inicio,
                         data_hora_fim=dt_fim

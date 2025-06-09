@@ -22,9 +22,9 @@ from .forms import (
     ConsultaCreationForm,
     ConsultaFiltrosForm,
 )
-from .models import Psicologo, Consulta, EstadoConsulta
-from terapia.utils.disponibilidade import get_disponibilidade_pela_matriz
+from .models import Psicologo, Consulta, EstadoConsulta, IntervaloDisponibilidade
 from .widgets import DisponibilidadeInput
+from .utils.disponibilidade import get_disponibilidade_pela_matriz
 
 
 # --- Mixins e classes de cadastro ---
@@ -32,9 +32,9 @@ from .widgets import DisponibilidadeInput
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if (
-                request.user.is_authenticated and
-                not request.user.is_psicologo and
-                not request.user.is_paciente
+            request.user.is_authenticated and
+            not request.user.is_psicologo and
+            not request.user.is_paciente
         ):
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
@@ -265,13 +265,29 @@ class PsicologoMeuPerfilView(LoginRequiredMixin, UpdateView):
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
 
-    def get_form(self, form_class=None):
+    def _get_week_bounds(self):
         """
-        Injeta o DisponibilidadeInput já ajustado para a semana correta.
+        Retorna (offset, início_da_semana, fim_da_semana).
         """
-        form = super().get_form(form_class)
+        tz = timezone.get_current_timezone()
+        hoje = timezone.localtime(timezone.now(), tz).date()
         week = int(self.request.GET.get('week', '0'))
-        dispo_qs = self.object.disponibilidade.all()
+        start = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week)
+        end = start + timedelta(days=6)
+        return week, start, end
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        week, start, end = self._get_week_bounds()
+
+        # filtra apenas os intervalos desta semana
+        tz = timezone.get_current_timezone()
+        dispo_qs = self.object.disponibilidade.filter(
+            data_hora_inicio__gte=datetime.combine(start, time.min, tzinfo=tz),
+            data_hora_inicio__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz),
+        )
+
+        # injeta widget com week_offset correto
         form.fields['disponibilidade'].widget = DisponibilidadeInput(
             disponibilidade=dispo_qs,
             week_offset=week
@@ -280,43 +296,35 @@ class PsicologoMeuPerfilView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        week = int(self.request.GET.get('week', '0'))
-        tz = timezone.get_current_timezone()
-        hoje = timezone.localtime(timezone.now(), tz).date()
-        inicio_semana = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week)
-        fim_semana = inicio_semana + timedelta(days=6)
+        week, start, end = self._get_week_bounds()
         context.update({
             'week_offset': week,
-            'week_start': inicio_semana,
-            'week_end': fim_semana,
+            'week_start': start,
+            'week_end': end,
         })
         return context
 
     def form_valid(self, form):
         resp = super().form_valid(form)
 
-        matriz = json.loads(self.request.POST.get('disponibilidade', '[]'))
-        week_str = self.request.POST.get('week_offset') or '0'
-        week = int(week_str)
-
-        from terapia.models import IntervaloDisponibilidade
-
+        week, start, end = self._get_week_bounds()
         tz = timezone.get_current_timezone()
-        hoje = timezone.localtime(timezone.now(), tz).date()
-        inicio_semana = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week)
-        # Apaga somente os intervalos DESSA semana
+
+        # deleta somente os intervalos desta semana
         IntervaloDisponibilidade.objects.filter(
             psicologo=self.object,
-            data_hora_inicio__gte=datetime.combine(inicio_semana, time.min, tzinfo=tz),
-            data_hora_inicio__lt=datetime.combine(inicio_semana + timedelta(days=7), time.min, tzinfo=tz),
+            data_hora_inicio__gte=datetime.combine(start, time.min, tzinfo=tz),
+            data_hora_inicio__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz),
         ).delete()
 
-        # Gera apenas para a semana selecionada
+        # lê matriz JSON e gera apenas para esta semana
+        matriz = json.loads(self.request.POST.get('disponibilidade', '[]'))
         novos = get_disponibilidade_pela_matriz(
             matriz,
             week_offset=week,
             propagate=False
         )
+
         for intervalo in novos:
             intervalo.psicologo = self.object
             intervalo.save()
