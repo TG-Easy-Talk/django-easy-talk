@@ -1,5 +1,7 @@
 from django import forms
 from .utils.disponibilidade import get_matriz_disponibilidade_booleanos_em_javascript
+from django.utils import timezone
+from datetime import timedelta
 
 
 class CustomDateInput(forms.DateInput):
@@ -18,7 +20,29 @@ class DisponibilidadeInput(forms.HiddenInput):
         self.disponibilidade = disponibilidade
         self.week_offset = week_offset
 
+        # Calcula início e fim da semana
+        tz = timezone.get_current_timezone()
+        hoje = timezone.localtime(timezone.now(), tz).date()
+        inicio = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week_offset)
+        self.week_start = inicio
+        self.week_end = inicio + timedelta(days=6)
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        matriz_js = get_matriz_disponibilidade_booleanos_em_javascript(
+            self.disponibilidade, week_offset=self.week_offset
+        )
+        # injeta variáveis no contexto que o template espera
+        context['widget'].update({
+            'week_offset': self.week_offset,
+            'week_start': self.week_start,
+            'week_end': self.week_end,
+            'matriz_js': matriz_js,
+        })
+        return context
+
     def format_value(self, value):
+        # gera o JSON da matriz para o input oculto
         return get_matriz_disponibilidade_booleanos_em_javascript(
             self.disponibilidade, week_offset=self.week_offset
         )

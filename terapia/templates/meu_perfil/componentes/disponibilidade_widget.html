@@ -1,9 +1,11 @@
-<!-- django-easy-talk/terapia/templates/meu_perfil/componentes/disponibilidade_widget.html -->
 {% load static %}
 
 <div class="d-flex justify-content-between align-items-center mt-3">
     <button type="button" id="prev-week" class="btn btn-outline-primary">&laquo;</button>
-    <span id="week-label">Semana {{ week_offset }}</span>
+    <span id="week-label">
+    Semana {{ widget.week_offset }}
+    ({{ widget.week_start|date:"d/m/Y" }} – {{ widget.week_end|date:"d/m/Y" }})
+  </span>
     <button type="button" id="next-week" class="btn btn-outline-primary">&raquo;</button>
 </div>
 
@@ -19,9 +21,9 @@
     }
 
     .prevent-select {
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10+ */
-        user-select: none; /* Standard */
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 </style>
 
@@ -36,7 +38,6 @@
             {% elif forloop.counter|divisibleby:"2" %}Seg
             {% else %}Dom{% endif %}
         </div>
-
         {% for _ in "123456789012345678901234" %}
             <div
                     data-grade
@@ -49,20 +50,15 @@
                border-end"
             >
                 {% if forloop.parentloop.first %}
-                    <div
-                            draggable="false"
-                            class="font-monospace position-absolute translate-middle"
-                            style="top: -100%; cursor: default;"
-                    >
+                    <div draggable="false"
+                         class="font-monospace position-absolute translate-middle"
+                         style="top:-100%; cursor:default;">
                         {{ forloop.counter0 }}h
                     </div>
-
                     {% if forloop.last %}
-                        <div
-                                draggable="false"
-                                class="font-monospace position-absolute translate-middle start-100"
-                                style="top: -100%; cursor: default;"
-                        >
+                        <div draggable="false"
+                             class="font-monospace position-absolute translate-middle start-100"
+                             style="top:-100%; cursor:default;">
                             {{ forloop.counter }}h
                         </div>
                     {% endif %}
@@ -73,45 +69,67 @@
 </div>
 
 <div class="d-flex justify-content-end gap-3">
-    <a type="button" class="link-primary" onclick="DisponibilidadeWidget.limparGrade()">Limpar grade</a>
+    <a type="button" class="link-primary" onclick="DisponibilidadeWidget.limparGrade()">Limpar</a>
     <a type="button" class="link-primary" onclick="DisponibilidadeWidget.redefinir()">Redefinir</a>
 </div>
 
 <input type="hidden" name="disponibilidade" value="{{ widget.value }}"/>
-<input type="hidden" name="week_offset" id="week_offset" value="{{ week_offset }}"/>
+<input type="hidden" id="week_offset" value="{{ widget.week_offset }}"/>
 
-<div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
-{% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=widget.value week_offset=week_offset %}
+<div class="text-body-secondary mt-4">
+    Sua tabela de disponibilidade ficará assim:
+</div>
+
+<!-- Tabela gerada dinamicamente pelo JavaScript abaixo -->
+<div class="table-responsive rounded-3 border border-primary mt-2">
+    <table class="table table-borderless text-center mb-0 text-nowrap">
+        <colgroup>
+            {% for _ in "1234567" %}
+                <col style="width:14.2857%;">{% endfor %}
+        </colgroup>
+        <thead class="table-primary">
+        <tr>
+            <th class="text-white">Domingo</th>
+            <th class="text-white">Segunda</th>
+            <th class="text-white">Terça</th>
+            <th class="text-white">Quarta</th>
+            <th class="text-white">Quinta</th>
+            <th class="text-white">Sexta</th>
+            <th class="text-white">Sábado</th>
+        </tr>
+        </thead>
+        <tbody id="tbodyDisponibilidade"></tbody>
+    </table>
+</div>
 
 <script>
     class DisponibilidadeWidget {
         static widget = document.querySelector('input[name="disponibilidade"]');
         static celulas = document.querySelectorAll('[data-grade]');
-        static classesNaoSelecionado = ["bg-body-secondary"];
-        static classesSelecionado = ["bg-secondary"];
+        static classesOn = ["bg-secondary"];
+        static classesOff = ["bg-body-secondary"];
         static matriz = {{ widget.value }};
         static original = {{ widget.value }};
 
         static atualizarItem(item) {
             const l = +item.dataset.linha, c = +item.dataset.coluna;
-            if (this.matriz[l][c]) this.selecionar(item);
-            else this.tirar(item);
+            (this.matriz[l][c] ? this.on : this.off).call(this, item);
         }
 
-        static selecionar(item) {
+        static on(item) {
             item.dataset.selecionado = "true";
-            this.classesNaoSelecionado.forEach(c => item.classList.remove(c));
-            this.classesSelecionado.forEach(c => item.classList.add(c));
+            this.classesOff.forEach(c => item.classList.remove(c));
+            this.classesOn.forEach(c => item.classList.add(c));
         }
 
-        static tirar(item) {
+        static off(item) {
             item.dataset.selecionado = "false";
-            this.classesSelecionado.forEach(c => item.classList.remove(c));
-            this.classesNaoSelecionado.forEach(c => item.classList.add(c));
+            this.classesOn.forEach(c => item.classList.remove(c));
+            this.classesOff.forEach(c => item.classList.add(c));
         }
 
         static toggle(item) {
-            (item.dataset.selecionado === "false" ? this.selecionar : this.tirar).call(this, item);
+            item.dataset.selecionado === "false" ? this.on(item) : this.off(item);
             const l = +item.dataset.linha, c = +item.dataset.coluna;
             this.matriz[l][c] = item.dataset.selecionado === "true";
             this.updateAll();
@@ -145,11 +163,11 @@
         }
 
         static changeWeek(delta) {
-            let w = +document.getElementById('week_offset').value;
-            w += delta;
-            const p = new URLSearchParams(window.location.search);
-            p.set('week', w);
-            window.location.search = p.toString();
+            // sempre lê o parâmetro `week` da URL
+            const params = new URLSearchParams(window.location.search);
+            const w = parseInt(params.get('week') || '0', 10) + delta;
+            params.set('week', w);
+            window.location.href = window.location.pathname + '?' + params.toString();
         }
 
         static updateAll() {
@@ -159,5 +177,44 @@
         }
     }
 
+    // lista e atualiza tabela de texto
+    class DisponibilidadeTabela {
+        static matriz_disponibilidade_booleanos = {{ widget.value }};
+        static tbody = document.getElementById('tbodyDisponibilidade');
+
+        static atualizar() {
+            const m = this.matriz_disponibilidade_booleanos;
+            if (!m.flat().includes(true)) {
+                this.tbody.innerHTML = '<tr>' + '<td>-</td>'.repeat(7) + '</tr>';
+                return;
+            }
+            let maxInt = 0;
+            const dias = m.map(row => {
+                const ints = [];
+                for (let i = 0; i < 24;) {
+                    if (row[i]) {
+                        const start = i;
+                        while (i < 24 && row[i]) i++;
+                        ints.push(`${start.toString().padStart(2, '0')}:00 – ${i.toString().padStart(2, '0')}:00`);
+                    } else i++;
+                }
+                maxInt = Math.max(maxInt, ints.length);
+                return ints;
+            });
+            dias.forEach(ints => {
+                while (ints.length < maxInt) ints.push('-');
+            });
+            const rows = [];
+            for (let r = 0; r < maxInt; r++) {
+                let tr = '<tr>';
+                for (let d = 0; d < 7; d++) tr += `<td>${dias[d][r]}</td>`;
+                tr += '</tr>';
+                rows.push(tr);
+            }
+            this.tbody.innerHTML = rows.join('');
+        }
+    }
+
     DisponibilidadeWidget.preparar();
+    DisponibilidadeTabela.atualizar();
 </script>
