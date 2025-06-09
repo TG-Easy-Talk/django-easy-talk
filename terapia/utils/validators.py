@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from terapia.constants import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
 from datetime import datetime
+from usuario.models import Usuario
     
 
 def validate_antecedencia(value):
@@ -10,11 +11,15 @@ def validate_antecedencia(value):
 
     if value < agora + CONSULTA_ANTECEDENCIA_MINIMA:
         raise ValidationError(
-            f"A consulta deve ser agendada com, no mínimo, {CONSULTA_ANTECEDENCIA_MINIMA.total_seconds() // 60} minutos de antecedência."
+            "A consulta deve ser agendada com, no mínimo, %(antecedencia)s minutos de antecedência.",
+            params={'antecedencia': CONSULTA_ANTECEDENCIA_MINIMA.total_seconds() // 60},
+            code='antecedencia_minima_nao_atendida',
         )
     elif value > agora + CONSULTA_ANTECEDENCIA_MAXIMA:
         raise ValidationError(
-            f"A consulta não pode ser agendada para mais de {CONSULTA_ANTECEDENCIA_MAXIMA.days} dias no futuro."
+            "A consulta não pode ser agendada para mais de %(antecedencia_maxima) dias no futuro.",
+            params={'antecedencia_maxima': CONSULTA_ANTECEDENCIA_MAXIMA.days},
+            code='antecedencia_maxima_nao_atendida',
         )
 
 
@@ -22,7 +27,10 @@ def validate_final_horario(value):
     horario = value.time()
 
     if horario.minute % 60 != 0:
-        raise ValidationError("O horário deve terminar em :00.")
+        raise ValidationError(
+            "O horário deve terminar em :00.",
+            code='final_horario_invalido',
+        )
 
 
 def validate_data_hora_agendada(value):
@@ -40,11 +48,13 @@ def validate_valor_consulta(value):
     """
     if value is None:
         return
-    min_value = Decimal('20.00')
-    max_value = Decimal('4999.99')
+    min_value = Decimal("20.00")
+    max_value = Decimal("4999.99")
     if value < min_value or value > max_value:
         raise ValidationError(
-            f"O valor da consulta deve ser entre R${min_value:.2f} e R${max_value:.2f}"
+            "O valor da consulta deve ser entre R$%(min_value)s e R$%(max_value)s.",
+            params={"min_value": min_value, "max_value": max_value},
+            code="valor_consulta_invalido",
         )
     
 
@@ -58,5 +68,34 @@ def validate_intervalo_disponibilidade_datetime_range(value):
 
     if not (data_hora_minima <= value <= data_hora_maxima):
         raise ValidationError(
-            "A data e hora devem estar entre 00:00 de 01/07/2024 e 00:00 de 08/07/2024."
+            "A data e hora devem estar entre %(data_hora_minima)s e %(data_hora_maxima)s.",
+            params={
+                "data_hora_minima": data_hora_minima,
+                "data_hora_maxima": data_hora_maxima,
+            },
+            code="intervalo_disponibilidade_datetime_range_invalido",
+        )
+    
+
+def validate_usuario_nao_psicologo(usuario_pk):
+    """
+    Garante que o usuário não esteja vinculado a um psicólogo.
+    """
+    usuario = Usuario.objects.get(pk=usuario_pk)
+    if usuario.is_psicologo:
+        raise ValidationError(
+            "Este usuário já está relacionado a um psicólogo.",
+            code="psicologo_ja_relacionado",
+        )
+
+
+def validate_usuario_nao_paciente(usuario_pk):
+    """
+    Garante que o usuário não esteja vinculado a um paciente.
+    """
+    usuario = Usuario.objects.get(pk=usuario_pk)
+    if usuario.is_paciente:
+        raise ValidationError(
+            "Este usuário já está relacionado a um paciente.",
+            code="paciente_ja_relacionado",
         )

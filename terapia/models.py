@@ -12,6 +12,8 @@ from .utils.validators import (
     validate_data_hora_agendada,
     validate_valor_consulta,
     validate_intervalo_disponibilidade_datetime_range,
+    validate_usuario_nao_psicologo,
+    validate_usuario_nao_paciente,
 )
 from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
 
@@ -42,6 +44,7 @@ class Paciente(BasePacienteOuPsicologo):
         verbose_name="Usuário",
         on_delete=models.CASCADE,
         related_name="paciente",
+        validators=[validate_usuario_nao_psicologo],
     )
     nome = models.CharField("Nome", max_length=50)
     cpf = models.CharField("CPF", max_length=14, unique=True, validators=[validate_cpf])
@@ -50,12 +53,6 @@ class Paciente(BasePacienteOuPsicologo):
     class Meta:
         verbose_name = "Paciente"
         verbose_name_plural = "Pacientes"
-
-    def clean(self):
-        super().clean()
-        # Caso já exista no banco, checar se já há psicólogo relacionado
-        if hasattr(self, "usuario") and self.usuario.is_psicologo:
-            raise ValidationError({"usuario": "Este usuário já está relacionado a um psicólogo."})
 
     def __str__(self):
         return self.nome
@@ -90,6 +87,7 @@ class Psicologo(BasePacienteOuPsicologo):
         verbose_name="Usuário",
         on_delete=models.CASCADE,
         related_name="psicologo",
+        validators=[validate_usuario_nao_paciente],
     )
     nome_completo = models.CharField("Nome Completo", max_length=50)
     crp = models.CharField("CRP", max_length=20, unique=True, validators=[validate_crp])
@@ -144,12 +142,6 @@ class Psicologo(BasePacienteOuPsicologo):
             return None
 
         return None
-
-    def clean(self):
-        super().clean()
-        # Caso já exista no banco, checar se já há paciente relacionado
-        if hasattr(self, "usuario") and self.usuario.is_paciente:
-            raise ValidationError({"usuario": "Este usuário já está relacionado a um paciente."})
 
     def __str__(self):
         return self.nome_completo
@@ -289,7 +281,7 @@ class IntervaloDisponibilidade(models.Model):
     def __str__(self):
         return f"{self.nome_dia_semana_inicio_local} às {self.hora_inicio_local} - {self.nome_dia_semana_fim_local} às {self.hora_fim_local}"
 
-    def contem(self, data_hora):
+    def __contains__(self, data_hora):
         """
         Verifica se a data (considera-se apenas o dia da semana) e hora estão contidas no intervalo.
 
@@ -302,7 +294,11 @@ class IntervaloDisponibilidade(models.Model):
         super().clean()
         if self.data_hora_inicio is not None and self.data_hora_fim is not None:
             if self.data_hora_fim < self.data_hora_inicio + CONSULTA_DURACAO_MAXIMA:
-                raise ValidationError(f"O fim do intervalo deve ser posterior ao início por, pelo menos, {CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos.")
+                raise ValidationError(
+                    "O fim do intervalo deve ser posterior ao início por, pelo menos, %(antecedencia)s minutos.",
+                    params={"antecedencia": CONSULTA_DURACAO_MAXIMA.total_seconds() // 60},
+                    code="intervalo_fim_nao_distante_suficiente",
+                )
         
             # Desconsiderar segundos e microssegundos
             self.data_hora_inicio = self.data_hora_inicio.replace(minute=0, second=0, microsecond=0)
@@ -314,10 +310,14 @@ class IntervaloDisponibilidade(models.Model):
         
                 for intervalo in intervalos:
                     if (
-                        self.contem(intervalo.data_hora_inicio) or self.contem(intervalo.data_hora_fim) or
-                        intervalo.contem(self.data_hora_inicio) or intervalo.contem(self.data_hora_fim)
+                        intervalo.data_hora_inicio in self or intervalo.data_hora_fim in self or
+                        self.data_hora_inicio in intervalo or self.data_hora_fim in intervalo
                     ):
-                        raise ValidationError(f"Este intervalo sobrepõe este outro intervalo: {intervalo}")
+                        raise ValidationError(
+                            "Este intervalo sobrepõe este outro intervalo: %(intervalo)s",
+                            params={"intervalo": intervalo},
+                            code="sobreposicao_intervalos",
+                        )
         
 
 class EstadoConsulta(models.TextChoices):
@@ -370,12 +370,17 @@ class Consulta(models.Model):
     def clean(self):
         super().clean()
 
-        if self.data_hora_agendada < timezone.now() + CONSULTA_ANTECEDENCIA_MINIMA:
-            raise ValidationError({"data_hora_agendada": f"A consulta deve ser agendada com, no mínimo, {CONSULTA_ANTECEDENCIA_MINIMA.total_seconds() // 60} minutos de antecedência."})
-        elif hasattr(self, "psicologo") and not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
-            raise ValidationError({"data_hora_agendada": "O psicólogo não tem disponibilidade nessa data e horário"})
+        if hasattr(self, "psicologo") and not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
+            raise ValidationError(
+                {"data_hora_agendada": "O psicólogo não tem disponibilidade nessa data e horário"},
+                code="psicologo_nao_disponivel",
+            )
+        
         elif hasattr(self, "paciente") and self.paciente.ja_tem_consulta_em(self.data_hora_agendada):
-            raise ValidationError({"data_hora_agendada": "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar"})
+            raise ValidationError(
+                {"data_hora_agendada": "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar"},
+                code="paciente_nao_disponivel",
+            )
         
     def __str__(self):
         return f"Consulta {self.estado.upper()} agendada para {timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"

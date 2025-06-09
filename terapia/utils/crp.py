@@ -13,4 +13,7 @@ def validar_crp(crp: str) -> bool:
 
 def validate_crp(value: str) -> None:
     if not validar_crp(value):
-        raise ValidationError("Este CRP é inválido")
+        raise ValidationError(
+            "Este CRP é inválido ou não foi formatado corretamente.",
+            code="crp_invalido",
+        )

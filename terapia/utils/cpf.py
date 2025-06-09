@@ -27,4 +27,7 @@ def validar_cpf(value: str) -> bool:
 
 def validate_cpf(value: Optional[str]) -> None:
     if not validar_cpf(value or ""):
-        raise ValidationError("Este CPF é inválido")
+        raise ValidationError(
+            "Este CPF é inválido ou não foi formatado corretamente.",
+            code="cpf_invalido",
+        )
