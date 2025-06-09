@@ -67,7 +67,7 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
     def get(self, request, *args, **kwargs):
         form_usuario = UsuarioCreationForm()
         form_inline = self.get_form_inline_class()()
-        return self.render_to_response({'form': form_usuario, 'form_inline': form_inline})
+        return self.render_to_response(self.get_context_data(form=form_usuario, form_inline=form_inline))
 
     def post(self, request, *args, **kwargs):
         form_usuario = UsuarioCreationForm(request.POST)
@@ -81,7 +81,7 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
             login(self.request, usuario)
             return self.get_redirect()
         
-        return self.render_to_response({'form': form_usuario, 'form_inline': form_inline})
+        return self.render_to_response(self.get_context_data(form=form_usuario, form_inline=form_inline))
 
     def get_form_inline(self):
         raise NotImplementedError("Subclasses devem implementar o método get_form_inline para retornar o formulário inline específico.")
@@ -89,6 +89,16 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
     def get_redirect(self):
         raise NotImplementedError("Subclasses devem implementar o método get_redirect para retornar a URL de redirecionamento.")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context.update({
+            'form': kwargs["form"],
+            'form_inline': kwargs["form_inline"],
+        })
+
+        return context
+    
 
 class PacienteCadastroView(CadastroView):
     def get_form_inline_class(self):
@@ -96,6 +106,19 @@ class PacienteCadastroView(CadastroView):
 
     def get_redirect(self):
         return redirect('pesquisa')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["heading_form"] = "Cadastro de Paciente"
+        context["fluxos_alternativos"].append(
+            {
+                'url': reverse_lazy('cadastro_psicologo'),
+                'pergunta': 'É psicólogo',
+                'link_texto': 'Cadastre-se como profissional',
+            }
+        )
+
+        return context
 
 
 class PsicologoCadastroView(CadastroView):
@@ -104,6 +127,18 @@ class PsicologoCadastroView(CadastroView):
 
     def get_redirect(self):
         return redirect('meu_perfil')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["heading_form"] = "Cadastro de Profissional"
+        context["fluxos_alternativos"].append(
+            {
+                'url': reverse_lazy('cadastro_paciente'),
+                'pergunta': 'É paciente',
+                'link_texto': 'Cadastre-se como paciente',
+            }
+        )
+        return context
 
 
 class CustomLoginView(LoginView):
