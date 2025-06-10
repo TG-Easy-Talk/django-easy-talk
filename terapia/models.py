@@ -217,7 +217,7 @@ class Psicologo(BasePacienteOuPsicologo):
         fuso_atual = timezone.get_current_timezone()
         data_hora_inicio = datetime.combine(date(2024, 7, data_hora.isoweekday()), data_hora.time(), tzinfo=fuso_atual)
         data_hora_final = data_hora_inicio + CONSULTA_DURACAO_MAXIMA
-
+        
         return self.disponibilidade.filter(
             data_hora_inicio__lte=data_hora_inicio,
             data_hora_fim__gte=data_hora_final,
@@ -275,7 +275,7 @@ class IntervaloDisponibilidade(models.Model):
     @property
     def data_hora_inicio_local(self):
         return timezone.localtime(self.data_hora_inicio)
-
+    
     @property
     def data_hora_fim_local(self):
         return timezone.localtime(self.data_hora_fim)
