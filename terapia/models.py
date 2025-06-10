@@ -15,7 +15,8 @@ from .utils.validators import (
     validate_usuario_nao_psicologo,
     validate_usuario_nao_paciente,
 )
-from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
+from .constants import CONSULTA_DURACAO_MAXIMA
+from datetime import datetime, date
 
 
 class BasePacienteOuPsicologo(models.Model):
@@ -141,6 +142,29 @@ class Psicologo(BasePacienteOuPsicologo):
         if not self.disponibilidade.exists():
             return None
 
+        # i = 0
+        # agora = timezone.now()
+        # suposta_data_hora_agendavel_mais_proxima = agora + CONSULTA_ANTECEDENCIA_MINIMA
+
+        # if agora.day < suposta_data_hora_agendavel_mais_proxima.day:
+        #     i += 1
+
+        # while i < CONSULTA_ANTECEDENCIA_MAXIMA.days:
+        #     hoje = agora.date() + timedelta(days=i)
+        #     dia_semana = hoje.isoweekday() % 7 + 1  # 1 (domingo) a 7 (sábado)
+
+        #     for intervalo in self._get_intervalos_do_dia_semana(dia_semana):
+        #         for hora in get_horas_intervalo(intervalo):
+        #             data_hora_inicio = combinar_data_com_str_horario(hoje, f"{hora}:00", agora.tzinfo)
+
+        #             if (
+        #                 data_hora_inicio >= suposta_data_hora_agendavel_mais_proxima and
+        #                 not self.ja_tem_consulta_em(data_hora_inicio)
+        #             ):
+        #                 return data_hora_inicio
+
+        #     i += 1
+
         return None
 
     def __str__(self):
@@ -177,9 +201,13 @@ class Psicologo(BasePacienteOuPsicologo):
         @param data_hora: Data e hora em que a consulta começa.
         @return: True se a consulta se encaixa no intervalo, False caso contrário.
         """
+        fuso_atual = timezone.get_current_timezone()
+        data_hora_inicio = datetime.combine(date(2024, 7, data_hora.isoweekday()), data_hora.time(), tzinfo=fuso_atual)
+        data_hora_final = data_hora_inicio + CONSULTA_DURACAO_MAXIMA
+        
         return self.disponibilidade.filter(
-            data_hora_inicio__lte=data_hora,
-            data_hora_fim__gte=data_hora + CONSULTA_DURACAO_MAXIMA,
+            data_hora_inicio__lte=data_hora_inicio,
+            data_hora_fim__gte=data_hora_final,
         ).exists()
 
     def esta_agendavel_em(self, data_hora):
@@ -232,11 +260,11 @@ class IntervaloDisponibilidade(models.Model):
 
     @property
     def data_hora_inicio_local(self):
-        return self.data_hora_inicio.astimezone(tz=timezone.get_current_timezone())
+        return timezone.localtime(self.data_hora_inicio)
     
     @property
     def data_hora_fim_local(self):
-        return self.data_hora_fim.astimezone(tz=timezone.get_current_timezone())
+        return timezone.localtime(self.data_hora_fim)
 
     @property
     def dia_semana_inicio_local(self):

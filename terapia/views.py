@@ -226,7 +226,7 @@ class PesquisaView(ListView, GetFormMixin):
                 queryset = queryset.filter(valor_consulta__lte=valor_maximo)
 
             if disponibilidade is not None:
-                psicologo_ids = [psicologo.id for psicologo in queryset if psicologo.esta_agendavel_em(disponibilidade)]
+                psicologo_ids = [psicologo.id for psicologo in queryset.iterator() if psicologo.esta_agendavel_em(disponibilidade)]
                 queryset = queryset.filter(id__in=psicologo_ids)
 
         return queryset
