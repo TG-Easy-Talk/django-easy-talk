@@ -31,11 +31,7 @@ from .utils.disponibilidade import get_disponibilidade_pela_matriz
 
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
-        if (
-            request.user.is_authenticated and
-            not request.user.is_psicologo and
-            not request.user.is_paciente
-        ):
+        if request.user.is_authenticated and not request.user.is_psicologo and not request.user.is_paciente:
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
 
@@ -148,16 +144,79 @@ class PerfilView(FormView, SingleObjectMixin):
     form_class = ConsultaCreationForm
     success_url = reverse_lazy("minhas_consultas")
 
+    def get_object(self, queryset=None):
+        # ajusta conforme sua URLconf (pk, slug, etc.)
+        return Psicologo.objects.get(pk=self.kwargs["pk"])
+
+    def _get_week_bounds(self):
+        """
+        Retorna (offset, início_da_semana, fim_da_semana) baseados em ?week= na querystring.
+        """
+        try:
+            week = int(self.request.GET.get("week", "0"))
+        except ValueError:
+            week = 0
+        week = max(0, week)
+
+        today = timezone.localtime(timezone.now()).date()
+        monday = today - timedelta(days=today.isoweekday() - 1)
+        start = monday + timedelta(weeks=week)
+        end = start + timedelta(days=6)
+        return week, start, end
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["usuario"] = self.request.user
         kwargs["psicologo"] = self.get_object()
         return kwargs
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+
+        # --- replica lógica de seleção de disponibilidade por semana ---
+        week, start, end = self._get_week_bounds()
+        tz = timezone.get_current_timezone()
+
+        qs_semana = IntervaloDisponibilidade.objects.filter(
+            psicologo=self.get_object(),
+            data_hora_inicio__gte=datetime.combine(start, time.min, tzinfo=tz),
+            data_hora_inicio__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz),
+        )
+
+        # injeta o widget que renderiza o calendário de horários
+        form.fields['disponibilidade'].widget = DisponibilidadeInput(
+            disponibilidade=qs_semana,
+            week_offset=week
+        )
+        # ----------------------------------------------------------------
+
+        return form
+
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
         context = super().get_context_data(**kwargs)
         context[self.context_object_name] = self.object
+
+        week, start, end = self._get_week_bounds()
+        context.update({
+            "week_offset": week,
+            "week_start": start,
+            "week_end": end,
+        })
+
+        # Mantém também a matriz completa em JS, se ainda precisar
+        js_matrix = self.object.get_matriz_disponibilidade_booleanos_em_javascript()
+        try:
+            full = json.loads(js_matrix)
+        except (TypeError, ValueError):
+            full = []
+
+        context["full_matriz_json"] = full
+        if 0 <= week < len(full):
+            context["matriz_disponibilidade_booleanos"] = full[week]
+        else:
+            context["matriz_disponibilidade_booleanos"] = [[] for _ in range(7)]
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -282,14 +341,14 @@ class PsicologoMeuPerfilView(LoginRequiredMixin, UpdateView):
 
         # filtra apenas os intervalos desta semana
         tz = timezone.get_current_timezone()
-        dispo_qs = self.object.disponibilidade.filter(
+        qs_semana = self.object.disponibilidade.filter(
             data_hora_inicio__gte=datetime.combine(start, time.min, tzinfo=tz),
             data_hora_inicio__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz),
         )
 
         # injeta widget com week_offset correto
         form.fields['disponibilidade'].widget = DisponibilidadeInput(
-            disponibilidade=dispo_qs,
+            disponibilidade=qs_semana,
             week_offset=week
         )
         return form

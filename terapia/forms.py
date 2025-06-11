@@ -15,7 +15,6 @@ from .models import (
 )
 from .utils.disponibilidade import get_disponibilidade_pela_matriz
 
-
 Usuario = get_user_model()
 
 
@@ -144,10 +143,14 @@ class PsicologoChangeForm(forms.ModelForm):
 class ConsultaCreationForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
     template_name = "perfil/componentes/form.html"
-    
+    disponibilidade = forms.CharField(
+        widget=DisponibilidadeInput(),
+        required=False
+    )
+
     class Meta:
         model = Consulta
-        fields = ["data_hora_agendada"]
+        fields = ["data_hora_agendada", "disponibilidade"]
 
     def __init__(self, *args, usuario, psicologo, **kwargs):
         super().__init__(*args, **kwargs)
