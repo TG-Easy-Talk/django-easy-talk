@@ -113,19 +113,13 @@ class PsicologoChangeForm(forms.ModelForm):
         """
         super().__init__(*args, **kwargs)
 
-        # Placeholder e tamanho do campo sobre_mim
         self.fields["sobre_mim"].widget.attrs.update({
             "placeholder": "Apresente-se para os pacientes do EasyTalk...",
             "rows": "8",
         })
 
-        # File input para foto
         self.fields["foto"].widget = forms.FileInput()
-
-        # Classe CSS para o campo de especializações
         self.fields["especializacoes"].widget.attrs.update({"class": "h-100"})
-
-        # Widget de disponibilidade; week_offset real virá de PsicologoMeuPerfilView.get_form()
         self.fields["disponibilidade"].widget = DisponibilidadeInput(
             disponibilidade=self.instance.disponibilidade,
             week_offset=0
@@ -159,7 +153,6 @@ class ConsultaCreationForm(forms.ModelForm):
         self.fields["data_hora_agendada"].widget = CustomDateTimeInput(attrs={"step": "3600"})
 
     def _post_clean(self):
-        # Setar os campos de paciente e psicólogo antes da validação da model
         self.instance.paciente = self.usuario.paciente
         self.instance.psicologo = self.psicologo
         super()._post_clean()
