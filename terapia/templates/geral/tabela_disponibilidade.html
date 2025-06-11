@@ -1,4 +1,3 @@
-<!-- django-easy-talk/terapia/templates/geral/tabela_disponibilidade.html -->
 <div class="text-end mb-2">
     <small>Semana: {{ week_offset }}</small>
 </div>
@@ -26,14 +25,13 @@
         </tr>
         </thead>
         <tbody id="tbodyDisponibilidade">
-        <!-- será preenchido pelo script abaixo -->
         </tbody>
     </table>
 </div>
 
 <script>
     class DisponibilidadeTabela {
-        static matriz_disponibilidade_booleanos = {{ matriz_disponibilidade_booleanos|default:'[]' }};
+        static matriz_disponibilidade_booleanos = {{ matriz_disponibilidade_booleanos|safe }};
         static tbody = document.getElementById('tbodyDisponibilidade');
 
         static atualizar() {
@@ -49,16 +47,20 @@
                     if (row[i]) {
                         const start = i;
                         while (i < 24 && row[i]) i++;
-                        ints.push(`${start.toString().padStart(2, '0')}:00 - ${i.toString().padStart(2, '0')}:00`);
+                        ints.push(
+                            `${start.toString().padStart(2, '0')}:00 – ${i.toString().padStart(2, '0')}:00`
+                        );
                     } else i++;
                 }
                 maxInt = Math.max(maxInt, ints.length);
                 return ints;
             });
-            const rows = [];
-            for (const ints of diasInt) {
+
+            diasInt.forEach(ints => {
                 while (ints.length < maxInt) ints.push('-');
-            }
+            });
+
+            const rows = [];
             for (let r = 0; r < maxInt; r++) {
                 let tr = '<tr>';
                 for (let d = 0; d < 7; d++) {

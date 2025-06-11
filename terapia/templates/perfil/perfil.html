@@ -1,4 +1,4 @@
-{% extends 'geral/base.html' %}
+{% extends "geral/base.html" %}
 {% block titulo %} {{ psicologo.nome_completo }} {% endblock %}
 
 {% load static %}
@@ -6,20 +6,24 @@
 {% block conteudo %}
     <div class="row gap-4 flex-nowrap">
         <main class="col vstack gap-5">
+
+            {# ------------------------------------------------------------------ #}
+            {# Cabeçalho                                                         #}
+            {# ------------------------------------------------------------------ #}
             <div class="hstack gap-4">
                 <img class="rounded-circle mx-auto"
-                     style="width: 7.5rem; height: 7.5rem;"
+                     style="width:7.5rem;height:7.5rem;"
                      src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
                      alt="Foto de perfil">
-
                 <div class="flex-grow-1">
                     <h4 class="fw-bold">{{ psicologo.nome_completo }}</h4>
                     <hr class="border border-primary opacity-100">
-
                     <div class="hstack gap-5">
                         <div>
                             <h6 class="text-body-secondary">Valor da consulta</h6>
-                            <h6 class="fw-semibold">R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}</h6>
+                            <h6 class="fw-semibold">
+                                R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}
+                            </h6>
                         </div>
                         <div>
                             <h6 class="text-body-secondary">CRP</h6>
@@ -29,7 +33,9 @@
                 </div>
             </div>
 
-            <!-- Especializações -->
+            {# ------------------------------------------------------------------ #}
+            {# Especializações                                                   #}
+            {# ------------------------------------------------------------------ #}
             <div class="vstack gap-2">
                 <h6>Especializações</h6>
                 <div class="hstack gap-2 flex-wrap">
@@ -37,38 +43,55 @@
                 </div>
             </div>
 
+            {# ------------------------------------------------------------------ #}
+            {# Sobre mim                                                         #}
+            {# ------------------------------------------------------------------ #}
             <div class="vstack gap-2">
                 <h6>Sobre mim</h6>
                 <div class="text-body-secondary">
-                    {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre Mim.</i>" }}
+                    {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre&nbsp;Mim.</i>"|safe }}
                 </div>
             </div>
 
-            <!-- Disponibilidade somente leitura -->
+            {# ------------------------------------------------------------------ #}
+            {# Disponibilidade (somente leitura)                                 #}
+            {# ------------------------------------------------------------------ #}
             <div class="vstack gap-2">
                 <h6>Disponibilidade</h6>
-                {% if psicologo.disponibilidade.exists %}
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <a href="?week={{ week_offset|add:'-1' }}"
-                           class="btn btn-outline-primary"
-                           {% if week_offset == 0 %}disabled{% endif %}>&laquo;</a>
-                        <small>
-                            Semana {{ week_offset }}
-                            ({{ week_start|date:"d/m/Y" }} – {{ week_end|date:"d/m/Y" }})
-                        </small>
-                        <a href="?week={{ week_offset|add:'1' }}" class="btn btn-outline-primary">&raquo;</a>
-                    </div>
 
-                    {% include "geral/tabela_disponibilidade.html" with matriz_disponibilidade_booleanos=psicologo.get_matriz_disponibilidade_booleanos_em_javascript %}
+                {# Botões de navegação entre semanas #}
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <a href="?week={{ week_offset|add:'-1' }}"
+                       class="btn btn-outline-primary"
+                       {% if week_offset == 0 %}disabled{% endif %}>
+                        &laquo;
+                    </a>
+
+                    <small>
+                        Semana {{ week_offset }}
+                        ({{ week_start|date:"d/m/Y" }} – {{ week_end|date:"d/m/Y" }})
+                    </small>
+
+                    <a href="?week={{ week_offset|add:'1' }}"
+                       class="btn btn-outline-primary">
+                        &raquo;
+                    </a>
+                </div>
+
+                {# Verifica se existe ao menos um horário TRUE na matriz #}
+                {% if matriz_disponibilidade_booleanos|default:'' and matriz_disponibilidade_booleanos|join:''|yesno:'1,0' != '0' %}
+                    {% include "geral/tabela_disponibilidade.html" with matriz_disponibilidade_booleanos=matriz_disponibilidade_booleanos %}
                 {% else %}
                     <div class="text-body-secondary">
-                        <i>Este psicólogo ainda não definiu sua disponibilidade.</i>
+                        <i>Este psicólogo não possui disponibilidade nesta semana.</i>
                     </div>
                 {% endif %}
             </div>
-
         </main>
 
+        {# ------------------------------------------------------------------ #}
+        {# Sidebar – Agendamento                                             #}
+        {# ------------------------------------------------------------------ #}
         <aside class="col-auto rounded-3" style="width:250px;">
             <div class="vstack gap-2 sticky-top" id="agendamentoConsulta">
                 <form method="post">
@@ -76,6 +99,7 @@
                     <fieldset class="vstack gap-3"
                               {% if not request.user.is_paciente %}disabled{% endif %}>
                         {{ form }}
+
                         {% if request.user.is_anonymous %}
                             <div class="text-body-secondary">
                                 Você precisa estar logado para agendar uma consulta.
@@ -92,14 +116,16 @@
     </div>
 
     <script>
-        const cabecalhoEspaco = document.querySelector('header');
-
-        function setTopAgendamentoConsulta() {
+        /* reposiciona o card de agendamento abaixo do header fixo */
+        function ajustarTopoAside() {
+            const header = document.querySelector('header');
             const aside = document.getElementById('agendamentoConsulta');
-            aside.style.top = `${cabecalhoEspaco.offsetHeight + 30}px`;
+            if (header && aside) {
+                aside.style.top = (header.offsetHeight + 30) + 'px';
+            }
         }
 
-        setTopAgendamentoConsulta();
-        window.addEventListener('resize', setTopAgendamentoConsulta);
+        ajustarTopoAside();
+        window.addEventListener('resize', ajustarTopoAside);
     </script>
 {% endblock %}

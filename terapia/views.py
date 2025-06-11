@@ -24,7 +24,10 @@ from .forms import (
 )
 from .models import Psicologo, Consulta, EstadoConsulta, IntervaloDisponibilidade
 from .widgets import DisponibilidadeInput
-from .utils.disponibilidade import get_disponibilidade_pela_matriz
+from .utils.disponibilidade import (
+    get_disponibilidade_pela_matriz,
+    get_matriz_disponibilidade_booleanos_em_javascript,
+)
 
 
 # --- Mixins e classes de cadastro ---
@@ -145,21 +148,17 @@ class PerfilView(FormView, SingleObjectMixin):
     success_url = reverse_lazy("minhas_consultas")
 
     def get_object(self, queryset=None):
-        # ajusta conforme sua URLconf (pk, slug, etc.)
         return Psicologo.objects.get(pk=self.kwargs["pk"])
 
     def _get_week_bounds(self):
-        """
-        Retorna (offset, início_da_semana, fim_da_semana) baseados em ?week= na querystring.
-        """
         try:
             week = int(self.request.GET.get("week", "0"))
         except ValueError:
             week = 0
         week = max(0, week)
 
-        today = timezone.localtime(timezone.now()).date()
-        monday = today - timedelta(days=today.isoweekday() - 1)
+        hoje = timezone.localtime(timezone.now()).date()
+        monday = hoje - timedelta(days=hoje.isoweekday() - 1)
         start = monday + timedelta(weeks=week)
         end = start + timedelta(days=6)
         return week, start, end
@@ -173,7 +172,6 @@ class PerfilView(FormView, SingleObjectMixin):
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
 
-        # --- replica lógica de seleção de disponibilidade por semana ---
         week, start, end = self._get_week_bounds()
         tz = timezone.get_current_timezone()
 
@@ -183,19 +181,15 @@ class PerfilView(FormView, SingleObjectMixin):
             data_hora_inicio__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz),
         )
 
-        # injeta o widget que renderiza o calendário de horários
         form.fields['disponibilidade'].widget = DisponibilidadeInput(
             disponibilidade=qs_semana,
             week_offset=week
         )
-        # ----------------------------------------------------------------
-
         return form
 
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
         context = super().get_context_data(**kwargs)
-        context[self.context_object_name] = self.object
 
         week, start, end = self._get_week_bounds()
         context.update({
@@ -204,18 +198,18 @@ class PerfilView(FormView, SingleObjectMixin):
             "week_end": end,
         })
 
-        # Mantém também a matriz completa em JS, se ainda precisar
-        js_matrix = self.object.get_matriz_disponibilidade_booleanos_em_javascript()
-        try:
-            full = json.loads(js_matrix)
-        except (TypeError, ValueError):
-            full = []
+        tz = timezone.get_current_timezone()
+        qs_semana = IntervaloDisponibilidade.objects.filter(
+            psicologo=self.object,
+            data_hora_inicio__gte=datetime.combine(start, time.min, tzinfo=tz),
+            data_hora_inicio__lt=datetime.combine(end + timedelta(days=1), time.min, tzinfo=tz),
+        )
 
-        context["full_matriz_json"] = full
-        if 0 <= week < len(full):
-            context["matriz_disponibilidade_booleanos"] = full[week]
-        else:
-            context["matriz_disponibilidade_booleanos"] = [[] for _ in range(7)]
+        js_matriz = get_matriz_disponibilidade_booleanos_em_javascript(
+            qs_semana,
+            week_offset=week
+        )
+        context["matriz_disponibilidade_booleanos"] = js_matriz
 
         return context
 
@@ -381,7 +375,7 @@ class PsicologoMeuPerfilView(LoginRequiredMixin, UpdateView):
         novos = get_disponibilidade_pela_matriz(
             matriz,
             week_offset=week,
-            propagate=False
+            propagate=True
         )
 
         for intervalo in novos:
