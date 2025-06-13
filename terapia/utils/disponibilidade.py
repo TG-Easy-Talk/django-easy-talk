@@ -1,107 +1,96 @@
-from datetime import time, datetime, date
+# django-easy-talk/terapia/utils/disponibilidade.py
+
+from datetime import time, datetime, timedelta
 from django.utils import timezone
 
+MAX_PROPAGATION_WEEKS = 52  # Limite anual
 
-def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade):
+
+def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade, week_offset=0):
     """
-    Cria uma matriz de booleanos que representa a disponibilidade.
-    A ideia é que a matriz seja interpretável nos templates, então
-    ela é retornada como uma string que pode ser decodificada pelo
-    JavaScript no template.
+    Gera a matriz semanal de disponibilidade para a semana atual + offset.
+    Cada linha é um dia (0 = segunda-feira, 6 = domingo) e cada coluna uma hora (0–23).
     """
+    tz = timezone.get_current_timezone()
+    hoje = timezone.localtime(timezone.now(), tz).date()
+    # calcula o início da semana (segunda-feira) com deslocamento de semanas
+    inicio_semana = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week_offset)
+
+    # filtra apenas os IntervaloDisponibilidade que começam nesta semana
+    semanal = disponibilidade.filter(
+        data_hora_inicio__gte=datetime.combine(inicio_semana, time.min, tzinfo=tz),
+        data_hora_inicio__lt=datetime.combine(inicio_semana + timedelta(days=7), time.min, tzinfo=tz)
+    )
+
+    # inicializa matriz 7x24 toda em False
     matriz = [[False] * 24 for _ in range(7)]
 
-    if disponibilidade.exists():
-        for intervalo in disponibilidade.all():
-            dia_semana_inicio = intervalo.dia_semana_inicio_local - 1
-            dia_semana_fim = intervalo.dia_semana_fim_local - 1
-            hora_inicio = intervalo.hora_inicio_local.hour
-            hora_fim = intervalo.hora_fim_local.hour
+    # marca True em cada hora disponível
+    for intervalo in semanal:
+        start = timezone.localtime(intervalo.data_hora_inicio, tz)
+        end = timezone.localtime(intervalo.data_hora_fim, tz)
+        current = start
+        while current < end:
+            dia_idx = (current.date() - inicio_semana).days
+            if 0 <= dia_idx < 7:
+                matriz[dia_idx][current.hour] = True
+            current += timedelta(hours=1)
 
-            ranges = []
-
-            if dia_semana_inicio == dia_semana_fim:
-                ranges = [range(hora_inicio, hora_fim)]
-            else:
-                ranges.append(range(hora_inicio, 24))
-                i = dia_semana_inicio + 1
-
-                while i <= dia_semana_fim:
-                    if i != dia_semana_fim:
-                        ranges.append(range(0, 24))
-                    else:
-                        ranges.append(range(0, hora_fim))
-                    i += 1
-
-            for i, _range in enumerate(ranges):
-                for hora in _range:
-                    matriz[dia_semana_inicio % 7 + i][hora] = True
-
-    domingo_a_segunda(matriz)
-    # Usar str.lower() para o JavaScript interpretar corretamente
-    matriz_em_javascript = str(matriz).lower()
-    return matriz_em_javascript
+    # converte para string lower-case para consumo em JavaScript
+    return str(matriz).lower()
 
 
-def segunda_a_domingo(matriz_disponibilidade_booleanos):
+def get_disponibilidade_pela_matriz(matriz, week_offset=0, propagate=True):
     """
-    Converte uma matriz de domingo a sábado para uma matriz de segunda a domingo.
-    """
-    matriz_disponibilidade_booleanos.append(matriz_disponibilidade_booleanos.pop(0))
+    Converte a matriz de booleanos (JSON) em instâncias de IntervaloDisponibilidade.
 
-
-def domingo_a_segunda(matriz_disponibilidade_booleanos):
+    - propagate=True: replica os intervalos para todas as semanas futuras (até MAX_PROPAGATION_WEEKS).
+    - propagate=False: gera apenas os intervalos da semana week_offset.
     """
-    Converte uma matriz de segunda a domingo para uma matriz de domingo a sábado.
-    """
-    matriz_disponibilidade_booleanos.insert(0, matriz_disponibilidade_booleanos.pop())
-
-
-def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
-    """
-    Converte a matriz de booleanos em JavaScript em objetos de IntervaloDisponibilidade.
-    """
+    # import aqui para evitar circular import
     from terapia.models import IntervaloDisponibilidade
-    
-    segunda_a_domingo(matriz_disponibilidade_booleanos)
 
-    disponibilidade = []
-    m = matriz_disponibilidade_booleanos
+    tz = timezone.get_current_timezone()
+    hoje = timezone.localtime(timezone.now(), tz).date()
+    inicio_semana = hoje - timedelta(days=hoje.isoweekday() - 1) + timedelta(weeks=week_offset)
 
-    i = j = 0
-    while i < len(m):
-        while j < len(m[i]):
-            if m[i][j]:
-                hora_inicio = time(j, 0)
-                dia_semana_inicio = i + 1 # Somar 1 para ficar no formato ISO de dias de semana (1 = Segunda, 7 = Domingo)
+    intervalos = []
+    semanas = range(week_offset, MAX_PROPAGATION_WEEKS) if propagate else [week_offset]
 
-                while m[i][j]:
-                    if j < len(m[i]) - 1:
-                        j += 1
-                    else:
-                        i += 1
-                        if i >= len(m):
-                            break
-                        j = 0
-
-                j = j if j < 23 else 0
-                hora_fim = time(j, 0)
-                dia_semana_fim = i + 1 # Somar 1 para ficar no formato ISO de dias de semana (1 = Segunda, 7 = Domingo)
-                fuso_atual = timezone.get_current_timezone()
-
-                intervalo = IntervaloDisponibilidade(
-                    data_hora_inicio=datetime.combine(date(2024, 7, dia_semana_inicio), hora_inicio, tzinfo=fuso_atual),
-                    data_hora_fim=datetime.combine(date(2024, 7, dia_semana_fim), hora_fim, tzinfo=fuso_atual),
-                )
-
-                disponibilidade.append(intervalo)
-
-            j += 1
-
-            if i >= len(m):
-                break
-
-        i += 1
+    for dia, linha in enumerate(matriz):
         j = 0
+        while j < 24:
+            if linha[j]:
+                hora_inicio = j
+                # avança até encontrar fim do bloco contínuo
+                while j < 24 and linha[j]:
+                    j += 1
+                hora_fim = j  # pode ser de 1 a 24
 
-    return disponibilidade
+                for w in semanas:
+                    semana_base = inicio_semana + timedelta(weeks=(w - week_offset))
+                    # data e hora de início
+                    dt_inicio = datetime.combine(
+                        semana_base + timedelta(days=dia),
+                        time(hora_inicio),
+                        tzinfo=tz
+                    )
+
+                    # se hora_fim == 24, ajusta para meia-noite do dia seguinte
+                    if hora_fim == 24:
+                        fim_data = semana_base + timedelta(days=dia + 1)
+                        fim_hora = time(0)
+                    else:
+                        fim_data = semana_base + timedelta(days=dia)
+                        fim_hora = time(hora_fim)
+
+                    dt_fim = datetime.combine(fim_data, fim_hora, tzinfo=tz)
+
+                    intervalos.append(IntervaloDisponibilidade(
+                        data_hora_inicio=dt_inicio,
+                        data_hora_fim=dt_fim
+                    ))
+            else:
+                j += 1
+
+    return intervalos

@@ -1,3 +1,14 @@
+{% load static %}
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <button type="button" id="prev-week" class="btn btn-outline-primary">&laquo;</button>
+    <span id="week-label">
+        Semana {{ widget.week_offset }}
+        ({{ widget.week_start|date:"d/m/Y" }} – {{ widget.week_end|date:"d/m/Y" }})
+    </span>
+    <button type="button" id="next-week" class="btn btn-outline-primary">&raquo;</button>
+</div>
+
 <style>
     .grade-intervalos {
         display: grid;
@@ -10,57 +21,44 @@
     }
 
     .prevent-select {
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10 and IE 11 */
-        user-select: none; /* Standard syntax */
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 </style>
 
 <div draggable="false" class="grade-intervalos mt-5">
     {% for _ in "1234567" %}
         <div draggable="false" class="text-end font-monospace me-3">
-            {% if forloop.counter|divisibleby:"7" %}
-                Sáb
-            {% elif forloop.counter|divisibleby:"6" %}
-                Sex
-            {% elif forloop.counter|divisibleby:"5" %}
-                Qui
-            {% elif forloop.counter|divisibleby:"4" %}
-                Qua
-            {% elif forloop.counter|divisibleby:"3" %}
-                Ter
-            {% elif forloop.counter|divisibleby:"2" %}
-                Seg
-            {% else %}
-                Dom
-            {% endif %}
+            {% if forloop.counter|divisibleby:"7" %}Sáb
+            {% elif forloop.counter|divisibleby:"6" %}Sex
+            {% elif forloop.counter|divisibleby:"5" %}Qui
+            {% elif forloop.counter|divisibleby:"4" %}Qua
+            {% elif forloop.counter|divisibleby:"3" %}Ter
+            {% elif forloop.counter|divisibleby:"2" %}Seg
+            {% else %}Dom{% endif %}
         </div>
-
         {% for _ in "123456789012345678901234" %}
             <div
                 data-grade
-                data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
+                data-selecionado="false"
                 data-linha="{{ forloop.parentloop.counter0 }}"
                 data-coluna="{{ forloop.counter0 }}"
                 class="position-relative border-bottom border-primary
-                    {% if forloop.parentloop.first %}
-                        border-top
-                    {% endif %}
-
-                    {% if forloop.first %}
-                        border-start
-                    {% endif %}
-
-                    border-end
-                "
+                    {% if forloop.parentloop.first %}border-top{% endif %}
+                    {% if forloop.first %}border-start{% endif %}
+                    border-end"
             >
                 {% if forloop.parentloop.first %}
-                    <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%; cursor: default;">
+                    <div draggable="false"
+                         class="font-monospace position-absolute translate-middle"
+                         style="top:-100%; cursor:default;">
                         {{ forloop.counter0 }}h
                     </div>
-
                     {% if forloop.last %}
-                        <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%; cursor: default;">
+                        <div draggable="false"
+                             class="font-monospace position-absolute translate-middle start-100"
+                             style="top:-100%; cursor:default;">
                             {{ forloop.counter }}h
                         </div>
                     {% endif %}
@@ -69,107 +67,152 @@
         {% endfor %}
     {% endfor %}
 </div>
+
 <div class="d-flex justify-content-end gap-3">
-    <a type="button" class="link-primary" onclick="DisponibilidadeWidget.limparGrade()">Limpar grade</a>
+    <a type="button" class="link-primary" onclick="DisponibilidadeWidget.limparGrade()">Limpar</a>
     <a type="button" class="link-primary" onclick="DisponibilidadeWidget.redefinir()">Redefinir</a>
 </div>
 
-{% include "django/forms/widgets/input.html" with widget=widget %}
+<input type="hidden" name="disponibilidade" value="{{ widget.matriz_js }}"/>
+<input type="hidden" id="week_offset" value="{{ widget.week_offset }}"/>
 
-<div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
-{% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=widget.value %}
+<div class="text-body-secondary mt-4">
+    Sua tabela de disponibilidade ficará assim:
+</div>
+
+<div class="table-responsive rounded-3 border border-primary mt-2">
+    <table class="table table-borderless text-center mb-0 text-nowrap">
+        <colgroup>
+            {% for _ in "1234567" %}
+                <col style="width:14.2857%;">{% endfor %}
+        </colgroup>
+        <thead class="table-primary">
+            <tr>
+                <th class="text-white">Domingo</th>
+                <th class="text-white">Segunda</th>
+                <th class="text-white">Terça</th>
+                <th class="text-white">Quarta</th>
+                <th class="text-white">Quinta</th>
+                <th class="text-white">Sexta</th>
+                <th class="text-white">Sábado</th>
+            </tr>
+        </thead>
+        <tbody id="tbodyDisponibilidade"></tbody>
+    </table>
+</div>
 
 <script>
     class DisponibilidadeWidget {
-        static widget = document.querySelector('input[name="{{ widget.name }}"]')
-        static celulas = document.querySelectorAll('[data-grade]')
-        static classesNaoSelecionado = ["bg-body-secondary"]
-        static classesSelecionado = ["bg-secondary"]
-        static matriz_disponibilidade_booleanos = {{ widget.value }}
-        static matriz_disponibilidade_booleanos_original = {{ widget.value }}
+        static widget = document.querySelector('input[name="disponibilidade"]');
+        static celulas = document.querySelectorAll('[data-grade]');
+        static classesOn = ["bg-secondary"];
+        static classesOff = ["bg-body-secondary"];
+        static matriz = {{ widget.matriz_js }};
+        static original = {{ widget.matriz_js }};
 
-        static atualizarItemPelaMatriz(item) {
-            const linha = Number(item.dataset.linha)
-            const coluna = Number(item.dataset.coluna)
-
-            if (this.matriz_disponibilidade_booleanos[linha][coluna])
-                this.selecionar(item)
-            else
-                this.tirar(item)
+        static atualizarItem(item) {
+            const l = +item.dataset.linha, c = +item.dataset.coluna;
+            (this.matriz[l][c] ? this.on : this.off).call(this, item);
         }
 
-        static atualizarMatrizPeloItem(item) {
-            const linha = Number(item.dataset.linha)
-            const coluna = Number(item.dataset.coluna)
-            this.matriz_disponibilidade_booleanos[linha][coluna] = item.dataset.selecionado === "true" ? true : false
+        static on(item) {
+            item.dataset.selecionado = "true";
+            this.classesOff.forEach(c => item.classList.remove(c));
+            this.classesOn.forEach(c => item.classList.add(c));
         }
 
-        static selecionar(item) {
-            item.dataset.selecionado = "true"
-            this.classesNaoSelecionado.forEach(classe => item.classList.remove(classe))
-            this.classesSelecionado.forEach(classe => item.classList.add(classe))
+        static off(item) {
+            item.dataset.selecionado = "false";
+            this.classesOn.forEach(c => item.classList.remove(c));
+            this.classesOff.forEach(c => item.classList.add(c));
         }
 
-        static tirar(item) {
-            item.dataset.selecionado = "false"
-            this.classesSelecionado.forEach(classe => item.classList.remove(classe))
-            this.classesNaoSelecionado.forEach(classe => item.classList.add(classe))
-        }
-
-        static selecionarOuTirar(item) {
-            if (item.dataset.selecionado === "false")
-                this.selecionar(item)
-            else
-                this.tirar(item)
-
-            this.atualizarMatrizPeloItem(item)
-            this.atualizarInputETabela()
-        }
-
-        static atualizarInputETabela() {
-            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos)
-            DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos
-            DisponibilidadeTabela.atualizar()
+        static toggle(item) {
+            item.dataset.selecionado === "false" ? this.on(item) : this.off(item);
+            const l = +item.dataset.linha, c = +item.dataset.coluna;
+            this.matriz[l][c] = item.dataset.selecionado === "true";
+            this.updateAll();
         }
 
         static limparGrade() {
-            this.celulas.forEach((item) => {
-                this.tirar(item)
-                this.atualizarMatrizPeloItem(item)
-            })
-
-            this.atualizarInputETabela()
+            this.matriz = this.matriz.map(row => row.map(_ => false));
+            this.updateAll();
         }
 
         static redefinir() {
-            this.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_original.map((linha) => [...linha])
-            this.celulas.forEach((item) => this.atualizarItemPelaMatriz(item))
-            this.atualizarInputETabela()
+            this.matriz = this.original.map(r => [...r]);
+            this.updateAll();
         }
 
-        static lidarComEvento(e, item) {
-            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-                this.selecionarOuTirar(item)
+        static lidar(e, item) {
+            if (e.buttons === 1) this.toggle(item);
         }
 
         static preparar() {
-            document.querySelectorAll('[draggable="false"]').forEach((item) => {
-                item.classList.add('prevent-select')
+            this.celulas.forEach(item => {
+                item.classList.add('prevent-select');
+                item.addEventListener('dragstart', e => e.preventDefault());
+                this.atualizarItem(item);
+                item.addEventListener('mousedown', e => this.lidar(e, item));
+                item.addEventListener('mouseover', e => this.lidar(e, item));
+            });
+            // não sobrescreve; original já veio de widget.matriz_js
+            // this.widget.value = JSON.stringify(this.original);
+            document.getElementById('prev-week').onclick = () => this.changeWeek(-1);
+            document.getElementById('next-week').onclick = () => this.changeWeek(1);
+        }
 
-                // Prevenir que elementos sejam arrastados quando o usuário estiver arrastando o mouse na grade
-                item.addEventListener('dragstart', (e) => e.preventDefault())
-            })
+        static changeWeek(delta) {
+            const params = new URLSearchParams(window.location.search);
+            const w = parseInt(params.get('week') || '0', 10) + delta;
+            params.set('week', w);
+            window.location.href = window.location.pathname + '?' + params.toString();
+        }
 
-            this.celulas.forEach((item) => {
-                this.atualizarItemPelaMatriz(item)
-                item.addEventListener('mouseover', (e) => this.lidarComEvento(e, item))
-                item.addEventListener('mousedown', (e) => this.lidarComEvento(e, item))
-            })
-
-            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_original)
+        static updateAll() {
+            this.widget.value = JSON.stringify(this.matriz);
+            DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz;
+            DisponibilidadeTabela.atualizar();
         }
     }
 
-    DisponibilidadeWidget.preparar()
+    class DisponibilidadeTabela {
+        static matriz_disponibilidade_booleanos = {{ widget.matriz_js }};
+        static tbody = document.getElementById('tbodyDisponibilidade');
 
+        static atualizar() {
+            const m = this.matriz_disponibilidade_booleanos;
+            if (!m.flat().includes(true)) {
+                this.tbody.innerHTML = '<tr>' + '<td>-</td>'.repeat(7) + '</tr>';
+                return;
+            }
+            let maxInt = 0;
+            const dias = m.map(row => {
+                const ints = [];
+                for (let i = 0; i < 24;) {
+                    if (row[i]) {
+                        const start = i;
+                        while (i < 24 && row[i]) i++;
+                        ints.push(`${start.toString().padStart(2, '0')}:00 – ${i.toString().padStart(2, '0')}:00`);
+                    } else i++;
+                }
+                maxInt = Math.max(maxInt, ints.length);
+                return ints;
+            });
+            dias.forEach(ints => {
+                while (ints.length < maxInt) ints.push('-');
+            });
+            const rows = [];
+            for (let r = 0; r < maxInt; r++) {
+                let tr = '<tr>';
+                for (let d = 0; d < 7; d++) tr += `<td>${dias[d][r]}</td>`;
+                tr += '</tr>';
+                rows.push(tr);
+            }
+            this.tbody.innerHTML = rows.join('');
+        }
+    }
+
+    DisponibilidadeWidget.preparar();
+    DisponibilidadeTabela.atualizar();
 </script>

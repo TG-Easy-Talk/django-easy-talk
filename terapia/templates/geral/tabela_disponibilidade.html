@@ -1,3 +1,7 @@
+<div class="text-end mb-2">
+    <small>Semana: {{ week_offset }}</small>
+</div>
+
 <div class="table-responsive rounded-3 border border-primary">
     <table class="table table-borderless text-center mb-0 text-nowrap">
         <colgroup>
@@ -7,107 +11,67 @@
             <col style="width: 14.2857%;">
             <col style="width: 14.2857%;">
             <col style="width: 14.2857%;">
+            <col style="width: 14.2857%;">
         </colgroup>
         <thead class="table-primary">
-            <tr>
-                <th class="text-white" scope="col">Domingo</th>
-                <th class="text-white" scope="col">Segunda</th>
-                <th class="text-white" scope="col">Terça</th>
-                <th class="text-white" scope="col">Quarta</th>
-                <th class="text-white" scope="col">Quinta</th>
-                <th class="text-white" scope="col">Sexta</th>
-                <th class="text-white" scope="col">Sábado</th>
-            </tr>
+        <tr>
+            <th class="text-white" scope="col">Domingo</th>
+            <th class="text-white" scope="col">Segunda</th>
+            <th class="text-white" scope="col">Terça</th>
+            <th class="text-white" scope="col">Quarta</th>
+            <th class="text-white" scope="col">Quinta</th>
+            <th class="text-white" scope="col">Sexta</th>
+            <th class="text-white" scope="col">Sábado</th>
+        </tr>
         </thead>
         <tbody id="tbodyDisponibilidade">
-
         </tbody>
     </table>
 </div>
 
 <script>
-
     class DisponibilidadeTabela {
-        static matriz_disponibilidade_booleanos = {{ matriz_disponibilidade_booleanos }}
-        static tbody = document.getElementById('tbodyDisponibilidade')
-
-        static getNumeroMaximoIntervalos() {
-            let maximo = 0
-
-            for (const dia of this.matriz_disponibilidade_booleanos) {
-                let atual = 0
-
-                for (let i = 0; i < dia.length; i++) {
-                    if (dia[i] === true) {
-                        atual++
-                        i++
-                        while (dia[i] === true && i < dia.length)
-                            i++
-                    } 
-                }
-
-                if (atual > maximo)
-                    maximo = atual
-            }
-
-            return maximo
-        }
-
-        static getTabelaDisponibilidadeComoMatriz() {
-            const numeroMaximoIntervalos = this.getNumeroMaximoIntervalos()
-            const matriz = []
-
-            for (const dia of this.matriz_disponibilidade_booleanos) {
-                const intervalos = []
-
-                for (let i = 0; i < dia.length; i++) {
-                    if (dia[i] === true) {
-                        const horarioInicio = `${i.toString().padStart(2, '0')}:00`
-                        i++
-                        while (dia[i] === true && i < dia.length)
-                            i++
-
-                        const horarioFim = `${i.toString().padStart(2, '0')}:00`
-                        intervalos.push(`${horarioInicio} - ${horarioFim}`)
-                    } 
-                } 
-
-                if (intervalos.length < numeroMaximoIntervalos)
-                    for (let j = intervalos.length; j < numeroMaximoIntervalos; j++)
-                        intervalos.push("-")
-
-                matriz.push(intervalos)
-            }
-
-            // Transpor a matriz
-            const qtdColunasTransp = 7
-            const qtdLinhasTransp = numeroMaximoIntervalos
-            const matrizTransp = []
-
-            for (let i = 0; i < qtdLinhasTransp; i++) {
-                matrizTransp[i] = []
-                for (let j = 0; j < qtdColunasTransp; j++)
-                    matrizTransp[i][j] = matriz[j][i]
-            }
-            return matrizTransp
-        }
-
-        static getTabelaDisponibilidadeComoHtml() {
-            if (!this.matriz_disponibilidade_booleanos.some(linha => linha.some(x => x === true)))
-                return `<tr>` + `<td>-</td>`.repeat(7) + `</tr>`
-
-            const tbodyInnerHtml = this.getTabelaDisponibilidadeComoMatriz()
-                .map(linha => `<tr>${linha.map(intervalo => `<td>${intervalo}</td>`).join('')}</tr>`)
-                .join('')
-
-            return tbodyInnerHtml
-        }
+        static matriz_disponibilidade_booleanos = {{ matriz_disponibilidade_booleanos|safe }};
+        static tbody = document.getElementById('tbodyDisponibilidade');
 
         static atualizar() {
-            this.tbody.innerHTML = this.getTabelaDisponibilidadeComoHtml()
+            const m = this.matriz_disponibilidade_booleanos;
+            if (!m.some(row => row.includes(true))) {
+                this.tbody.innerHTML = '<tr>' + '<td>-</td>'.repeat(7) + '</tr>';
+                return;
+            }
+            let maxInt = 0;
+            const diasInt = m.map(row => {
+                const ints = [];
+                for (let i = 0; i < 24;) {
+                    if (row[i]) {
+                        const start = i;
+                        while (i < 24 && row[i]) i++;
+                        ints.push(
+                            `${start.toString().padStart(2, '0')}:00 – ${i.toString().padStart(2, '0')}:00`
+                        );
+                    } else i++;
+                }
+                maxInt = Math.max(maxInt, ints.length);
+                return ints;
+            });
+
+            diasInt.forEach(ints => {
+                while (ints.length < maxInt) ints.push('-');
+            });
+
+            const rows = [];
+            for (let r = 0; r < maxInt; r++) {
+                let tr = '<tr>';
+                for (let d = 0; d < 7; d++) {
+                    tr += `<td>${diasInt[d][r]}</td>`;
+                }
+                tr += '</tr>';
+                rows.push(tr);
+            }
+            this.tbody.innerHTML = rows.join('');
         }
     }
 
-    DisponibilidadeTabela.atualizar()
-
+    DisponibilidadeTabela.atualizar();
 </script>
