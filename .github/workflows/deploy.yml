@@ -34,14 +34,11 @@ jobs:
             source .venv/bin/activate
             pip install -r requirements.txt
 
-            # 1) Garante que existam arquivos estáticos coletados
             mkdir -p staticfiles                        
 
-            # 2) Migra banco e coleta estáticos
             python manage.py migrate --noinput
             python manage.py collectstatic --noinput
 
-            # 3) Recarrega systemd e habilita+reinicia o Gunicorn
             sudo systemctl daemon-reload                  
             sudo systemctl enable gunicorn.service        
             sudo systemctl restart gunicorn.service       
