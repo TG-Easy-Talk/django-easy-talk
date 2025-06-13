@@ -1,6 +1,7 @@
 from django.apps import AppConfig
+from django.conf import settings
 from django.db.models.signals import post_migrate
-from .popular_banco import funcoes_de_popular
+from .popular_banco import popular_tudo
 
 
 class TerapiaConfig(AppConfig):
@@ -11,5 +12,7 @@ class TerapiaConfig(AppConfig):
     def ready(self):
         import terapia.signals
 
-        for funcao in funcoes_de_popular:
-            post_migrate.connect(funcao, sender=self)
+        if settings.DATABASES['default']['NAME'] != 'db.sqlite3':  # Substitua pelo nome do banco padrão
+            return
+
+        post_migrate.connect(popular_tudo, sender=self)

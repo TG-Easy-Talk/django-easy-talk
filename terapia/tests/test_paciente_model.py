@@ -54,19 +54,27 @@ class PacienteModelTest(TestCase):
         """
         Inserir um CPF inexistente.
         """
-        paciente_cpf_invalido = Paciente(
-            usuario=self.usuario_paciente,
-            nome='Teste Inválido',
-            cpf='574.768.960-67', # CPF inválido
-        )
+        cpfs_invalidos = [
+            '574.768.960-67',
+            '57476896067',
+            '111.111.111-11',
+        ]
 
-        with self.assertRaises(ValidationError) as ctx:
-            paciente_cpf_invalido.full_clean()
+        usuario = Usuario.objects.create_user(email=f"cpf.invalido@exemplo.com", password="senha123")
 
-        self.assertEqual(
-            'cpf_invalido',
-            ctx.exception.error_dict["cpf"][0].code,
-        )
+        for cpf in cpfs_invalidos:
+            with self.subTest(cpf=cpf):
+                with self.assertRaises(ValidationError) as ctx:
+                    Paciente(
+                        usuario=usuario,
+                        nome='Paciente Inválido',
+                        cpf=cpf,
+                    ).full_clean()
+
+                self.assertEqual(
+                    'cpf_invalido',
+                    ctx.exception.error_dict["cpf"][0].code,
+                )
 
     def test_impede_usuario_com_psicologo(self):
         """

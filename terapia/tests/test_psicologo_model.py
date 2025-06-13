@@ -2,7 +2,8 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from terapia.models import Paciente, Psicologo
+from terapia.models import Paciente, Psicologo, Especializacao
+from decimal import Decimal
 
 
 Usuario = get_user_model()
@@ -11,6 +12,14 @@ Usuario = get_user_model()
 class PsicologoModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
+        Especializacao.objects.create(titulo='Depressão', descricao='Tratamento de depressão e transtornos relacionados.')
+        Especializacao.objects.create(titulo='Ansiedade', descricao='Tratamento de transtornos de ansiedade e fobias.')
+
+        cls.especializacoes = [
+            Especializacao.objects.create(titulo='Psicologia Clínica', descricao='Tratamento de distúrbios emocionais e comportamentais.'),
+            Especializacao.objects.create(titulo='Psicologia Escolar', descricao='Apoio psicológico em ambientes educacionais.'),
+            Especializacao.objects.create(titulo='Psicologia Organizacional', descricao='Consultoria e desenvolvimento organizacional.'),
+        ]
         cls.usuario_psicologo = Usuario.objects.create_user(
             email='psicologo@example.com',
             password='senha456'
@@ -19,7 +28,10 @@ class PsicologoModelTest(TestCase):
             usuario=cls.usuario_psicologo,
             nome_completo='Wanessa Vasconcelos',
             crp='06/12345',
+            sobre_mim='Psicóloga clínica com 10 anos de experiência.',
+            valor_consulta=Decimal('100.00'),
         )
+        cls.psicologo.especializacoes.set(cls.especializacoes)
 
     def test_str_representation(self):
         self.assertEqual(str(self.psicologo), 'Wanessa Vasconcelos')
@@ -31,7 +43,13 @@ class PsicologoModelTest(TestCase):
         self.assertEqual(self.psicologo.nome_completo, 'Wanessa Vasconcelos')
         self.assertEqual(self.psicologo.crp, '06/12345')
         self.assertEqual(self.psicologo.usuario, self.usuario_psicologo)
+        self.assertEqual(self.psicologo.sobre_mim, 'Psicóloga clínica com 10 anos de experiência.')
+        self.assertEqual(self.psicologo.valor_consulta, Decimal('100.00'))
+        self.assertQuerySetEqual(self.psicologo.especializacoes.all(), self.especializacoes, ordered=False)
         self.assertIsNone(self.psicologo.foto.name)
+
+    def test_valor_consulta_invalido(self):
+        pass
 
     def test_crp_unico(self):
         """
@@ -53,19 +71,38 @@ class PsicologoModelTest(TestCase):
         """
         Inserir um CRP inexistente.
         """
-        psicologo_crp_invalido = Psicologo(
-            usuario=self.usuario_psicologo,
-            nome_completo='Teste Inválido',
-            crp='06-12345', # CRP inválido
-        )
+        crps_invalidos = [
+            "06-12345",
+            "06/123456",
+            "06/1234a",
+            "06/1234-5",
+            "06/1234 5",
+            "06 12345",
+            "06/1234",
+            "06/12345/",
+            "06/12345 ",
+            "00/12345",
+            "00/12345",
+            "29/12345",
+            "-1/12345",
+            "6/12345",
+        ]
 
-        with self.assertRaises(ValidationError) as ctx:
-            psicologo_crp_invalido.full_clean()
+        usuario = Usuario.objects.create_user(email="crp.invalido@example.com", password="senha123")
 
-        self.assertEqual(
-            'crp_invalido',
-            ctx.exception.error_dict["crp"][0].code,
-        )
+        for crp in crps_invalidos:
+            with self.subTest(crp=crp):
+                with self.assertRaises(ValidationError) as ctx:
+                    Psicologo(
+                        usuario=usuario,
+                        nome_completo='Psicólogo Inválido',
+                        crp=crp,
+                    ).full_clean()
+
+                self.assertEqual(
+                    'crp_invalido',
+                    ctx.exception.error_dict["crp"][0].code,
+                )
 
     def test_impede_usuario_com_paciente(self):
         """

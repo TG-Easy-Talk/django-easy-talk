@@ -5,18 +5,18 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from terapia.models import Paciente, Psicologo, Consulta, EstadoConsulta
 
-User = get_user_model()
+Usuario = get_user_model()
 
 
 class ConsultaModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         # usuário, paciente e psicólogo
-        cls.usuario_cliente = User.objects.create_user(
+        cls.usuario_cliente = Usuario.objects.create_user(
             email='c1@example.com',
             password='senha123'
         )
-        cls.usuario_psicologo = User.objects.create_user(
+        cls.usuario_psicologo = Usuario.objects.create_user(
             email='p1@example.com',
             password='senha123'
         )
