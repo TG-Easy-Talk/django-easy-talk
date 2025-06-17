@@ -123,7 +123,7 @@ class PsicologoChangeForm(forms.ModelForm):
 
     def save(self, commit=True):
         psicologo = super().save(commit=False)
-        disponibilidade = self.cleaned_data.get("disponibilidade")
+        disponibilidade = self.cleaned_data.get("disponibilidade", [])
 
         for intervalo in disponibilidade:
             intervalo.psicologo = psicologo
@@ -133,6 +133,7 @@ class PsicologoChangeForm(forms.ModelForm):
 
         if commit:
             psicologo.save()
+            self.save_m2m()
 
         return psicologo
 

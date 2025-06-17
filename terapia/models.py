@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.db.models.expressions import Value
 from django.urls import reverse
 from django.contrib import admin
 from django.utils import timezone
@@ -15,8 +16,8 @@ from .utils.validators import (
     validate_usuario_nao_psicologo,
     validate_usuario_nao_paciente,
 )
-from .constants import CONSULTA_DURACAO_MAXIMA
-from datetime import datetime, date
+from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
+from datetime import datetime, date, timedelta
 
 
 class BasePacienteOuPsicologo(models.Model):
@@ -82,6 +83,7 @@ class PsicologoCompletosManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(self.get_filtros()).distinct()
 
+
 class Psicologo(BasePacienteOuPsicologo):
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -141,37 +143,69 @@ class Psicologo(BasePacienteOuPsicologo):
         """
         if not self.disponibilidade.exists():
             return None
+        
+        intervalos = self._get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro()
 
-        # i = 0
-        # agora = timezone.now()
-        # suposta_data_hora_agendavel_mais_proxima = agora + CONSULTA_ANTECEDENCIA_MINIMA
+        semanas = 0
+        agora = timezone.localtime()
 
-        # if agora.day < suposta_data_hora_agendavel_mais_proxima.day:
-        #     i += 1
+        while True:
+            for intervalo in intervalos:
+                datas_hora = intervalo.get_datas_hora_locais()
 
-        # while i < CONSULTA_ANTECEDENCIA_MAXIMA.days:
-        #     hoje = agora.date() + timedelta(days=i)
-        #     dia_semana = hoje.isoweekday() % 7 + 1  # 1 (domingo) a 7 (sábado)
+                for data_hora in datas_hora:
+                    dias = data_hora.isoweekday() - agora.isoweekday()
 
-        #     for intervalo in self._get_intervalos_do_dia_semana(dia_semana):
-        #         for hora in get_horas_intervalo(intervalo):
-        #             data_hora_inicio = combinar_data_com_str_horario(hoje, f"{hora}:00", agora.tzinfo)
+                    if data_hora.isoweekday() < agora.isoweekday():
+                        dias += 7
 
-        #             if (
-        #                 data_hora_inicio >= suposta_data_hora_agendavel_mais_proxima and
-        #                 not self.ja_tem_consulta_em(data_hora_inicio)
-        #             ):
-        #                 return data_hora_inicio
+                    soma_total_tempo = timedelta(days=semanas * 7 + dias)
 
-        #     i += 1
+                    if soma_total_tempo > CONSULTA_ANTECEDENCIA_MAXIMA:
+                        return None
 
-        return None
+                    data = agora.date() + soma_total_tempo
+                    data_hora_inicio = datetime.combine(data, data_hora.time(), tzinfo=agora.tzinfo)
 
+                    if (
+                        data_hora_inicio >= agora + CONSULTA_ANTECEDENCIA_MINIMA and
+                        not self.ja_tem_consulta_em(data_hora_inicio)
+                    ):
+                        return data_hora_inicio
+                    
+            semanas += 1
+                
     def __str__(self):
         return self.nome_completo
 
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
+
+    def _get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro(self):
+        """
+        Retorna os intervalos de disponibilidade do psicólogo partindo do mais
+        próximo ao mais distante no futuro.
+        """
+        agora = timezone.localtime()
+
+        # Essa variável serve para separar os intervalos que pertencem a essa semana
+        # e os que pertencem à proxima semana, levando em consideração a antecedência
+        # mínima para agendamento e a duração máxima de uma consulta.
+        final_de_consulta_mais_proximo_possivel = datetime.combine(
+            date(2024, 7, agora.isoweekday()),
+            agora.time(),
+            tzinfo=agora.tzinfo,
+        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO_MAXIMA
+
+        intervalos_nessa_semana = self.disponibilidade.filter(
+            data_hora_fim__gte=final_de_consulta_mais_proximo_possivel,
+        ).annotate(proximidade_semana=Value(0)).order_by()
+
+        intervalos_proxima_semana = self.disponibilidade.filter(
+            data_hora_fim__lt=final_de_consulta_mais_proximo_possivel,
+        ).annotate(proximidade_semana=Value(1)).order_by()
+
+        return intervalos_proxima_semana.union(intervalos_nessa_semana).order_by("proximidade_semana", "data_hora_inicio")
 
     def _get_intervalo_em(self, data_hora):
         """
@@ -236,8 +270,7 @@ INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (
     " o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja:"
     " 01/07/2024 é segunda (1),"
     " 02/07/2024 é terça (2) ..."
-    " 07/07/2024 é domingo (7),"
-    " e 08/07/2024 é segunda (1) novamente."
+    " e 07/07/2024 é domingo (7)."
 )
 
 class IntervaloDisponibilidade(models.Model):
@@ -317,6 +350,27 @@ class IntervaloDisponibilidade(models.Model):
         @return: True se estiver contido, False caso contrário.
         """
         return self.data_hora_inicio <= data_hora <= self.data_hora_fim
+    
+    def _get_datas_hora(self):
+        """
+        Retorna a lista de datas e horas que estão dentro do intervalo,
+        dando passos correspondentes à duração máxima de uma consulta.
+        """
+        datas_hora = []
+        data_hora_atual = self.data_hora_inicio
+
+        while data_hora_atual <= self.data_hora_fim - CONSULTA_DURACAO_MAXIMA:
+            datas_hora.append(data_hora_atual)
+            data_hora_atual = data_hora_atual + CONSULTA_DURACAO_MAXIMA
+            
+        return datas_hora
+    
+    def get_datas_hora_locais(self):
+        """
+        Retorna, no fuso-horário local, a lista de datas e horas que estão dentro do intervalo,
+        dando passos correspondentes à duração máxima de uma consulta.
+        """
+        return [timezone.localtime(data_hora) for data_hora in self._get_datas_hora()]
 
     def clean(self):
         super().clean()
