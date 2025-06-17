@@ -1,0 +1,45 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HOST: ${{ secrets.HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts  
+
+      - name: Deploy via SSH
+        run: |
+          ssh ubuntu@"$HOST" << 'EOF'
+            cd ~/django-easy-talk
+
+            git pull origin main
+
+            source .venv/bin/activate
+            pip install -r requirements.txt
+
+            mkdir -p staticfiles                        
+
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput
+
+            sudo systemctl daemon-reload                  
+            sudo systemctl enable gunicorn.service        
+            sudo systemctl restart gunicorn.service       
+          EOF
