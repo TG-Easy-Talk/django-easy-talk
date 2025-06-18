@@ -1,113 +1,105 @@
-{% extends "geral/base.html" %}
+{% extends 'geral/base.html' %}
 {% block titulo %} {{ psicologo.nome_completo }} {% endblock %}
 
 {% load static %}
 
 {% block conteudo %}
-    <div class="row gap-4 flex-nowrap">
-        <main class="col vstack gap-5">
-            <div class="hstack gap-4">
-                <img class="rounded-circle mx-auto"
-                     style="width:7.5rem;height:7.5rem;"
-                     src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
-                     alt="Foto de perfil">
-                <div class="flex-grow-1">
-                    <h4 class="fw-bold">{{ psicologo.nome_completo }}</h4>
-                    <hr class="border border-primary opacity-100">
-                    <div class="hstack gap-5">
-                        <div>
-                            <h6 class="text-body-secondary">Valor da consulta</h6>
-                            <h6 class="fw-semibold">
-                                R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}
-                            </h6>
-                        </div>
-                        <div>
-                            <h6 class="text-body-secondary">CRP</h6>
-                            <h6 class="fw-semibold">{{ psicologo.crp }}</h6>
-                        </div>
+<div class="row gap-4 flex-nowrap">
+    <main class="col vstack gap-5">
+        <div class="hstack gap-4">
+            <img class="rounded-circle mx-auto"
+            style="width: 7.5rem; height: 7.5rem;"
+            src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
+            alt="Foto de perfil">
+
+            <div class="flex-grow-1">
+                <h4 class="fw-bold">{{ psicologo.nome_completo }}</h4>
+                <hr class="border border-primary opacity-100">
+
+                <div class="hstack gap-5">
+                    <div>
+                        <h6 class="text-body-secondary">Valor da consulta</h6>
+                        <h6 class="fw-semibold">R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}</h6>
+                    </div>
+                    <div>
+                        <h6 class="text-body-secondary">CRP</h6>
+                        <h6 class="fw-semibold">{{ psicologo.crp }}</h6>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="vstack gap-2">
-                <h6>Especializações</h6>
-                <div class="hstack gap-2 flex-wrap">
-                    {% include "geral/especializacoes.html" %}
-                </div>
+        <div class="vstack gap-2">
+            <h6>Especializações</h6>
+            <div class="hstack gap-2 flex-wrap">
+                {% include "geral/especializacoes.html" %}
             </div>
+        </div>
 
-            <div class="vstack gap-2">
-                <h6>Sobre mim</h6>
-                <div class="text-body-secondary">
-                    {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre&nbsp;Mim.</i>"|safe }}
-                </div>
+        <div class="vstack gap-2">
+            <h6>Sobre mim</h6>
+            <div class="text-body-secondary">
+                {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre Mim.</i>" }}
             </div>
+        </div>
+
+        <div class="vstack gap-2">
+            <h6>Disponibilidade</h6>
+            {% if psicologo.disponibilidade %}
+                {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=psicologo.get_matriz_disponibilidade_booleanos_em_javascript %}
+            {% else %}
+                <div class="text-body-secondary"><i>Este psicólogo ainda não definiu sua disponibilidade.</i></div>
+            {% endif %}
+        </div>
+
+        {% comment %}
+        Essa parte do código é um acordeão que mostra as especializações do psicólogo em mais detalhes,
+        mas como o sistema ainda não permite que o psicólogo detalhe sua experiência com cada uma das
+        suas especializações, essa parte ficará comentada por enquanto.
+
+        <div class="vstack gap-2">
+            <h6>Sobre minhas especializações</h6>
+            {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
+        </div>
+
+        {% endcomment %}
 
 
-            <div class="vstack gap-2">
-                <h6>Disponibilidade</h6>
+    </main>
 
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <a href="?week={{ week_offset|add:'-1' }}"
-                       class="btn btn-outline-primary"
-                       {% if week_offset == 0 %}disabled{% endif %}>
-                        &laquo;
-                    </a>
+    <aside class="col-auto rounded-3" style="width: 250px;">
+        <div class="vstack gap-2 sticky-top" id="agendamentoConsulta">
+            <form method="post">
+                {% csrf_token %}
+                <fieldset class="vstack gap-3" {% if not request.user.is_paciente %} disabled {% endif %}>
 
-                    <small>
-                        Semana {{ week_offset }}
-                        ({{ week_start|date:"d/m/Y" }} – {{ week_end|date:"d/m/Y" }})
-                    </small>
+                    {{ form }}
 
-                    <a href="?week={{ week_offset|add:'1' }}"
-                       class="btn btn-outline-primary">
-                        &raquo;
-                    </a>
-                </div>
+                    {% if request.user.is_anonymous %}
+                        <div class="text-body-secondary">
+                            Você precisa estar logado para agendar uma consulta.
+                        </div>
+                    {% elif not request.user.is_paciente %}
+                        <div class="text-body-secondary">
+                            Sua conta não é de paciente para poder agendar uma consulta.
+                        </div>
+                    {% endif %}
 
-                {% if matriz_disponibilidade_booleanos|default:'' and matriz_disponibilidade_booleanos|join:''|yesno:'1,0' != '0' %}
-                    {% include "geral/tabela_disponibilidade.html" with matriz_disponibilidade_booleanos=matriz_disponibilidade_booleanos %}
-                {% else %}
-                    <div class="text-body-secondary">
-                        <i>Este psicólogo não possui disponibilidade nesta semana.</i>
-                    </div>
-                {% endif %}
-            </div>
-        </main>
+                </fieldset>
+            </form>
+        </div>
+    </aside>
+</div>
 
-        <aside class="col-auto rounded-3" style="width:250px;">
-            <div class="vstack gap-2 sticky-top" id="agendamentoConsulta">
-                <form method="post">
-                    {% csrf_token %}
-                    <fieldset class="vstack gap-3"
-                              {% if not request.user.is_paciente %}disabled{% endif %}>
-                        {{ form }}
+<script>
+    const conteudoContainer = document.getElementById('conteudoContainer');
+    const agendamentoConsulta = document.getElementById('agendamentoConsulta');
 
-                        {% if request.user.is_anonymous %}
-                            <div class="text-body-secondary">
-                                Você precisa estar logado para agendar uma consulta.
-                            </div>
-                        {% elif not request.user.is_paciente %}
-                            <div class="text-body-secondary">
-                                Sua conta não é de paciente para poder agendar uma consulta.
-                            </div>
-                        {% endif %}
-                    </fieldset>
-                </form>
-            </div>
-        </aside>
-    </div>
+    function setTopAgendamentoConsulta() {
+        agendamentoConsulta.style.top = `${cabecalhoEspaco.offsetHeight + 30}px`;
+    }
 
-    <script>
-        function ajustarTopoAside() {
-            const header = document.querySelector('header');
-            const aside = document.getElementById('agendamentoConsulta');
-            if (header && aside) {
-                aside.style.top = (header.offsetHeight + 30) + 'px';
-            }
-        }
-
-        ajustarTopoAside();
-        window.addEventListener('resize', ajustarTopoAside);
-    </script>
+    setTopAgendamentoConsulta();
+    window.addEventListener('resize', setTopAgendamentoConsulta);
+</script>
 {% endblock %}
