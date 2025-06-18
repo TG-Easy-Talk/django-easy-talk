@@ -273,7 +273,7 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
 
             if data_final is not None:
                 # Somar 1 dia para incluir até as 23:59 da data final especificada
-                queryset = queryset.filter(data_hora_agendada__lte=data_final + timedelta(days=1))
+                queryset = queryset.filter(data_hora_agendada__lt=data_final + timedelta(days=1))
 
         return queryset
 
