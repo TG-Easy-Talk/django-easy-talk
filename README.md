@@ -96,7 +96,7 @@ ForeignKey para Psicologo
 **📅 Consulta**
 ```
 id: long
-dataHoraAgendada: Datetime
+dataHoraAgendada: DateTime
 duracao: int
 estado: EstadoConsulta
 anotacoes: String
