@@ -1,5 +1,6 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
+from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView, FormView, ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import (
@@ -19,6 +20,8 @@ from datetime import timedelta
 from django.shortcuts import redirect
 
 
+
+
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if (
@@ -35,7 +38,7 @@ class DeveSerPsicologoMixin(LoginRequiredMixin):
         if not request.user.is_psicologo:
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
-    
+
 
 class GetFormMixin(FormMixin):
     def get_form_kwargs(self):
@@ -55,8 +58,8 @@ class FluxoAlternativoLoginContextMixin(ContextMixin):
             }
         ]
         return context
-    
-    
+
+
 class CadastroEscolhaView(TemplateView, FluxoAlternativoLoginContextMixin):
     template_name = 'conta/cadastro_escolha.html'
 
@@ -77,15 +80,15 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
             inline = form_inline.save(commit=False)
             inline.usuario = usuario
             inline.save()
-                
+
             login(self.request, usuario)
             return self.get_redirect()
-        
+
         return self.render_to_response(self.get_context_data(form=form_usuario, form_inline=form_inline))
 
     def get_form_inline(self):
         raise NotImplementedError("Subclasses devem implementar o método get_form_inline para retornar o formulário inline específico.")
-    
+
     def get_redirect(self):
         raise NotImplementedError("Subclasses devem implementar o método get_redirect para retornar a URL de redirecionamento.")
 
@@ -98,7 +101,7 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
         })
 
         return context
-    
+
 
 class PacienteCadastroView(CadastroView):
     def get_form_inline_class(self):
@@ -106,7 +109,7 @@ class PacienteCadastroView(CadastroView):
 
     def get_redirect(self):
         return redirect('pesquisa')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["heading_form"] = "Cadastro de Paciente"
@@ -127,7 +130,7 @@ class PsicologoCadastroView(CadastroView):
 
     def get_redirect(self):
         return redirect('meu_perfil')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["heading_form"] = "Cadastro de Profissional"
@@ -181,23 +184,23 @@ class PerfilView(FormView, SingleObjectMixin):
         kwargs["usuario"] = self.request.user
         kwargs["psicologo"] = self.get_object()
         return kwargs
-    
+
     def get_context_data(self, **kwargs):
         # Setar self.object para o SingleObjectMixin funcionar
         self.object = self.get_object()
         context = super().get_context_data(**kwargs)
         context[self.context_object_name] = self.object
         return context
-    
+
     def post(self, request, *args, **kwargs):
         if not request.user.is_paciente:
             return HttpResponseForbidden("Sua conta precisa ser do tipo paciente para agendar uma consulta.")
         return super().post(request, *args, **kwargs)
-    
+
     def form_valid(self, form):
         form.save()
         return super().form_valid(form)
-    
+
 
 class PesquisaView(ListView, GetFormMixin):
     template_name = "pesquisa/pesquisa.html"
@@ -298,6 +301,44 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
         return context
 
 
+@login_required
+def mudar_status_consulta(request, pk, status):
+    consulta = Consulta.objects.filter(pk=pk).first()
+
+    if status == "aceitar":
+        consulta.estado = EstadoConsulta.CONFIRMADA
+    elif status == "recusar":
+        consulta.estado = EstadoConsulta.CANCELADA
+    else:
+        return redirect('minhas_consultas')
+
+    consulta.save()
+
+    return redirect('minhas_consultas')
+
+
+class MinhasConsultasrStatusChange(DeveTerCargoMixin, UpdateView, GetFormMixin):
+    model = Consulta
+    fields = []
+
+    def get_object(self, queryset=None):
+        return Consulta.objects.filter(pk=self.kwargs["pk"]).first()
+
+    def form_valid(self, form):
+        consulta = self.get_object()
+
+        if self.kwargs["status"] == "aceitar":
+            consulta.estado = EstadoConsulta.CONFIRMADA
+        elif self.kwargs["status"] == "recusar":
+            consulta.estado = EstadoConsulta.CANCELADA
+        consulta.save()
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('minhas_consultas')
+
+
 class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
     template_name = "meu_perfil/meu_perfil.html"
     form_class = PsicologoChangeForm
@@ -305,4 +346,4 @@ class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
-    
+

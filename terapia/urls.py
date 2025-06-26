@@ -13,5 +13,6 @@ urlpatterns = [
     path('perfil/<int:pk>', views.PerfilView.as_view(), name='perfil'),
     path('pesquisa/', views.PesquisaView.as_view(), name='pesquisa'),
     path('minhas_consultas/', views.MinhasConsultasView.as_view(), name='minhas_consultas'),
+    path('minhas_consultas/<int:pk>/<str:status>', views.mudar_status_consulta, name='minhas_consultas_status'),
     path('meu_perfil/', views.PsicologoMeuPerfilView.as_view(), name='meu_perfil'),
 ]

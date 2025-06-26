@@ -1,51 +1,37 @@
 def popular_especializacoes(sender, **kwargs):
     from .models import Especializacao
 
-    dados = [
-        {"titulo": "Transtornos de Ansiedade", "descricao": "Atuação em avaliações e terapias para quadros ansiosos."},
-        {"titulo": "Depressão e Transtornos de Humor", "descricao": "Intervenções em depressão e variações de humor."},
-        {"titulo": "Trauma e Estresse Pós-Traumático (TEPT)",
-         "descricao": "Apoio a vítimas de traumas e estresse agudo."},
-        {"titulo": "Transtornos Alimentares", "descricao": "Tratamento de anorexia, bulimia e compulsão alimentar."},
-        {"titulo": "Transtornos de Personalidade", "descricao": "Terapias para diferentes perfis de personalidade."},
-        {"titulo": "Vícios e Dependência Química", "descricao": "Intervenções em dependência de substâncias."},
-        {"titulo": "Crescimento Pessoal", "descricao": "Processos de autoconhecimento e desenvolvimento."},
-        {"titulo": "Luto e Perdas", "descricao": "Apoio em situações de luto e transições."},
-        {"titulo": "Dinâmicas Interpessoais", "descricao": "Estudo das relações e papéis sociais."},
-        {"titulo": "Relacionamentos Amorosos", "descricao": "Terapias de casal e mediação de conflitos afetivos."},
-        {"titulo": "Terapia de Casal", "descricao": "Foco na comunicação e parceria entre cônjuges."},
-        {"titulo": "Terapia Familiar", "descricao": "Atendimento de famílias e sistemas familiares."},
-        {"titulo": "Conflitos Interpessoais", "descricao": "Mediação e resolução de conflitos entre indivíduos."},
-        {"titulo": "Psicologia do Amor", "descricao": "Estudo das dinâmicas amorosas e afetivas."},
-        {"titulo": "Psicologia da Infância", "descricao": "Intervenções em desenvolvimento infantil."},
-        {"titulo": "Psicologia Parental", "descricao": "Apoio a pais em práticas de criação e educação."},
-        {"titulo": "Áreas Institucionais e Contextuais",
-         "descricao": "Atuação em contextos organizados e comunitários."},
-        {"titulo": "Psicologia Hospitalar", "descricao": "Suporte emocional em ambientes de saúde."},
-        {"titulo": "Psicologia Organizacional", "descricao": "Análise de comportamento em empresas."},
-        {"titulo": "Psicologia do Trabalho", "descricao": "Bem-estar e desempenho no ambiente laboral."},
-        {"titulo": "Psicologia Escolar e Educacional", "descricao": "Intervenções no contexto escolar."},
-        {"titulo": "Psicologia Social e Comunitária", "descricao": "Projetos e pesquisas em comunidades."},
-        {"titulo": "Psicologia da Saúde", "descricao": "Promoção de saúde mental e prevenção."},
-        {"titulo": "Psicologia Infantil", "descricao": "Atendimento focado em crianças."},
-        {"titulo": "Psicologia do Adolescente", "descricao": "Apoio ao desenvolvimento na adolescência."},
-        {"titulo": "Psicologia do Adulto", "descricao": "Terapias voltadas ao público adulto."},
-        {"titulo": "Psicologia Geriátrica", "descricao": "Cuidados em saúde mental do idoso."},
-    ]
-
-    for item in dados:
-        Especializacao.objects.get_or_create(
-            titulo=item["titulo"],
-            defaults={"descricao": item["descricao"]}
-        )
-
-
-
-
-
-
-
-
+    Especializacao.objects.bulk_create(
+        [
+            Especializacao("Transtornos de Ansiedade", "Atuação em avaliações e terapias para quadros ansiosos."),
+            Especializacao("Depressão e Transtornos de Humor", "Intervenções em depressão e variações de humor."),
+            Especializacao("Trauma e Estresse Pós-Traumático (TEPT)", "Apoio a vítimas de traumas e estresse agudo."),
+            Especializacao("Transtornos Alimentares", "Tratamento de anorexia, bulimia e compulsão alimentar."),
+            Especializacao("Transtornos de Personalidade", "Terapias para diferentes perfis de personalidade."),
+            Especializacao("Vícios e Dependência Química", "Intervenções em dependência de substâncias."),
+            Especializacao("Crescimento Pessoal", "Processos de autoconhecimento e desenvolvimento."),
+            Especializacao("Luto e Perdas", "Apoio em situações de luto e transições."),
+            Especializacao("Dinâmicas Interpessoais", "Estudo das relações e papéis sociais."),
+            Especializacao("Relacionamentos Amorosos", "Terapias de casal e mediação de conflitos afetivos."),
+            Especializacao("Terapia de Casal", "Foco na comunicação e parceria entre cônjuges."),
+            Especializacao("Terapia Familiar", "Atendimento de famílias e sistemas familiares."),
+            Especializacao("Conflitos Interpessoais", "Mediação e resolução de conflitos entre indivíduos."),
+            Especializacao("Psicologia do Amor", "Estudo das dinâmicas amorosas e afetivas."),
+            Especializacao("Psicologia da Infância", "Intervenções em desenvolvimento infantil."),
+            Especializacao("Psicologia Parental", "Apoio a pais em práticas de criação e educação."),
+            Especializacao("Áreas Institucionais e Contextuais", "Atuação em contextos organizados e comunitários."),
+            Especializacao("Psicologia Hospitalar", "Suporte emocional em ambientes de saúde."),
+            Especializacao("Psicologia Organizacional", "Análise de comportamento em empresas."),
+            Especializacao("Psicologia do Trabalho", "Bem-estar e desempenho no ambiente laboral."),
+            Especializacao("Psicologia Escolar e Educacional", "Intervenções no contexto escolar."),
+            Especializacao("Psicologia Social e Comunitária", "Projetos e pesquisas em comunidades."),
+            Especializacao("Psicologia da Saúde", "Promoção de saúde mental e prevenção."),
+            Especializacao("Psicologia Infantil", "Atendimento focado em crianças."),
+            Especializacao("Psicologia do Adolescente", "Apoio ao desenvolvimento na adolescência."),
+            Especializacao("Psicologia do Adulto", "Terapias voltadas ao público adulto."),
+            Especializacao("Psicologia Geriátrica", "Cuidados em saúde mental do idoso."),
+        ]
+    )
 
 
 def popular_usuarios(sender, **kwargs):
@@ -74,15 +60,6 @@ def popular_usuarios(sender, **kwargs):
         if created:
             user.set_password(item["password"])
             user.save()
-
-
-
-
-
-
-
-
-
 
 
 def popular_psicologos(sender, **kwargs):
@@ -152,15 +129,6 @@ def popular_psicologos(sender, **kwargs):
             psicologo.save()
 
 
-
-
-
-
-
-
-
-
-
 def popular_pacientes(sender, **kwargs):
     from .models import Paciente
     from django.contrib.auth import get_user_model
@@ -177,19 +145,12 @@ def popular_pacientes(sender, **kwargs):
         )
 
 
-
-
-
-
-
-
-
 def popular_tudo(sender, **kwargs):
-        funcoes_de_popular = [
-            popular_usuarios,
-            popular_especializacoes,
-            popular_psicologos,
-            popular_pacientes,
-        ]
-        for funcao in funcoes_de_popular:
-            funcao(sender, **kwargs)
+    funcoes_de_popular = [
+        popular_usuarios,
+        popular_especializacoes,
+        popular_psicologos,
+        popular_pacientes,
+    ]
+    for funcao in funcoes_de_popular:
+        funcao(sender, **kwargs)
