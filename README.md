@@ -46,7 +46,7 @@ Se o objetivo smart for alcançado, o payback será de 1 ano.
 
 ### 👨‍⚕️ Psicólogo
 - 📝 Criar conta
-- 🧑‍🎨 Personalizar perfil com suas especializações, preço, sobre mim...
+- 🎨 Personalizar perfil com suas especializações, preço, sobre mim...
 - 🕒 Definir seus horários de disponibilidade
 - 💬 Receber solicitações de consultas e realizá-las com pacientes
 - 🗒️ Fazer anotações para cada consulta
