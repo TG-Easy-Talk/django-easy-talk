@@ -129,4 +129,4 @@ FINALIZADA
 | --- | --- |
 | Vinícius dos Santos Andrade | [https://github.com/viniciusdsandrade](https://github.com/viniciusdsandrade) |
 | Felipe de Carvalho Santos | [https://github.com/Felipinho5](https://github.com/Felipinho5) |
-| Fabio Luis Ortolan | [https://github.com/mahousenshi](https://github.com/Felipinho5) |
+| Fabio Luis Ortolan | [https://github.com/mahousenshi](https://github.com/mahousenshi) |
