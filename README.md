@@ -26,11 +26,6 @@ Haverá a opção de realizar consultas "instantâneas" no sistema, as quais fun
 - Relatórios e anotações das consultas para psicólogos
 - Histórico de consultas
 
-### 💰 Termos monetários
-O custo de mão de obra estimado é de R$15.000,00.
-Se o objetivo smart for alcançado, o payback será de 1 ano.
-
-
 # 🚀 Funcionalidades
 
 🐍 O projeto é desenvolvido em **Django.**
