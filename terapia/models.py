@@ -419,13 +419,7 @@ class EstadoConsulta(models.TextChoices):
 
 
 class Consulta(models.Model):
-    data_hora_solicitada = models.DateTimeField(
-        "Data e hora em que a consulta foi solicitada",
-        # Essa linha de auto_now_add talvez precise mudar quando formos implementar fuso-horários diferentes.
-        # Ler a segunda "Note" em:
-        # https://docs.djangoproject.com/en/5.1/ref/models/fields/#django.db.models.DateField.auto_now_add
-        auto_now_add=True,
-    )
+    data_hora_solicitada = models.DateTimeField(auto_now_add=True)
     data_hora_agendada = models.DateTimeField(
         "Data e hora agendadas para a consulta",
         validators=[validate_data_hora_agendada],

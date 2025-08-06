@@ -49,19 +49,42 @@ class PsicologoModelTest(TestCase):
         self.assertIsNone(self.psicologo.foto.name)
 
     def test_valor_consulta_invalido(self):
-        pass
+        """
+        Inserir um valor de consulta inválido.
+        """
+        valores_invalidos = [
+            Decimal('0.00'),
+            Decimal('5000.00'),
+            Decimal('-100.00'),
+            Decimal('19.99'),
+        ]
+
+        for valor in valores_invalidos:
+            with self.subTest(valor=valor):
+                with self.assertRaises(ValidationError) as ctx:
+                    Psicologo(
+                        usuario=self.usuario_psicologo,
+                        nome_completo='Psicólogo Inválido',
+                        crp='06/12345',
+                        valor_consulta=valor
+                    ).full_clean()
+
+                self.assertEqual(
+                    'valor_consulta_invalido',
+                    ctx.exception.error_dict["valor_consulta"][0].code,
+                )
 
     def test_crp_unico(self):
         """
-        Garantir unicidade de CPF.
+        Garantir unicidade de CRP.
         """
-        usuario2 = Usuario.objects.create_user(
-            email='paciente2@example.com',
+        usuario = Usuario.objects.create_user(
+            email='psicologo2@example.com',
             password='senha123'
         )
         with self.assertRaises(IntegrityError) as ctx:
             Psicologo.objects.create(
-                usuario=usuario2,
+                usuario=usuario,
                 nome_completo='Maria Souza',
                 crp='06/12345',
             )
@@ -109,7 +132,7 @@ class PsicologoModelTest(TestCase):
         Impedir usuário já vinculado a um paciente.
         """
         usuario_paciente = Usuario.objects.create_user(
-            email='paciente2@example.com',
+            email='psicologo2@example.com',
             password='senha789'
         )
         Paciente.objects.create(
