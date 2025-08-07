@@ -37,8 +37,7 @@ def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade):
                 for hora in _range:
                     matriz[(dia_semana_inicio + i) % 7][hora] = True
 
-    domingo_a_segunda(matriz)
-    # Usar str.lower() para o JavaScript interpretar corretamente
+    domingo_a_sabado(matriz)
     matriz_em_javascript = str(matriz).lower()
     return matriz_em_javascript
 
@@ -50,7 +49,7 @@ def segunda_a_domingo(matriz_disponibilidade_booleanos):
     matriz_disponibilidade_booleanos.append(matriz_disponibilidade_booleanos.pop(0))
 
 
-def domingo_a_segunda(matriz_disponibilidade_booleanos):
+def domingo_a_sabado(matriz_disponibilidade_booleanos):
     """
     Converte uma matriz de segunda a domingo para uma matriz de domingo a sábado.
     """
@@ -73,7 +72,7 @@ def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
         while j < len(m[i]):
             if m[i][j]:
                 hora_inicio = time(j, 0)
-                dia_semana_inicio = i + 1 # Somar 1 para ficar no formato ISO de dias de semana (1 = Segunda, 7 = Domingo)
+                dia_semana_inicio_iso = i + 1
 
                 while m[i][j]:
                     if j < len(m[i]) - 1:
@@ -86,12 +85,12 @@ def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
 
                 j = j if j < 23 else 0
                 hora_fim = time(j, 0)
-                dia_semana_fim = i + 1 # Somar 1 para ficar no formato ISO de dias de semana (1 = Segunda, 7 = Domingo)
+                dia_semana_fim_iso = i + 1
                 fuso_atual = timezone.get_current_timezone()
 
                 intervalo = IntervaloDisponibilidade(
-                    data_hora_inicio=datetime.combine(date(2024, 7, dia_semana_inicio), hora_inicio, tzinfo=fuso_atual),
-                    data_hora_fim=datetime.combine(date(2024, 7, dia_semana_fim), hora_fim, tzinfo=fuso_atual),
+                    data_hora_inicio=datetime.combine(date(2024, 7, dia_semana_inicio_iso), hora_inicio, tzinfo=fuso_atual),
+                    data_hora_fim=datetime.combine(date(2024, 7, dia_semana_fim_iso), hora_fim, tzinfo=fuso_atual),
                 )
 
                 disponibilidade.append(intervalo)
