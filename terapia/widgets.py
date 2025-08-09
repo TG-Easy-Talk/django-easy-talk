@@ -1,5 +1,5 @@
 from django import forms
-from .utils.disponibilidade import get_matriz_disponibilidade_booleanos_em_javascript
+from .utils.disponibilidade import get_matriz_disponibilidade_booleanos_em_json
 
 
 class CustomDateInput(forms.DateInput):
@@ -18,4 +18,4 @@ class DisponibilidadeInput(forms.HiddenInput):
         self.disponibilidade = disponibilidade
 
     def format_value(self, value):
-        return get_matriz_disponibilidade_booleanos_em_javascript(self.disponibilidade)
+        return get_matriz_disponibilidade_booleanos_em_json(self.disponibilidade)

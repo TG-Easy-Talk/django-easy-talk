@@ -6,22 +6,62 @@ from terapia.models import Paciente, Psicologo, Especializacao, IntervaloDisponi
 from decimal import Decimal
 from datetime import UTC, datetime
 from django.utils import timezone
+import json
 
 
 Usuario = get_user_model()
 
-MATRIZ_DISPONIBILIDADE_GENERICA_BOOLEANOS = [
-    [False] * 24,
-    [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-    [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-    [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-    [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-    [False] * 24,
-    [False] * 24,
-]
-MATRIZ_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JAVASCRIPT = str(MATRIZ_DISPONIBILIDADE_GENERICA_BOOLEANOS).lower()
 
-timezone.activate(UTC)
+MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
+    UTC: [
+        [True] * 12 + [False] * 12,
+        [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
+        [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
+        [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
+        [False] * 22 + [True] * 1 + [False] * 1,
+        [False] * 1 + [True] * 2 + [False] * 21,
+        [False] * 23 + [True] * 1,
+    ],
+    "Etc/GMT+1": [
+        [True] * 11 + [False] * 13,
+        [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
+        [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
+        [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
+        [False] * 21 + [True] * 1 + [False] * 2,
+        [True] * 2 + [False] * 22,
+        [False] * 22 + [True] * 2,
+    ],
+    "Etc/GMT+2": [
+        [True] * 10 + [False] * 14,
+        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
+        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
+        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
+        [False] * 20 + [True] * 1 + [False] * 2 + [True] * 1,
+        [True] * 1 + [False] * 23,
+        [False] * 21 + [True] * 3,
+    ],
+    "Etc/GMT-1": [
+        [True] * 13 + [False] * 11,
+        [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
+        [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
+        [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
+        [False] * 23 + [True] * 1,
+        [False] * 2 + [True] * 2 + [False] * 20,
+        [False] * 24,
+    ],
+    "Etc/GMT-7": [
+        [False] * 6 + [True] * 13 + [False] * 5,
+        [False] * 15 + [True] * 4 + [False] * 2 + [True] * 3,
+        [True] * 1 + [False] * 14 + [True] * 4 + [False] * 2 + [True] * 3,
+        [True] * 1 + [False] * 14 + [True] * 4 + [False] * 2 + [True] * 3,
+        [True] * 1 + [False] * 23,
+        [False] * 5 + [True] * 1 + [False] * 2 + [True] * 2 + [False] * 14,
+        [False] * 24,
+    ],
+}
+MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON = {
+    fuso: json.dumps(matriz) for fuso, matriz in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS.items()
+}
 
 
 class PsicologoModelTest(TestCase):
@@ -42,8 +82,9 @@ class PsicologoModelTest(TestCase):
             IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 2, 14, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 2, 18, 0, tzinfo=UTC)),
             IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 3, 8, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 3, 12, 0, tzinfo=UTC)),
             IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 3, 14, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 3, 18, 0, tzinfo=UTC)),
-            IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 4, 8, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 4, 12, 0, tzinfo=UTC)),
-            IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 4, 14, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 4, 18, 0, tzinfo=UTC)),
+            IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 4, 22, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 4, 23, 0, tzinfo=UTC)),
+            IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 5, 1, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 5, 3, 0, tzinfo=UTC)),
+            IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 6, 23, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 7, 12, 0, tzinfo=UTC)),
         ]
         cls.usuario_com_psicologo = Usuario.objects.create_user(
             email='psicologo@example.com',
@@ -78,6 +119,13 @@ class PsicologoModelTest(TestCase):
         self.assertQuerySetEqual(self.psicologo.disponibilidade.all(), self.disponibilidade_generica, ordered=False)
         self.assertIsNone(self.psicologo.foto.name)
 
+    def test_fk_usuario_obrigatoria(self):
+        with self.assertRaisesMessage(IntegrityError, "NOT NULL"):
+            Psicologo.objects.create(
+                nome_completo='Psicólogo sem usuário',
+                crp='06/12345',
+            )
+
     def test_valor_consulta_invalido(self):
         valores_invalidos = [
             Decimal('0.00'),
@@ -106,13 +154,12 @@ class PsicologoModelTest(TestCase):
             email='psicologo2@example.com',
             password='senha123'
         )
-        with self.assertRaises(IntegrityError) as ctx:
+        with self.assertRaisesMessage(IntegrityError, "UNIQUE"):
             Psicologo.objects.create(
                 usuario=usuario,
                 nome_completo='Maria Souza',
                 crp='06/12345',
             )
-        self.assertIn('unique constraint failed', str(ctx.exception).lower())
 
     def test_crp_invalido(self):
         crps_invalidos = [
@@ -223,8 +270,11 @@ class PsicologoModelTest(TestCase):
             with self.subTest(psicologo=psicologo):
                 self.assertFalse(psicologo.esta_com_perfil_completo)
 
-    def test_get_matriz_disponibilidade_booleanos_em_javascript(self):
-        self.assertEqual(
-            self.psicologo.get_matriz_disponibilidade_booleanos_em_javascript(),
-            MATRIZ_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JAVASCRIPT,
-        )
+    def test_get_matriz_disponibilidade_booleanos_em_json(self):
+        for fuso, matriz_em_json in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON.items():
+            with timezone.override(fuso):
+                with self.subTest(fuso=fuso):
+                    self.assertEqual(
+                        self.psicologo.get_matriz_disponibilidade_booleanos_em_json(),
+                        matriz_em_json,
+                    )

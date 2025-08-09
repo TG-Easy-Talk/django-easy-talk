@@ -1,13 +1,14 @@
 from datetime import time, datetime, date
 from django.utils import timezone
+import json
 
 
-def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade):
+def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
     """
     Cria uma matriz de booleanos que representa a disponibilidade.
     A ideia é que a matriz seja interpretável nos templates, então
-    ela é retornada como uma string que pode ser decodificada pelo
-    JavaScript no template.
+    ela é retornada como uma string de JSON que pode ser decodificada
+    pelo JavaScript no template.
     """
     matriz = [[False] * 24 for _ in range(7)]
 
@@ -38,8 +39,8 @@ def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade):
                     matriz[(dia_semana_inicio + i) % 7][hora] = True
 
     domingo_a_sabado(matriz)
-    matriz_em_javascript = str(matriz).lower()
-    return matriz_em_javascript
+    matriz_em_json = json.dumps(matriz)
+    return matriz_em_json
 
 
 def segunda_a_domingo(matriz_disponibilidade_booleanos):
@@ -58,7 +59,7 @@ def domingo_a_sabado(matriz_disponibilidade_booleanos):
 
 def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
     """
-    Converte a matriz de booleanos em JavaScript em objetos de IntervaloDisponibilidade.
+    Converte a matriz de booleanos JSON em objetos de IntervaloDisponibilidade.
     """
     from terapia.models import IntervaloDisponibilidade
     

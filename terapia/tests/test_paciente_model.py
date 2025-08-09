@@ -31,18 +31,24 @@ class PacienteModelTest(TestCase):
         self.assertEqual(self.paciente.usuario, self.usuario_com_paciente)
         self.assertIsNone(self.paciente.foto.name)
 
+    def test_fk_usuario_obrigatoria(self):
+        with self.assertRaisesMessage(IntegrityError, "NOT NULL"):
+            Paciente.objects.create(
+                nome='Paciente sem usuário',
+                cpf='369.720.320-75',
+            )
+
     def test_cpf_unico(self):
         usuario2 = Usuario.objects.create_user(
             email='paciente2@example.com',
             password='senha123'
         )
-        with self.assertRaises(IntegrityError) as ctx:
+        with self.assertRaisesMessage(IntegrityError, "UNIQUE"):
             Paciente.objects.create(
                 usuario=usuario2,
                 nome='Maria Souza',
                 cpf='987.654.321-11',
             )
-        self.assertIn('unique constraint failed', str(ctx.exception).lower())
 
     def test_cpf_invalido(self):
         cpfs_invalidos = [

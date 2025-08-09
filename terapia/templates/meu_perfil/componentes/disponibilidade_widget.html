@@ -77,7 +77,7 @@
 {% include "django/forms/widgets/input.html" with widget=widget %}
 
 <div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
-{% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=widget.value %}
+{% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos_em_json=widget.value %}
 
 <script>
     class DisponibilidadeWidget {
@@ -85,14 +85,14 @@
         static celulas = document.querySelectorAll('[data-grade]')
         static classesNaoSelecionado = ["bg-body-secondary"]
         static classesSelecionado = ["bg-secondary"]
-        static matriz_disponibilidade_booleanos = {{ widget.value }}
-        static matriz_disponibilidade_booleanos_original = {{ widget.value }}
+        static matriz_disponibilidade_booleanos_atual = JSON.parse("{{ widget.value }}")
+        static matriz_disponibilidade_booleanos_original = JSON.parse("{{ widget.value }}")
 
         static atualizarItemPelaMatriz(item) {
             const linha = Number(item.dataset.linha)
             const coluna = Number(item.dataset.coluna)
 
-            if (this.matriz_disponibilidade_booleanos[linha][coluna])
+            if (this.matriz_disponibilidade_booleanos_atual[linha][coluna])
                 this.selecionar(item)
             else
                 this.tirar(item)
@@ -101,7 +101,7 @@
         static atualizarMatrizPeloItem(item) {
             const linha = Number(item.dataset.linha)
             const coluna = Number(item.dataset.coluna)
-            this.matriz_disponibilidade_booleanos[linha][coluna] = item.dataset.selecionado === "true" ? true : false
+            this.matriz_disponibilidade_booleanos_atual[linha][coluna] = item.dataset.selecionado === "true" ? true : false
         }
 
         static selecionar(item) {
@@ -127,8 +127,8 @@
         }
 
         static atualizarInputETabela() {
-            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos)
-            DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos
+            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_atual)
+            DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_atual
             DisponibilidadeTabela.atualizar()
         }
 
@@ -142,7 +142,7 @@
         }
 
         static redefinir() {
-            this.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_original.map((linha) => [...linha])
+            this.matriz_disponibilidade_booleanos_atual = this.matriz_disponibilidade_booleanos_original.map((linha) => [...linha])
             this.celulas.forEach((item) => this.atualizarItemPelaMatriz(item))
             this.atualizarInputETabela()
         }
