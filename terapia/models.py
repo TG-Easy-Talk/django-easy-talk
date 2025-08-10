@@ -213,24 +213,6 @@ class Psicologo(BasePacienteOuPsicologo):
 
         return intervalos_proxima_semana.union(intervalos_nessa_semana).order_by("proximidade_semana", "data_hora_inicio")
 
-    def _get_intervalo_em(self, data_hora):
-        """
-        Retorna, se houver, o intervalo no qual se encaixa uma consulta hipotética
-        que começa na data e hora enviadas.
-        
-        (A consulta deve caber completamente no intervalo para que ele seja retornado).
-        
-        @param data_hora: Data e hora em que a consulta começa.
-        @return: O intervalo no qual a consulta se encaixa ou None caso não exista.
-        """
-        try:
-            return self.disponibilidade.get(
-                data_hora_inicio__lte=data_hora,
-                data_hora_fim__gte=data_hora + CONSULTA_DURACAO_MAXIMA,
-            )
-        except IntervaloDisponibilidade.DoesNotExist:
-            return None
-
     def _tem_intervalo_em(self, data_hora):
         """
         Verifica se o psicólogo tem um intervalo de disponibilidade no qual se

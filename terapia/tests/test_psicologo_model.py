@@ -4,9 +4,11 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from terapia.models import Paciente, Psicologo, Especializacao, IntervaloDisponibilidade
 from decimal import Decimal
-from datetime import UTC, datetime
+from datetime import UTC, datetime, date, timedelta
 from django.utils import timezone
 import json
+from zoneinfo import ZoneInfo
+from terapia.constants import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO_MAXIMA
 
 
 Usuario = get_user_model()
@@ -22,7 +24,7 @@ MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
         [False] * 1 + [True] * 2 + [False] * 21,
         [False] * 23 + [True] * 1,
     ],
-    "Etc/GMT+1": [
+    ZoneInfo("Etc/GMT+1"): [
         [True] * 11 + [False] * 13,
         [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
         [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
@@ -31,7 +33,7 @@ MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
         [True] * 2 + [False] * 22,
         [False] * 22 + [True] * 2,
     ],
-    "Etc/GMT+2": [
+    ZoneInfo("Etc/GMT+2"): [
         [True] * 10 + [False] * 14,
         [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
         [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
@@ -40,7 +42,7 @@ MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
         [True] * 1 + [False] * 23,
         [False] * 21 + [True] * 3,
     ],
-    "Etc/GMT-1": [
+    ZoneInfo("Etc/GMT-1"): [
         [True] * 13 + [False] * 11,
         [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
         [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
@@ -49,7 +51,7 @@ MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
         [False] * 2 + [True] * 2 + [False] * 20,
         [False] * 24,
     ],
-    "Etc/GMT-7": [
+    ZoneInfo("Etc/GMT-7"): [
         [False] * 6 + [True] * 13 + [False] * 5,
         [False] * 15 + [True] * 4 + [False] * 2 + [True] * 3,
         [True] * 1 + [False] * 14 + [True] * 4 + [False] * 2 + [True] * 3,
@@ -269,6 +271,67 @@ class PsicologoModelTest(TestCase):
 
             with self.subTest(psicologo=psicologo):
                 self.assertFalse(psicologo.esta_com_perfil_completo)
+
+    def test_tem_intervalo_em(self):
+        datas_hora_para_teste = {
+            "tem_intervalo": [
+                datetime(2024, 8, 7, 11, 0, tzinfo=UTC),
+                datetime(2025, 8, 10, 11, 0, tzinfo=UTC),
+                datetime(2025, 8, 10, 10, 30, tzinfo=UTC),
+                datetime(2025, 8, 14, 22, 00, tzinfo=UTC),
+                datetime(2025, 8, 15, 1, 30, tzinfo=UTC),
+                datetime(2025, 8, 16, 23, 0, tzinfo=UTC),
+                datetime(2025, 8, 16, 23, 30, tzinfo=UTC),
+                datetime(2025, 8, 17, 0, 0, tzinfo=UTC),
+                datetime(2025, 8, 17, 0, 30, tzinfo=UTC),
+            ],
+            "nao_tem_intervalo": [
+                datetime(2024, 8, 7, 11, 30, tzinfo=UTC),
+                datetime(2025, 8, 10, 11, 30, tzinfo=UTC),
+                datetime(2025, 8, 10, 12, 0, tzinfo=UTC),
+                datetime(2025, 8, 10, 11, 1, tzinfo=UTC),
+                datetime(2025, 8, 14, 21, 59, tzinfo=UTC),
+                datetime(2025, 8, 14, 22, 1, tzinfo=UTC),
+            ],
+        }
+        
+        for fuso in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS.keys():
+            with timezone.override(fuso):
+                utc_offset = timezone.localtime().utcoffset()
+
+                for expectativa, datas_hora in datas_hora_para_teste.items():
+                    for data_hora in datas_hora:
+                        with self.subTest(expectativa=expectativa, data_hora=data_hora):
+                            if expectativa == "tem_intervalo":    
+                                self.assertTrue(self.psicologo._tem_intervalo_em(data_hora + utc_offset))
+                            elif expectativa == "nao_tem_intervalo":
+                                self.assertFalse(self.psicologo._tem_intervalo_em(data_hora + utc_offset))
+
+    def test_get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro(self):
+        agora = timezone.localtime()
+        
+        final_de_consulta_mais_proximo_possivel = datetime.combine(
+            date(2024, 7, agora.isoweekday()),
+            agora.time(),
+            tzinfo=agora.tzinfo,
+        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO_MAXIMA
+
+        intervalos_ordenados = self.psicologo._get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro()
+        intervalos_essa_semana = [i for i in intervalos_ordenados.iterator() if i.proximidade_semana == 0]
+        intervalos_proxima_semana = [i for i in intervalos_ordenados.iterator() if i.proximidade_semana == 1]
+        atual = final_de_consulta_mais_proximo_possivel
+
+        for intervalo in intervalos_essa_semana:
+            data_hora_fim = intervalo.data_hora_fim
+            self.assertGreaterEqual(data_hora_fim, atual)
+            atual = data_hora_fim
+
+        atual = final_de_consulta_mais_proximo_possivel
+
+        for intervalo in reversed(intervalos_proxima_semana):
+            data_hora_fim = intervalo.data_hora_fim
+            self.assertLess(data_hora_fim, atual)
+            atual = data_hora_fim
 
     def test_get_matriz_disponibilidade_booleanos_em_json(self):
         for fuso, matriz_em_json in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON.items():
