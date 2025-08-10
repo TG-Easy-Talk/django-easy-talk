@@ -333,6 +333,23 @@ class PsicologoModelTest(TestCase):
             self.assertLess(data_hora_fim, atual)
             atual = data_hora_fim
 
+    def test_proxima_data_hora_agendavel(self):
+        pass
+
+    def test_esta_agendavel_em(self):
+        agora = timezone.localtime()
+        proxima_data_hora_agendavel = self.psicologo.proxima_data_hora_agendavel
+
+        self.assertFalse(self.psicologo.esta_agendavel_em(proxima_data_hora_agendavel - timedelta(weeks=1)))
+
+        IntervaloDisponibilidade.objects.filter(psicologo=self.psicologo).delete()
+        self.assertFalse(self.psicologo.esta_agendavel_em(agora))
+        self.set_disponibilidade_generica(self.psicologo)
+
+        self.assertTrue(self.psicologo.esta_agendavel_em(proxima_data_hora_agendavel))
+
+        #Consulta.objects.create(proxima_data_hora_agendavel)
+
     def test_get_matriz_disponibilidade_booleanos_em_json(self):
         for fuso, matriz_em_json in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON.items():
             with timezone.override(fuso):
