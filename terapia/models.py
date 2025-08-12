@@ -6,17 +6,17 @@ from django.db.models.expressions import Value
 from django.urls import reverse
 from django.contrib import admin
 from django.utils import timezone
-from .utils.disponibilidade import get_matriz_disponibilidade_booleanos_em_json
-from .utils.crp import validate_crp
-from .utils.cpf import validate_cpf
-from .utils.validators import (
+from .utilidades.disponibilidade import get_matriz_disponibilidade_booleanos_em_json
+from .validadores.crp import validate_crp
+from .validadores.cpf import validate_cpf
+from .validadores.outros import (
     validate_data_hora_agendada,
     validate_valor_consulta,
     validate_intervalo_disponibilidade_datetime_range,
     validate_usuario_nao_psicologo,
     validate_usuario_nao_paciente,
 )
-from .constants import CONSULTA_DURACAO_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
+from .constantes import CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
 from datetime import datetime, date, timedelta
 
 
@@ -26,8 +26,8 @@ class BasePacienteOuPsicologo(models.Model):
         Verifica se já há alguma consulta que tomaria tempo da data e hora enviadas.
         """
         return self.consultas.filter(
-            Q(data_hora_agendada__gt = data_hora - CONSULTA_DURACAO_MAXIMA) &
-            Q(data_hora_agendada__lt = data_hora + CONSULTA_DURACAO_MAXIMA) &
+            Q(data_hora_agendada__gt = data_hora - CONSULTA_DURACAO) &
+            Q(data_hora_agendada__lt = data_hora + CONSULTA_DURACAO) &
             ~ Q(estado=EstadoConsulta.CANCELADA) # Desconsiderar consultas canceladas
         ).exists()
 
@@ -201,7 +201,7 @@ class Psicologo(BasePacienteOuPsicologo):
             date(2024, 7, agora.isoweekday()),
             agora.time(),
             tzinfo=agora.tzinfo,
-        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO_MAXIMA
+        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
 
         intervalos_nessa_semana = self.disponibilidade.filter(
             data_hora_fim__gte=final_de_consulta_mais_proximo_possivel,
@@ -223,9 +223,8 @@ class Psicologo(BasePacienteOuPsicologo):
         @param data_hora: Data e hora em que a consulta começa.
         @return: True se a consulta se encaixa no intervalo, False caso contrário.
         """
-        fuso_atual = timezone.get_current_timezone()
-        data_hora_inicio = datetime.combine(date(2024, 7, data_hora.isoweekday()), data_hora.time(), tzinfo=fuso_atual)
-        data_hora_final = data_hora_inicio + CONSULTA_DURACAO_MAXIMA
+        data_hora_inicio = datetime.combine(date(2024, 7, data_hora.isoweekday()), data_hora.time(), tzinfo=data_hora.tzinfo)
+        data_hora_final = data_hora_inicio + CONSULTA_DURACAO
         
         return self.disponibilidade.filter(
             data_hora_inicio__lte=data_hora_inicio,
@@ -240,8 +239,11 @@ class Psicologo(BasePacienteOuPsicologo):
         @param data_hora: Data e hora em que a consulta começa.
         @return: True se o psicólogo tem disponibilidade, False caso contrário.
         """
+        agora = timezone.now()
+        
         return bool(
-            data_hora >= timezone.now() + CONSULTA_ANTECEDENCIA_MINIMA and
+            data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
+            data_hora >= agora + CONSULTA_ANTECEDENCIA_MINIMA and
             self.disponibilidade.exists() and
             self._tem_intervalo_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
@@ -348,9 +350,9 @@ class IntervaloDisponibilidade(models.Model):
         datas_hora = []
         data_hora_atual = self.data_hora_inicio
 
-        while data_hora_atual <= self.data_hora_fim - CONSULTA_DURACAO_MAXIMA:
+        while data_hora_atual <= self.data_hora_fim - CONSULTA_DURACAO:
             datas_hora.append(data_hora_atual)
-            data_hora_atual = data_hora_atual + CONSULTA_DURACAO_MAXIMA
+            data_hora_atual = data_hora_atual + CONSULTA_DURACAO
             
         return datas_hora
     
@@ -364,10 +366,10 @@ class IntervaloDisponibilidade(models.Model):
     def clean(self):
         super().clean()
         if self.data_hora_inicio is not None and self.data_hora_fim is not None:
-            if self.data_hora_fim < self.data_hora_inicio + CONSULTA_DURACAO_MAXIMA:
+            if self.data_hora_fim < self.data_hora_inicio + CONSULTA_DURACAO:
                 raise ValidationError(
                     "O fim do intervalo deve ser posterior ao início por, pelo menos, %(antecedencia)s minutos.",
-                    params={"antecedencia": CONSULTA_DURACAO_MAXIMA.total_seconds() // 60},
+                    params={"antecedencia": CONSULTA_DURACAO.total_seconds() // 60},
                     code="intervalo_fim_nao_distante_suficiente",
                 )
         

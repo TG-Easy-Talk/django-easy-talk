@@ -1,13 +1,18 @@
 from django import forms
-from .utils.disponibilidade import get_matriz_disponibilidade_booleanos_em_json
+from .constantes import MULTIPLO_CONSULTA_DURACAO_MINUTOS
+from .utilidades.disponibilidade import get_matriz_disponibilidade_booleanos_em_json
 
 
 class CustomDateInput(forms.DateInput):
     input_type = 'date'
 
 
-class CustomDateTimeInput(forms.DateTimeInput):
+class CustomDateTimeInputComStepMultiploDuracaoConsulta(forms.DateTimeInput):
     input_type = 'datetime-local'
+
+    def __init__(self, attrs=None):
+        super().__init__(attrs)
+        self.attrs['step'] = f"{MULTIPLO_CONSULTA_DURACAO_MINUTOS * 60}"
 
 
 class DisponibilidadeInput(forms.HiddenInput):

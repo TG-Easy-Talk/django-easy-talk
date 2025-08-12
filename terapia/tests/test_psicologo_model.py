@@ -2,13 +2,20 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from terapia.models import Paciente, Psicologo, Especializacao, IntervaloDisponibilidade
+from terapia.models import (
+    Paciente,
+    Psicologo,
+    Especializacao,
+    IntervaloDisponibilidade,
+    Consulta,
+    EstadoConsulta,
+)
 from decimal import Decimal
 from datetime import UTC, datetime, date, timedelta
 from django.utils import timezone
 import json
 from zoneinfo import ZoneInfo
-from terapia.constants import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO_MAXIMA
+from terapia.constantes import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MAXIMA
 
 
 Usuario = get_user_model()
@@ -61,9 +68,18 @@ MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
         [False] * 24,
     ],
 }
+
 MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON = {
     fuso: json.dumps(matriz) for fuso, matriz in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS.items()
 }
+
+FUSOS_PARA_TESTE = [
+    timezone.get_current_timezone(),
+    ZoneInfo("Asia/Tokyo"),
+    ZoneInfo("America/New_York"),
+    ZoneInfo("Africa/Cairo"),
+    ZoneInfo("Asia/Shanghai"),
+] + [fuso for fuso in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS.keys()]
 
 
 class PsicologoModelTest(TestCase):
@@ -88,6 +104,10 @@ class PsicologoModelTest(TestCase):
             IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 5, 1, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 5, 3, 0, tzinfo=UTC)),
             IntervaloDisponibilidade(data_hora_inicio=datetime(2024, 7, 6, 23, 0, tzinfo=UTC), data_hora_fim=datetime(2024, 7, 7, 12, 0, tzinfo=UTC)),
         ]
+        cls.paciente = Paciente.objects.create(
+            usuario=Usuario.objects.create_user(email="paciente@example.com", password="senha123"),
+            cpf="342.738.610-46",
+        )
         cls.usuario_com_psicologo = Usuario.objects.create_user(
             email='psicologo@example.com',
             password='senha456',
@@ -101,6 +121,23 @@ class PsicologoModelTest(TestCase):
         )
         cls.psicologo.especializacoes.set(cls.especializacoes)
         cls.set_disponibilidade_generica(cls.psicologo)
+
+        cls.psicologo_sempre_disponivel = Psicologo.objects.create(
+            usuario=Usuario.objects.create_user(email="psicologo.hiperativo@example.com", password="senha123"),
+            nome_completo='Psicólogo Hiperativo',
+            crp='06/22223',
+            sobre_mim='Disponível 24 horas por dia.',
+            valor_consulta=Decimal('100.00'),
+        )
+
+        cls.psicologo_sempre_disponivel.especializacoes.set(cls.especializacoes)
+        cls.psicologo_sempre_disponivel.disponibilidade.set([
+            IntervaloDisponibilidade.objects.create(
+                data_hora_inicio=datetime(2024, 7, 1, 0, 0, tzinfo=UTC),
+                data_hora_fim=datetime(2024, 7, 8, 0, 0, tzinfo=UTC),
+                psicologo=cls.psicologo_sempre_disponivel,
+            ),
+        ])
 
     @classmethod
     def set_disponibilidade_generica(cls, psicologo):
@@ -240,7 +277,7 @@ class PsicologoModelTest(TestCase):
         self.assertEqual(self.psicologo.primeiro_nome, 'Wanessa')
 
     def test_esta_com_perfil_completo(self):
-        with self.subTest(psicologo=self.psicologo):    
+        with self.subTest(psicologo=self.psicologo.__dict__):    
             self.assertTrue(self.psicologo.esta_com_perfil_completo)
 
         psicologos_com_perfil_incompleto = {
@@ -269,7 +306,7 @@ class PsicologoModelTest(TestCase):
             if motivo != "falta_disponibilidade":
                 self.set_disponibilidade_generica(psicologo)
 
-            with self.subTest(psicologo=psicologo):
+            with self.subTest(psicologo=psicologo.__dict__):
                 self.assertFalse(psicologo.esta_com_perfil_completo)
 
     def test_tem_intervalo_em(self):
@@ -295,17 +332,17 @@ class PsicologoModelTest(TestCase):
             ],
         }
         
-        for fuso in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS.keys():
-            with timezone.override(fuso):
-                utc_offset = timezone.localtime().utcoffset()
+        for fuso in FUSOS_PARA_TESTE:
+            for expectativa, datas_hora in datas_hora_para_teste.items():
+                for data_hora in datas_hora:
+                    
+                    data_hora = timezone.localtime(data_hora, fuso)
 
-                for expectativa, datas_hora in datas_hora_para_teste.items():
-                    for data_hora in datas_hora:
-                        with self.subTest(expectativa=expectativa, data_hora=data_hora):
-                            if expectativa == "tem_intervalo":    
-                                self.assertTrue(self.psicologo._tem_intervalo_em(data_hora + utc_offset))
-                            elif expectativa == "nao_tem_intervalo":
-                                self.assertFalse(self.psicologo._tem_intervalo_em(data_hora + utc_offset))
+                    with self.subTest(data_hora=data_hora):
+                        if expectativa == "tem_intervalo":    
+                            self.assertTrue(self.psicologo._tem_intervalo_em(data_hora))
+                        elif expectativa == "nao_tem_intervalo":
+                            self.assertFalse(self.psicologo._tem_intervalo_em(data_hora))
 
     def test_get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro(self):
         agora = timezone.localtime()
@@ -314,11 +351,18 @@ class PsicologoModelTest(TestCase):
             date(2024, 7, agora.isoweekday()),
             agora.time(),
             tzinfo=agora.tzinfo,
-        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO_MAXIMA
+        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
 
         intervalos_ordenados = self.psicologo._get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro()
-        intervalos_essa_semana = [i for i in intervalos_ordenados.iterator() if i.proximidade_semana == 0]
-        intervalos_proxima_semana = [i for i in intervalos_ordenados.iterator() if i.proximidade_semana == 1]
+        intervalos_essa_semana = []
+        intervalos_proxima_semana = []
+
+        for intervalo in intervalos_ordenados.iterator():
+            if intervalo.proximidade_semana == 0:
+                intervalos_essa_semana.append(intervalo)
+            elif intervalo.proximidade_semana == 1:
+                intervalos_proxima_semana.append(intervalo)
+
         atual = final_de_consulta_mais_proximo_possivel
 
         for intervalo in intervalos_essa_semana:
@@ -334,21 +378,7 @@ class PsicologoModelTest(TestCase):
             atual = data_hora_fim
 
     def test_proxima_data_hora_agendavel(self):
-        pass
-
-    def test_esta_agendavel_em(self):
-        agora = timezone.localtime()
-        proxima_data_hora_agendavel = self.psicologo.proxima_data_hora_agendavel
-
-        self.assertFalse(self.psicologo.esta_agendavel_em(proxima_data_hora_agendavel - timedelta(weeks=1)))
-
-        IntervaloDisponibilidade.objects.filter(psicologo=self.psicologo).delete()
-        self.assertFalse(self.psicologo.esta_agendavel_em(agora))
-        self.set_disponibilidade_generica(self.psicologo)
-
-        self.assertTrue(self.psicologo.esta_agendavel_em(proxima_data_hora_agendavel))
-
-        #Consulta.objects.create(proxima_data_hora_agendavel)
+        self.skipTest("TODO test_proxima_data_hora_agendavel")
 
     def test_get_matriz_disponibilidade_booleanos_em_json(self):
         for fuso, matriz_em_json in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON.items():
@@ -358,3 +388,127 @@ class PsicologoModelTest(TestCase):
                         self.psicologo.get_matriz_disponibilidade_booleanos_em_json(),
                         matriz_em_json,
                     )
+
+    def test_esta_agendavel_em(self):
+        class MotivosParaNaoEstarAgendavel:
+            PASSADO = "Não é possível estar agendável no passado"
+            ANTECEDENCIA_MUITO_PEQUENA = "Não é possível estar agendável com uma antecedência menor que a permitida"
+            ANTECEDENCIA_MUITO_GRANDE = "Não é possível estar agendável com uma antecedência maior que a permitida"
+            ANTES_DA_PROXIMA_DATA_HORA_AGENDAVEL = "Não é possível estar agendável antes da próxima data-hora agendável"
+            NAO_HA_INTERVALO = "Não é possível estar agendável se não houver intervalo no qual a consulta se encaixe"
+            JA_HA_CONSULTA = "Não é possível estar agendável se já houver consulta que toma o tempo da que se deseja agendar"
+
+        def fazer_assertions_para_cada_fuso(metodo_assertion, data_hora, msg=""):
+            for fuso in FUSOS_PARA_TESTE:
+                with self.subTest(fuso=fuso):
+                    esta_agendavel_em = self.psicologo.esta_agendavel_em(timezone.localtime(data_hora, fuso))
+                    metodo_assertion(esta_agendavel_em, msg)
+
+        agora = timezone.localtime()
+        proxima_data_hora_agendavel = self.psicologo.proxima_data_hora_agendavel
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            agora - timedelta(minutes=1),
+            MotivosParaNaoEstarAgendavel.PASSADO,
+        )
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            agora + CONSULTA_ANTECEDENCIA_MINIMA - timedelta(minutes=1),
+            MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
+        )
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(days=1),
+            MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
+        )
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            proxima_data_hora_agendavel + CONSULTA_ANTECEDENCIA_MAXIMA,
+            MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
+        )
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            proxima_data_hora_agendavel - CONSULTA_DURACAO,
+            MotivosParaNaoEstarAgendavel.ANTES_DA_PROXIMA_DATA_HORA_AGENDAVEL,
+        )
+
+        intervalos_do_psicologo = self.psicologo.disponibilidade.all()
+        intervalo = intervalos_do_psicologo.first()
+        fuso_intervalo = intervalo.data_hora_inicio.tzinfo
+        data_intervalo = intervalo.data_hora_inicio.date()
+        agora_fuso_intervalo = timezone.localtime(agora, fuso_intervalo)
+        diferenca_dias_semana = data_intervalo.isoweekday() - agora_fuso_intervalo.isoweekday()
+        diferenca_dias_semana = diferenca_dias_semana + 7 if diferenca_dias_semana < 0 else diferenca_dias_semana
+
+        data_hora_inicio = datetime.combine(
+            agora_fuso_intervalo.date(),
+            intervalo.data_hora_inicio.time(),
+            fuso_intervalo,
+        ) + timedelta(days=diferenca_dias_semana)
+
+        fazer_assertions_para_cada_fuso(
+            self.assertTrue,
+            data_hora_inicio,
+        )
+
+        intervalo.delete()
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            data_hora_inicio,
+            MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
+        )
+
+        intervalos_do_psicologo.delete()
+        
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            proxima_data_hora_agendavel,
+            MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
+        )
+
+        self.set_disponibilidade_generica(self.psicologo)
+
+        fazer_assertions_para_cada_fuso(
+            self.assertTrue,
+            proxima_data_hora_agendavel,
+        )
+
+        consulta = Consulta.objects.create(
+            data_hora_agendada=proxima_data_hora_agendavel,
+            paciente=self.paciente,
+            psicologo=self.psicologo,
+        )
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            proxima_data_hora_agendavel,
+            MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+        )
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            proxima_data_hora_agendavel + CONSULTA_DURACAO - timedelta(minutes=1),
+            MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+        )
+
+        fazer_assertions_para_cada_fuso(
+            self.assertFalse,
+            proxima_data_hora_agendavel + timedelta(minutes=1),
+            MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+        )
+        
+        consulta.estado = EstadoConsulta.CANCELADA
+        consulta.save()
+
+        fazer_assertions_para_cada_fuso(
+            self.assertTrue,
+            proxima_data_hora_agendavel,
+        )
+
+        ##################### fazer mais com intervalos controlados

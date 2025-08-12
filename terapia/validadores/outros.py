@@ -1,7 +1,11 @@
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from terapia.constants import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
+from terapia.constantes import (
+    CONSULTA_ANTECEDENCIA_MINIMA,
+    CONSULTA_ANTECEDENCIA_MAXIMA,
+    MULTIPLO_CONSULTA_DURACAO_MINUTOS,
+)
 from datetime import datetime
 from usuario.models import Usuario
     
@@ -26,9 +30,10 @@ def validate_antecedencia(value):
 def validate_final_horario(value):
     horario = value.time()
 
-    if horario.minute % 60 != 0:
+    if horario.minute % MULTIPLO_CONSULTA_DURACAO_MINUTOS != 0:
         raise ValidationError(
-            "O horário deve terminar em :00.",
+            "O horário deve ser um múltiplo de %(multiplo)s minutos.",
+            params={'multiplo': MULTIPLO_CONSULTA_DURACAO_MINUTOS},
             code='final_horario_invalido',
         )
 
@@ -62,9 +67,8 @@ def validate_intervalo_disponibilidade_datetime_range(value):
     """
     Garante que a data e hora estejam entre 00:00 de 01/07/2024 e 00:00 de 08/07/2024.
     """
-    fuso_atual = timezone.get_current_timezone()
-    data_hora_minima = datetime(2024, 7, 1, 0, 0, tzinfo=fuso_atual)
-    data_hora_maxima = datetime(2024, 7, 8, 0, 0, tzinfo=fuso_atual)
+    data_hora_minima = datetime(2024, 7, 1, 0, 0, tzinfo=value.tzinfo)
+    data_hora_maxima = datetime(2024, 7, 8, 0, 0, tzinfo=value.tzinfo)
 
     if not (data_hora_minima <= value <= data_hora_maxima):
         raise ValidationError(
