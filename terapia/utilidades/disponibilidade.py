@@ -1,4 +1,4 @@
-from datetime import time, datetime, date
+from datetime import date, datetime, time
 from django.utils import timezone
 import json
 
@@ -21,18 +21,22 @@ def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
 
             ranges = []
 
-            if dia_semana_inicio == dia_semana_fim:
+            if dia_semana_inicio == dia_semana_fim and hora_inicio < hora_fim:
                 ranges = [range(hora_inicio, hora_fim)]
             else:
                 ranges.append(range(hora_inicio, 24))
-                i = dia_semana_inicio + 1
+                
+                dia_semana_atual = dia_semana_inicio + 1
+                    
+                if dia_semana_inicio > dia_semana_fim:
+                    dia_semana_atual -= 7
 
-                while i <= dia_semana_fim:
-                    if i != dia_semana_fim:
+                while dia_semana_atual <= dia_semana_fim:
+                    if dia_semana_atual != dia_semana_fim:
                         ranges.append(range(0, 24))
                     else:
                         ranges.append(range(0, hora_fim))
-                    i += 1
+                    dia_semana_atual += 1
 
             for i, _range in enumerate(ranges):
                 for hora in _range:
@@ -89,9 +93,12 @@ def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
                 dia_semana_fim_iso = i + 1
                 fuso_atual = timezone.get_current_timezone()
 
-                intervalo = IntervaloDisponibilidade(
-                    data_hora_inicio=datetime.combine(date(2024, 7, dia_semana_inicio_iso), hora_inicio, tzinfo=fuso_atual),
-                    data_hora_fim=datetime.combine(date(2024, 7, dia_semana_fim_iso), hora_fim, tzinfo=fuso_atual),
+                intervalo = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                    dia_semana_inicio_iso=dia_semana_inicio_iso,
+                    hora_inicio=hora_inicio,
+                    dia_semana_fim_iso=dia_semana_fim_iso,
+                    hora_fim=hora_fim,
+                    fuso=fuso_atual,
                 )
 
                 disponibilidade.append(intervalo)
@@ -105,3 +112,16 @@ def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
         j = 0
 
     return disponibilidade
+
+def converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_iso, hora, fuso):
+    """
+    Função para converter um par de dia da semana ISO e hora em um objeto datetime.
+    Essa conversão é necessária apenas para fazer queries e operações de comparação
+    suportadas pelo tipo datetime. Portanto, a data combinada ao dia da semana ISO
+    será apenas um "dummy" para que se possa fazer as operações do tipo datetime.
+    """
+    return datetime.combine(
+        date(2024, 7, dia_semana_iso),
+        hora,
+        tzinfo=fuso,
+    )

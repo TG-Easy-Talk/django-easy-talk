@@ -4,9 +4,9 @@ from django.utils import timezone
 from terapia.constantes import (
     CONSULTA_ANTECEDENCIA_MINIMA,
     CONSULTA_ANTECEDENCIA_MAXIMA,
-    MULTIPLO_CONSULTA_DURACAO_MINUTOS,
+    CONSULTA_DURACAO,
 )
-from datetime import datetime
+from datetime import datetime, UTC, timedelta
 from usuario.models import Usuario
     
 
@@ -27,24 +27,16 @@ def validate_antecedencia(value):
         )
 
 
-def validate_final_horario(value):
-    horario = value.time()
+def validate_final_hora_multiplo_de_duracao_consulta(value):
+    hora = timezone.localtime(value, UTC).time()
+    hora_em_timedelta = timedelta(hours=hora.hour, minutes=hora.minute)
 
-    if horario.minute % MULTIPLO_CONSULTA_DURACAO_MINUTOS != 0:
+    if hora_em_timedelta % CONSULTA_DURACAO != 0:
         raise ValidationError(
             "O horário deve ser um múltiplo de %(multiplo)s minutos.",
-            params={'multiplo': MULTIPLO_CONSULTA_DURACAO_MINUTOS},
-            code='final_horario_invalido',
+            params={"multiplo": CONSULTA_DURACAO},
+            code="final_horario_invalido",
         )
-
-
-def validate_data_hora_agendada(value):
-    """
-    - Garante que a data e hora atenda a antecedência mínima e máxima para agendamento.
-    - Garante que o final do horário seja :00.
-    """
-    validate_antecedencia(value)
-    validate_final_horario(value)
 
 
 def validate_valor_consulta(value):
@@ -68,7 +60,7 @@ def validate_intervalo_disponibilidade_datetime_range(value):
     Garante que a data e hora estejam entre 00:00 de 01/07/2024 e 00:00 de 08/07/2024.
     """
     data_hora_minima = datetime(2024, 7, 1, 0, 0, tzinfo=value.tzinfo)
-    data_hora_maxima = datetime(2024, 7, 8, 0, 0, tzinfo=value.tzinfo)
+    data_hora_maxima = datetime(2024, 7, 7, 23, 59, tzinfo=value.tzinfo)
 
     if not (data_hora_minima <= value <= data_hora_maxima):
         raise ValidationError(
