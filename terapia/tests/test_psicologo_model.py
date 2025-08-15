@@ -24,15 +24,6 @@ Usuario = get_user_model()
 
 
 MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
-    # UTC: [
-    #     [True] * 12 + [False] * 12,
-    #     [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-    #     [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-    #     [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-    #     [False] * 22 + [True] * 1 + [False] * 1,
-    #     [False] * 1 + [True] * 2 + [False] * 21,
-    #     [False] * 23 + [True] * 1,
-    # ],
     UTC: [
         [True] * 12 + [False] * 10 + [True] * 2,
         [True] * 2 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
@@ -368,23 +359,46 @@ class PsicologoModelTest(TestCase):
                         elif expectativa == "nao_tem_intervalo":
                             self.assertFalse(self.psicologo._tem_intervalo_em(data_hora))
 
-    def test_get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro(self):
-        datas_hora_para_teste = [
+    def test_get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(self):
+        datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(22, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(2, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 30), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(0, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(8, 30), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(12, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(4, time(23, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(3, time(6, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(2, time(17, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(7, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(8, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(8, 1), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(10, 13), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(11, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(12, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(12, 1), UTC),
+        ]] + [
             timezone.localtime(),
             timezone.now(),
-            # completar com mais horarios q seriam edge cases interessantes baseado na disp do cls.psicologo
         ]
 
         for data_hora in datas_hora_para_teste:
-            with freeze_time(lambda: data_hora):
-                final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
-                    data_hora.isoweekday(),
-                    data_hora.time(),
-                    data_hora.tzinfo,
-                ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
+            for fuso in FUSOS_PARA_TESTE:
+                data_hora = timezone.localtime(data_hora, fuso)
 
-                intervalos_ordenados = self.psicologo._get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro()
+                final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
+                        data_hora.isoweekday(),
+                        data_hora.time(),
+                        data_hora.tzinfo,
+                    ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
             
+                intervalos_ordenados = self.psicologo._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(data_hora)
+
                 intervalos_essa_semana = []
                 intervalos_proxima_semana = []
 
@@ -394,19 +408,27 @@ class PsicologoModelTest(TestCase):
                     elif intervalo.proximidade_semana == 1:
                         intervalos_proxima_semana.append(intervalo)
 
-                atual = final_de_consulta_mais_proximo_possivel
+                with self.subTest(
+                    final_de_consulta_mais_proximo_possivel=final_de_consulta_mais_proximo_possivel,
+                    intervalos_ordenados=intervalos_ordenados,
+                    intervalos_essa_semana=intervalos_essa_semana,
+                    intervalos_proxima_semana=intervalos_proxima_semana,
+                ):
+                    self.assertQuerySetEqual(intervalos_ordenados, self.psicologo.disponibilidade.all(), ordered=False)
 
-                for intervalo in intervalos_essa_semana:
-                    data_hora_fim = intervalo.data_hora_fim
-                    self.assertGreaterEqual(data_hora_fim, atual)
-                    atual = data_hora_fim
+                    atual = final_de_consulta_mais_proximo_possivel
 
-                atual = final_de_consulta_mais_proximo_possivel
+                    for intervalo in intervalos_essa_semana:
+                        data_hora_fim = intervalo.data_hora_fim
+                        self.assertGreaterEqual(data_hora_fim, atual)
+                        atual = data_hora_fim
 
-                for intervalo in reversed(intervalos_proxima_semana):
-                    data_hora_fim = intervalo.data_hora_fim
-                    self.assertLess(data_hora_fim, atual)
-                    atual = data_hora_fim
+                    atual = final_de_consulta_mais_proximo_possivel
+
+                    for intervalo in reversed(intervalos_proxima_semana):
+                        data_hora_fim = intervalo.data_hora_fim
+                        self.assertLess(data_hora_fim, atual)
+                        atual = data_hora_fim
 
     def test_proxima_data_hora_agendavel(self):
         self.skipTest("TODO test_proxima_data_hora_agendavel")

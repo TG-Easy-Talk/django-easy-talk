@@ -148,7 +148,7 @@ class Psicologo(BasePacienteOuPsicologo):
         if not self.disponibilidade.exists():
             return None
         
-        intervalos = self._get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro()
+        intervalos = self._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de()
 
         semanas = 0
         agora = timezone.localtime()
@@ -192,20 +192,18 @@ class Psicologo(BasePacienteOuPsicologo):
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
 
-    def _get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro(self):
+    def _get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(self, instante):
         """
-        Retorna os intervalos de disponibilidade do psicólogo partindo do mais
-        próximo ao mais distante no futuro.
+        Retorna os intervalos de disponibilidade do psicólogo na ordem do mais
+        próximo ao mais distante partindo de um instante no tempo.
         """
-        agora = timezone.localtime()
-
         # Essa variável serve para separar os intervalos que pertencem a essa semana
         # e os que pertencem à proxima semana, levando em consideração a antecedência
         # mínima para agendamento e a duração de uma consulta.
         final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
-            agora.isoweekday(),
-            agora.time(),
-            agora.tzinfo,
+            instante.isoweekday(),
+            instante.time(),
+            instante.tzinfo,
         ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
 
         intervalos_nessa_semana = self.disponibilidade.filter(
