@@ -2,7 +2,6 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from freezegun import freeze_time
 from terapia.models import (
     Paciente,
     Psicologo,
@@ -17,7 +16,8 @@ from django.utils import timezone
 import json
 from zoneinfo import ZoneInfo
 from terapia.constantes import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MAXIMA
-from terapia.utilidades.disponibilidade import converter_dia_semana_iso_com_hora_para_data_hora
+from terapia.utilidades.disponibilidade import converter_dia_semana_iso_com_hora_para_data_hora, get_matriz_disponibilidade_booleanos_em_json
+from .constantes import FUSOS_PARA_TESTE
 
 
 Usuario = get_user_model()
@@ -75,17 +75,102 @@ MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON = {
     fuso: json.dumps(matriz) for fuso, matriz in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS.items()
 }
 
-FUSOS_PARA_TESTE = [
-    timezone.get_current_timezone(),
-    ZoneInfo("Asia/Tokyo"),
-    ZoneInfo("America/New_York"),
-    ZoneInfo("Africa/Cairo"),
-    ZoneInfo("Asia/Shanghai"),
-    ZoneInfo("Pacific/Chatham"),
-    ZoneInfo("Pacific/Marquesas"),
-    ZoneInfo("Iran"),
-    ZoneInfo("Australia/Eucla"),
-] + [fuso for fuso in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS.keys()]
+OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS = (
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(23, 0), 1, time(0, 0), UTC), [
+        [False] * 23 + [True] * 1,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(23, 0), 1, time(1, 0), UTC), [
+        [False] * 23 + [True] * 1,
+        [True] * 1 + [False] * 23,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(22, 0), 2, time(2, 0), UTC), [
+        [False] * 22 + [True] * 2,
+        [True] * 24,
+        [True] * 2 + [False] * 22,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(6, time(22, 0), 2, time(23, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 23 + [False] * 1,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 22 + [True] * 2,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(5, time(22, 0), 2, time(3, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 3 + [False] * 21,
+        [False] * 24,
+        [False] * 24,
+        [False] * 22 + [True] * 2,
+        [True] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(4, time(22, 0), 3, time(0, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [False] * 24,
+        [False] * 22 + [True] * 2,
+        [True] * 24,
+        [True] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(6, time(13, 0), 5, time(13, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 13 + [False] * 11,
+        [False] * 13 + [True] * 11,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(4, time(0, 0), 4, time(0, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(3, time(10, 0), 3, time(12, 0), UTC), [
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 10 + [True] * 2 + [False] * 12,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(2, time(12, 0), 2, time(10, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 10 + [False] * 2 + [True] * 12,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+    ]),
+)
+
+OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON = (
+    (intervalo, json.dumps(matriz)) for intervalo, matriz in OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS
+)
 
 
 class PsicologoModelTest(TestCase):
@@ -321,7 +406,7 @@ class PsicologoModelTest(TestCase):
             if motivo != "falta_disponibilidade":
                 self.set_disponibilidade_generica(psicologo)
 
-            with self.subTest(psicologo=psicologo.__dict__):
+            with self.subTest(motivo=motivo, psicologo=psicologo.__dict__):
                 self.assertFalse(psicologo.esta_com_perfil_completo)
 
     def test_tem_intervalo_em(self):
@@ -365,6 +450,7 @@ class PsicologoModelTest(TestCase):
             converter_dia_semana_iso_com_hora_para_data_hora(7, time(22, 0), UTC),
             converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC),
             converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 1), UTC),
             converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC),
             converter_dia_semana_iso_com_hora_para_data_hora(1, time(2, 0), UTC),
             converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 0), UTC),
@@ -387,59 +473,88 @@ class PsicologoModelTest(TestCase):
             timezone.now(),
         ]
 
-        for data_hora in datas_hora_para_teste:
-            for fuso in FUSOS_PARA_TESTE:
-                data_hora = timezone.localtime(data_hora, fuso)
+        for psicologo in [self.psicologo, self.psicologo_sempre_disponivel]:
+            for data_hora in datas_hora_para_teste:
+                for fuso in FUSOS_PARA_TESTE:
+                    data_hora = timezone.localtime(data_hora, fuso)
 
-                final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
-                        data_hora.isoweekday(),
-                        data_hora.time(),
-                        data_hora.tzinfo,
-                    ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
-            
-                intervalos_ordenados = self.psicologo._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(data_hora)
+                    final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
+                            data_hora.isoweekday(),
+                            data_hora.time(),
+                            data_hora.tzinfo,
+                        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
+                
+                    intervalos_ordenados = psicologo._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(data_hora)
 
-                intervalos_essa_semana = []
-                intervalos_proxima_semana = []
+                    intervalos_essa_semana = []
+                    intervalos_proxima_semana = []
 
-                for intervalo in intervalos_ordenados.iterator():
-                    if intervalo.proximidade_semana == 0:
-                        intervalos_essa_semana.append(intervalo)
-                    elif intervalo.proximidade_semana == 1:
-                        intervalos_proxima_semana.append(intervalo)
+                    for intervalo in intervalos_ordenados.iterator():
+                        if intervalo.proximidade_semana == 0:
+                            intervalos_essa_semana.append(intervalo)
+                        elif intervalo.proximidade_semana == 1:
+                            intervalos_proxima_semana.append(intervalo)
 
-                with self.subTest(
-                    final_de_consulta_mais_proximo_possivel=final_de_consulta_mais_proximo_possivel,
-                    intervalos_ordenados=intervalos_ordenados,
-                    intervalos_essa_semana=intervalos_essa_semana,
-                    intervalos_proxima_semana=intervalos_proxima_semana,
-                ):
-                    self.assertQuerySetEqual(intervalos_ordenados, self.psicologo.disponibilidade.all(), ordered=False)
+                    with self.subTest(
+                        final_de_consulta_mais_proximo_possivel=final_de_consulta_mais_proximo_possivel,
+                        intervalos_ordenados=intervalos_ordenados,
+                        intervalos_essa_semana=intervalos_essa_semana,
+                        intervalos_proxima_semana=intervalos_proxima_semana,
+                    ):
+                        self.assertQuerySetEqual(intervalos_ordenados, psicologo.disponibilidade.all(), ordered=False)
 
-                    atual = final_de_consulta_mais_proximo_possivel
+                        atual = final_de_consulta_mais_proximo_possivel
 
-                    for intervalo in intervalos_essa_semana:
-                        data_hora_fim = intervalo.data_hora_fim
-                        self.assertGreaterEqual(data_hora_fim, atual)
-                        atual = data_hora_fim
+                        for intervalo in intervalos_essa_semana:
+                            data_hora_fim = intervalo.data_hora_fim
+                            self.assertGreaterEqual(data_hora_fim, atual)
+                            atual = data_hora_fim
 
-                    atual = final_de_consulta_mais_proximo_possivel
+                        atual = final_de_consulta_mais_proximo_possivel
 
-                    for intervalo in reversed(intervalos_proxima_semana):
-                        data_hora_fim = intervalo.data_hora_fim
-                        self.assertLess(data_hora_fim, atual)
-                        atual = data_hora_fim
+                        for intervalo in reversed(intervalos_proxima_semana):
+                            data_hora_fim = intervalo.data_hora_fim
+                            self.assertLess(data_hora_fim, atual)
+                            atual = data_hora_fim
 
     def test_proxima_data_hora_agendavel(self):
         self.skipTest("TODO test_proxima_data_hora_agendavel")
 
     def test_get_matriz_disponibilidade_booleanos_em_json(self):
         for fuso, matriz_em_json in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON.items():
-            with timezone.override(fuso), self.subTest(fuso=fuso):
+            with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo.__dict__):
                 self.assertEqual(
                     self.psicologo.get_matriz_disponibilidade_booleanos_em_json(),
                     matriz_em_json,
                 )
+                self.assertEqual(
+                    get_matriz_disponibilidade_booleanos_em_json(self.psicologo.disponibilidade),
+                    matriz_em_json,
+                )
+
+        psicologo_dummy = Psicologo.objects.create(
+            usuario=Usuario.objects.create_user(email="psicologo.dummy@example.com", password="dummy123"),
+            nome_completo="Psicologo Dummy",
+            crp='06/94949',
+            sobre_mim='Psicólogo dummy feito apenas para testes.',
+        )
+        fuso = UTC
+
+        with timezone.override(fuso):
+            for intervalo, matriz in OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON:
+                psicologo_dummy.disponibilidade.all().delete()
+                intervalo.psicologo = psicologo_dummy
+                intervalo.save()
+                
+                with self.subTest(fuso=fuso, intervalo=intervalo.__dict__):
+                    self.assertEqual(
+                        psicologo_dummy.get_matriz_disponibilidade_booleanos_em_json(),
+                        matriz,
+                    )
+                    self.assertEqual(
+                        get_matriz_disponibilidade_booleanos_em_json(psicologo_dummy.disponibilidade),
+                        matriz,
+                    )
 
     def test_esta_agendavel_em(self):
         class MotivosParaNaoEstarAgendavel:

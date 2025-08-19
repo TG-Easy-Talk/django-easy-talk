@@ -2,7 +2,7 @@
 
 import terapia.validadores.cpf
 import terapia.validadores.crp
-import terapia.validadores.outros
+import terapia.validadores.geral
 from django.db import migrations, models
 
 
@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('data_hora_solicitada', models.DateTimeField(auto_now_add=True)),
-                ('data_hora_agendada', models.DateTimeField(validators=[terapia.validadores.outros.validate_antecedencia, terapia.validadores.outros.validate_final_hora_multiplo_de_duracao_consulta], verbose_name='Data e hora agendadas para a consulta')),
+                ('data_hora_agendada', models.DateTimeField(validators=[terapia.validadores.geral.validate_antecedencia, terapia.validadores.geral.validate_final_hora_multiplo_de_duracao_consulta], verbose_name='Data e hora agendadas para a consulta')),
                 ('duracao', models.IntegerField(blank=True, null=True, verbose_name='Duração que a consulta teve em minutos')),
                 ('estado', models.CharField(choices=[(None, 'Estado'), ('SOLICITADA', 'Solicitada'), ('CONFIRMADA', 'Confirmada'), ('CANCELADA', 'Cancelada'), ('EM_ANDAMENTO', 'Em andamento'), ('FINALIZADA', 'Finalizada')], default='SOLICITADA', max_length=20, verbose_name='Estado')),
                 ('anotacoes', models.TextField(blank=True, null=True, verbose_name='Anotações')),
@@ -47,8 +47,8 @@ class Migration(migrations.Migration):
             name='IntervaloDisponibilidade',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_hora_inicio', models.DateTimeField(help_text='A data deste campo é apenas utilizada para obter o dia da semana do intervalo, o que significa que a data em si não importa desde que o dia da semana esteja correto. Por conveniência, usa-se a semana de 01/07/2024 até 08/07/2024, isto é, datetime(2024, 7, 1, 0, 0) até datetime(2024, 7, 8, 0, 0). A razão para isso é que nessa semana, o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja: 01/07/2024 é segunda (1), 02/07/2024 é terça (2) ... e 07/07/2024 é domingo (7).', validators=[terapia.validadores.outros.validate_intervalo_disponibilidade_datetime_range], verbose_name='Dia da semana e hora do início do intervalo')),
-                ('data_hora_fim', models.DateTimeField(help_text='A data deste campo é apenas utilizada para obter o dia da semana do intervalo, o que significa que a data em si não importa desde que o dia da semana esteja correto. Por conveniência, usa-se a semana de 01/07/2024 até 08/07/2024, isto é, datetime(2024, 7, 1, 0, 0) até datetime(2024, 7, 8, 0, 0). A razão para isso é que nessa semana, o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja: 01/07/2024 é segunda (1), 02/07/2024 é terça (2) ... e 07/07/2024 é domingo (7).', validators=[terapia.validadores.outros.validate_intervalo_disponibilidade_datetime_range], verbose_name='Dia da semana e hora do fim do intervalo')),
+                ('data_hora_inicio', models.DateTimeField(help_text='A data deste campo é apenas utilizada para obter o dia da semana do intervalo, o que significa que a data em si não importa desde que o dia da semana esteja correto. Por conveniência, usa-se a semana de 01/07/2024 até 08/07/2024, isto é, datetime(2024, 7, 1, 0, 0) até datetime(2024, 7, 8, 0, 0). A razão para isso é que nessa semana, o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja: 01/07/2024 é segunda (1), 02/07/2024 é terça (2) ... e 07/07/2024 é domingo (7).', validators=[terapia.validadores.geral.validate_intervalo_disponibilidade_datetime_range], verbose_name='Dia da semana e hora do início do intervalo')),
+                ('data_hora_fim', models.DateTimeField(help_text='A data deste campo é apenas utilizada para obter o dia da semana do intervalo, o que significa que a data em si não importa desde que o dia da semana esteja correto. Por conveniência, usa-se a semana de 01/07/2024 até 08/07/2024, isto é, datetime(2024, 7, 1, 0, 0) até datetime(2024, 7, 8, 0, 0). A razão para isso é que nessa semana, o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja: 01/07/2024 é segunda (1), 02/07/2024 é terça (2) ... e 07/07/2024 é domingo (7).', validators=[terapia.validadores.geral.validate_intervalo_disponibilidade_datetime_range], verbose_name='Dia da semana e hora do fim do intervalo')),
             ],
             options={
                 'verbose_name': 'Intervalo de Disponibilidade',
@@ -77,7 +77,7 @@ class Migration(migrations.Migration):
                 ('crp', models.CharField(max_length=20, unique=True, validators=[terapia.validadores.crp.validate_crp], verbose_name='CRP')),
                 ('foto', models.ImageField(blank=True, null=True, upload_to='psicologos/fotos/', verbose_name='Foto')),
                 ('sobre_mim', models.TextField(blank=True, null=True, verbose_name='Sobre Mim')),
-                ('valor_consulta', models.DecimalField(blank=True, decimal_places=2, help_text='Entre R$ 20,00 e R$ 4.999,99', max_digits=10, null=True, validators=[terapia.validadores.outros.validate_valor_consulta], verbose_name='Valor da Consulta')),
+                ('valor_consulta', models.DecimalField(blank=True, decimal_places=2, help_text='Entre R$ 20,00 e R$ 4.999,99', max_digits=10, null=True, validators=[terapia.validadores.geral.validate_valor_consulta], verbose_name='Valor da Consulta')),
             ],
             options={
                 'verbose_name': 'Psicólogo',

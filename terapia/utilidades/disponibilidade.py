@@ -28,7 +28,7 @@ def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
                 
                 dia_semana_atual = dia_semana_inicio + 1
                     
-                if dia_semana_inicio > dia_semana_fim:
+                if dia_semana_inicio >= dia_semana_fim:
                     dia_semana_atual -= 7
 
                 while dia_semana_atual <= dia_semana_fim:

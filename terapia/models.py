@@ -12,7 +12,7 @@ from .utilidades.disponibilidade import (
 )
 from .validadores.crp import validate_crp
 from .validadores.cpf import validate_cpf
-from .validadores.outros import (
+from .validadores.geral import (
     validate_antecedencia,
     validate_final_hora_multiplo_de_duracao_consulta,
     validate_valor_consulta,
