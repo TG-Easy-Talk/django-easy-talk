@@ -119,9 +119,11 @@ def converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_iso, hora, fuso)
     Essa conversão é necessária apenas para fazer queries e operações de comparação
     suportadas pelo tipo datetime. Portanto, a data combinada ao dia da semana ISO
     será apenas um "dummy" para que se possa fazer as operações do tipo datetime.
+
+    Segundos e microssegundos são desprezados.
     """
     return datetime.combine(
         date(2024, 7, dia_semana_iso),
-        hora,
+        hora.replace(second=0, microsecond=0),
         tzinfo=fuso,
     )

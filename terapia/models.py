@@ -21,7 +21,7 @@ from .validadores.geral import (
     validate_usuario_nao_paciente,
 )
 from .constantes import CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
-from datetime import datetime, timedelta
+from datetime import timedelta, time
 
 
 class BasePacienteOuPsicologo(models.Model):
@@ -141,42 +141,41 @@ class Psicologo(BasePacienteOuPsicologo):
         )
     
     @property
-    def proxima_data_hora_agendavel_local(self):
+    def proxima_data_hora_agendavel(self):
         """
         Retorna a data e hora agendáveis mais próximas do psicólogo.
         """
         if not self.disponibilidade.exists():
             return None
-        
-        intervalos = self._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de()
 
         semanas = 0
         agora = timezone.localtime()
+        agora_convertido = converter_dia_semana_iso_com_hora_para_data_hora(agora.isoweekday(), agora.time(), agora.tzinfo)
+        datas_hora_ordenadas = self._get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(agora)
 
         while True:
-            for intervalo in intervalos:
-                datas_hora = intervalo.get_datas_hora_locais()
+            for data_hora in datas_hora_ordenadas:
+                print("1: ", data_hora)
+                data_hora += timedelta(weeks=semanas)
 
-                for data_hora in datas_hora:
-                    dias = data_hora.isoweekday() - agora.isoweekday()
+                if data_hora < datas_hora_ordenadas[0]:
+                    data_hora += timedelta(weeks=1)
 
-                    if data_hora.isoweekday() < agora.isoweekday():
-                        dias += 7
+                print("2: ", data_hora)
+                tempo_decorrido = data_hora - agora_convertido
+                print(tempo_decorrido)
 
-                    soma_dias = timedelta(days=semanas * 7 + dias)
+                if tempo_decorrido > CONSULTA_ANTECEDENCIA_MAXIMA:
+                    return None
 
-                    if soma_dias > CONSULTA_ANTECEDENCIA_MAXIMA:
-                        return None
+                data_hora_inicio = agora + tempo_decorrido
+                data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
 
-                    data = agora.date() + soma_dias
-                    data_hora_inicio = datetime.combine(data, data_hora.time(), tzinfo=agora.tzinfo)
-                    data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
-
-                    if (
-                        data_hora_fim >= agora + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO and
-                        not self.ja_tem_consulta_em(data_hora_inicio)
-                    ):
-                        return data_hora_inicio
+                if (
+                    data_hora_fim >= agora + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO and
+                    not self.ja_tem_consulta_em(data_hora_inicio)
+                ):
+                    return data_hora_inicio
                     
             semanas += 1
                 
@@ -215,6 +214,30 @@ class Psicologo(BasePacienteOuPsicologo):
         ).annotate(proximidade_semana=Value(1)).order_by()
 
         return intervalos_proxima_semana.union(intervalos_nessa_semana).order_by("proximidade_semana", "data_hora_fim")
+
+    def _get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self, instante):
+        """
+        Retorna as datas e horas dos intervalos de disponibilidade do psicólogo na ordem do mais
+        próximo ao mais distante partindo de um instante no tempo.
+        """
+        intervalos_ordenados = self._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(instante)
+        
+        datas_hora_ordenadas = []
+        ultimas_datas_hora = []
+
+        for data_hora in intervalos_ordenados[0].get_datas_hora_locais():
+            if data_hora >= instante + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO:
+                datas_hora_ordenadas.append(data_hora)
+            else:
+                ultimas_datas_hora.append(data_hora)
+
+        for intervalo in intervalos_ordenados[1:]:
+            for data_hora in intervalo.get_datas_hora_locais():
+                datas_hora_ordenadas.append(data_hora)
+
+        datas_hora_ordenadas += ultimas_datas_hora
+
+        return datas_hora_ordenadas
 
     def _tem_intervalo_em(self, data_hora):
         """
@@ -391,11 +414,22 @@ class IntervaloDisponibilidade(models.Model):
         """
         datas_hora = []
         data_hora_atual = self.data_hora_inicio
+        virou_a_semana = False
 
-        while data_hora_atual <= self.data_hora_fim - CONSULTA_DURACAO:
+        while True:
+            if (
+                (self.data_hora_inicio < self.data_hora_fim or virou_a_semana) and
+                data_hora_atual > self.data_hora_fim - CONSULTA_DURACAO
+            ):
+                break
+
             datas_hora.append(data_hora_atual)
             data_hora_atual = data_hora_atual + CONSULTA_DURACAO
             
+            if data_hora_atual > converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), data_hora_atual.tzinfo):
+                data_hora_atual -= timedelta(weeks=1)
+                virou_a_semana = True
+                
         return datas_hora
     
     def get_datas_hora_locais(self):
