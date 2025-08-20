@@ -573,7 +573,7 @@ class PsicologoModelTest(TestCase):
                     metodo_assertion(esta_agendavel_em, msg)
 
         agora = timezone.localtime()
-        proxima_data_hora_agendavel = self.psicologo.proxima_data_hora_agendavel_local
+        proxima_data_hora_agendavel = self.psicologo.proxima_data_hora_agendavel
 
         fazer_assertions_para_cada_fuso(
             metodo_assertion=self.assertFalse,
@@ -732,12 +732,10 @@ class PsicologoModelTest(TestCase):
             psicologo=self.psicologo_sempre_disponivel,
         )
 
-        proxima_data_hora_agendavel = self.psicologo_sempre_disponivel.proxima_data_hora_agendavel_local
+        proxima_data_hora_agendavel = self.psicologo_sempre_disponivel.proxima_data_hora_agendavel
 
         fazer_assertions_para_cada_fuso(
             metodo_assertion=self.assertTrue,
             data_hora=proxima_data_hora_agendavel,
             psicologo=self.psicologo_sempre_disponivel,
         )
-
-        ##################### fazer mais com intervalos controlados
