@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, UTC
 from django.utils import timezone
 import json
 
@@ -122,8 +122,16 @@ def converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_iso, hora, fuso)
 
     Segundos e microssegundos são desprezados.
     """
-    return datetime.combine(
+    data_hora_fuso_original = datetime.combine(
         date(2024, 7, dia_semana_iso),
         hora.replace(second=0, microsecond=0),
         tzinfo=fuso,
+    )
+
+    data_hora_convertida = timezone.localtime(data_hora_fuso_original, UTC)
+
+    return datetime.combine(
+        date(2024, 7, data_hora_convertida.isoweekday()),
+        data_hora_convertida.time(),
+        data_hora_convertida.tzinfo,
     )

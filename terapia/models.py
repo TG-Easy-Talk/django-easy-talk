@@ -21,7 +21,7 @@ from .validadores.geral import (
     validate_usuario_nao_paciente,
 )
 from .constantes import CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
-from datetime import timedelta, time
+from datetime import timedelta, time, UTC
 
 
 class BasePacienteOuPsicologo(models.Model):
@@ -269,18 +269,31 @@ class Psicologo(BasePacienteOuPsicologo):
         if qs_intervalo_de_semana_completa.exists():
             return True
 
+        if data_hora_inicio == data_hora_fim:
+            return False
+
         if qs_intervalos_que_nao_viram_de_semana.filter(
             Q(data_hora_inicio__lte=data_hora_inicio) &
-            ~ Q(data_hora_fim__lt=data_hora_fim),
+            Q(data_hora_fim__gte=data_hora_fim)
         ).exists():
-            return data_hora_inicio < data_hora_fim
+            if not consulta_vira_a_semana:
+                return True
         
         if qs_intervalos_que_viram_de_semana.filter(
-            ~ Q(data_hora_inicio__gt=data_hora_inicio) &
-            ~ Q(data_hora_fim__lt=data_hora_fim),
+            Q(data_hora_inicio__lte=data_hora_inicio) |
+            Q(data_hora_fim__gte=data_hora_fim)
         ).exists():
-            if data_hora_inicio < data_hora_fim:
+            if not consulta_vira_a_semana:
                 return True
+
+        if qs_intervalos_que_viram_de_semana.filter(
+            Q(data_hora_inicio__lte=data_hora_inicio) &
+            Q(data_hora_fim__gte=data_hora_fim)
+        ).exists():
+            if consulta_vira_a_semana:
+                return True
+
+        return False
 
     def esta_agendavel_em(self, data_hora):
         """
