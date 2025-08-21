@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, F
 from django.db.models.expressions import Value
 from django.urls import reverse
 from django.contrib import admin
@@ -249,13 +249,38 @@ class Psicologo(BasePacienteOuPsicologo):
         @param data_hora: Data e hora em que a consulta começa.
         @return: True se a consulta se encaixa no intervalo, False caso contrário.
         """
-        data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(data_hora.isoweekday(), data_hora.time(), data_hora.tzinfo)
-        data_hora_final = data_hora_inicio + CONSULTA_DURACAO
+        data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(
+            data_hora.isoweekday(),
+            data_hora.time(),
+            data_hora.tzinfo,
+        )
+        data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
+        data_hora_fim = converter_dia_semana_iso_com_hora_para_data_hora(
+            data_hora_fim.isoweekday(),
+            data_hora_fim.time(),
+            data_hora_fim.tzinfo,
+        )
+
+        qs_intervalo_de_semana_completa = self.disponibilidade.filter(data_hora_inicio=F("data_hora_fim"))
+        qs_intervalos_que_nao_viram_de_semana = self.disponibilidade.filter(data_hora_inicio__lt=F("data_hora_fim"))
+        qs_intervalos_que_viram_de_semana = self.disponibilidade.filter(data_hora_fim__lt=F("data_hora_inicio"))
+        consulta_vira_a_semana = data_hora_fim < data_hora_inicio
+
+        if qs_intervalo_de_semana_completa.exists():
+            return True
+
+        if qs_intervalos_que_nao_viram_de_semana.filter(
+            Q(data_hora_inicio__lte=data_hora_inicio) &
+            ~ Q(data_hora_fim__lt=data_hora_fim),
+        ).exists():
+            return data_hora_inicio < data_hora_fim
         
-        return self.disponibilidade.filter(
-            data_hora_inicio__lte=data_hora_inicio,
-            data_hora_fim__gte=data_hora_final,
-        ).exists()
+        if qs_intervalos_que_viram_de_semana.filter(
+            ~ Q(data_hora_inicio__gt=data_hora_inicio) &
+            ~ Q(data_hora_fim__lt=data_hora_fim),
+        ).exists():
+            if data_hora_inicio < data_hora_fim:
+                return True
 
     def esta_agendavel_em(self, data_hora):
         """
