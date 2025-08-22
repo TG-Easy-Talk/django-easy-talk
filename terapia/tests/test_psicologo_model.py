@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 from terapia.constantes import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MAXIMA
 from terapia.utilidades.disponibilidade import converter_dia_semana_iso_com_hora_para_data_hora, get_matriz_disponibilidade_booleanos_em_json
 from .constantes import FUSOS_PARA_TESTE
+from freezegun import freeze_time
 
 
 Usuario = get_user_model()
@@ -565,177 +566,237 @@ class PsicologoModelTest(TestCase):
             NAO_HA_INTERVALO = "Não é possível estar agendável se não houver intervalo no qual a consulta se encaixe"
             JA_HA_CONSULTA = "Não é possível estar agendável se já houver consulta que toma o tempo da que se deseja agendar"
 
-        def fazer_assertions_para_cada_fuso(*, metodo_assertion, data_hora, psicologo, msg=""):
+        def formatar_msg_assertion(*,
+            metodo_assertion,
+            fuso,
+            data_hora_original,
+            data_hora_local,
+            psicologo,
+            descricao,
+            motivo_para_nao_estar_agendavel,
+        ):
+            msg = (
+                f"[DESCRIÇÃO DO TESTE: {descricao}]"
+                f"\n[FUSO: {fuso}"
+                f"\n[DATA HORA ORIGINAL: {data_hora_original.isoformat()}]"
+                f"\n[DATA HORA LOCAL: {data_hora_local.isoformat()}]"
+                f"\n[PSICÓLOGO: {psicologo.nome_completo}]"
+                f"\n[DEVERIA ESTAR AGENDÁVEL? {"Sim" if metodo_assertion is self.assertTrue else "Não"}]"
+            )
+
+            if metodo_assertion is self.assertFalse:
+                msg += f"\n[MOTIVO PARA NÃO ESTAR AGENDÁVEL: {motivo_para_nao_estar_agendavel}]"
+
+            return msg
+
+        def fazer_assertions_para_cada_fuso(*,
+            metodo_assertion,
+            data_hora,
+            psicologo,
+            motivo_para_nao_estar_agendavel="",
+            descricao,
+        ):
             with self.subTest(data_hora=data_hora, psicologo=psicologo.__dict__):
                 for fuso in FUSOS_PARA_TESTE:
-                    print("localtime: ", timezone.localtime(data_hora, fuso))
-                    esta_agendavel_em = psicologo.esta_agendavel_em(timezone.localtime(data_hora, fuso))
+                    data_hora_local = timezone.localtime(data_hora, fuso)
+                    esta_agendavel_em = psicologo.esta_agendavel_em(data_hora_local)
+                    msg = formatar_msg_assertion(
+                        metodo_assertion=metodo_assertion,
+                        fuso=fuso,
+                        data_hora_original=data_hora,
+                        data_hora_local=data_hora_local,
+                        psicologo=psicologo,
+                        descricao=descricao,
+                        motivo_para_nao_estar_agendavel=motivo_para_nao_estar_agendavel,
+                    )
                     metodo_assertion(esta_agendavel_em, msg)
 
         agora = timezone.localtime()
-        proxima_data_hora_agendavel = self.psicologo.proxima_data_hora_agendavel
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=agora - timedelta(minutes=1),
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.PASSADO,
-        )
+        with freeze_time(agora):
+            proxima_data_hora_agendavel = self.psicologo.proxima_data_hora_agendavel
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=agora + CONSULTA_ANTECEDENCIA_MINIMA - timedelta(minutes=1),
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora - timedelta(minutes=1),
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.PASSADO,
+                descricao="Data-hora no passado",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(days=1),
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MINIMA - timedelta(seconds=1),
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
+                descricao="1 segundo antes do mínimo de antecedência",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=proxima_data_hora_agendavel + CONSULTA_ANTECEDENCIA_MAXIMA,
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(seconds=1),
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
+                descricao="1 segundo depois do máximo de antecedência",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=proxima_data_hora_agendavel - CONSULTA_DURACAO,
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.ANTES_DA_PROXIMA_DATA_HORA_AGENDAVEL,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel + CONSULTA_ANTECEDENCIA_MAXIMA,
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
+                descricao="Próxima data-hora agendável + máximo de antecedência",
+            )
 
-        intervalos_do_psicologo = self.psicologo.disponibilidade.all()
-        intervalo = intervalos_do_psicologo.first()
-        fuso_intervalo = intervalo.data_hora_inicio.tzinfo
-        data_intervalo = intervalo.data_hora_inicio.date()
-        agora_fuso_intervalo = timezone.localtime(agora, fuso_intervalo)
-        diferenca_dias_semana = data_intervalo.isoweekday() - agora_fuso_intervalo.isoweekday()
-        diferenca_dias_semana = diferenca_dias_semana + 7 if diferenca_dias_semana < 0 else diferenca_dias_semana
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel - timedelta(seconds=1),
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTES_DA_PROXIMA_DATA_HORA_AGENDAVEL,
+                descricao="1 segundo antes da próxima data-hora agendável",
+            )
 
-        data_hora_inicio = datetime.combine(
-            agora_fuso_intervalo.date(),
-            intervalo.data_hora_inicio.time(),
-            fuso_intervalo,
-        ) + timedelta(days=diferenca_dias_semana)
+            intervalos_do_psicologo = self.psicologo.disponibilidade.all()
+            intervalo = intervalos_do_psicologo.first()
+            fuso_intervalo = intervalo.data_hora_inicio.tzinfo
+            data_intervalo = intervalo.data_hora_inicio.date()
+            agora_fuso_intervalo = timezone.localtime(agora, fuso_intervalo)
+            diferenca_dias_semana = data_intervalo.isoweekday() - agora_fuso_intervalo.isoweekday()
+            diferenca_dias_semana = diferenca_dias_semana + 7 if diferenca_dias_semana <= 0 else diferenca_dias_semana
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertTrue,
-            data_hora=data_hora_inicio,
-            psicologo=self.psicologo,
-        )
+            data_hora_inicio = datetime.combine(
+                agora_fuso_intervalo.date(),
+                intervalo.data_hora_inicio.time(),
+                fuso_intervalo,
+            ) + timedelta(days=diferenca_dias_semana)
 
-        intervalo.delete()
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=data_hora_inicio,
+                psicologo=self.psicologo,
+                descricao="Cálculo de uma data-hora de início válida a partir de um intervalo existente do psicólogo",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=data_hora_inicio,
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
-        )
+            intervalo.delete()
 
-        intervalos_do_psicologo.delete()
-        
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=proxima_data_hora_agendavel,
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=data_hora_inicio,
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
+                descricao="",
+            )
 
-        self.set_disponibilidade_generica(self.psicologo)
+            intervalos_do_psicologo.delete()
+            
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertTrue,
-            data_hora=proxima_data_hora_agendavel,
-            psicologo=self.psicologo,
-        )
+            self.set_disponibilidade_generica(self.psicologo)
 
-        consulta = Consulta.objects.create(
-            data_hora_agendada=proxima_data_hora_agendavel,
-            paciente=self.paciente,
-            psicologo=self.psicologo,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=proxima_data_hora_agendavel,
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
-        )
+            consulta = Consulta.objects.create(
+                data_hora_agendada=proxima_data_hora_agendavel,
+                paciente=self.paciente,
+                psicologo=self.psicologo,
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=proxima_data_hora_agendavel + CONSULTA_DURACAO - timedelta(minutes=1),
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=proxima_data_hora_agendavel + timedelta(minutes=1),
-            psicologo=self.psicologo,
-            msg=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
-        )
-        
-        consulta.estado = EstadoConsulta.CANCELADA
-        consulta.save()
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel + CONSULTA_DURACAO - timedelta(minutes=1),
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertTrue,
-            data_hora=proxima_data_hora_agendavel,
-            psicologo=self.psicologo,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel + timedelta(minutes=1),
+                psicologo=self.psicologo,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+                descricao="",
+            )
+            
+            consulta.estado = EstadoConsulta.CANCELADA
+            consulta.save()
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=agora - timedelta(minutes=1),
-            psicologo=self.psicologo_sempre_disponivel,
-            msg=MotivosParaNaoEstarAgendavel.PASSADO,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=agora,
-            psicologo=self.psicologo_sempre_disponivel,
-            msg=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora - timedelta(minutes=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.PASSADO,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=agora + timedelta(minutes=1),
-            psicologo=self.psicologo_sempre_disponivel,
-            msg=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora,
+                psicologo=self.psicologo_sempre_disponivel,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertFalse,
-            data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(days=1),
-            psicologo=self.psicologo_sempre_disponivel,
-            msg=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora + timedelta(minutes=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertTrue,
-            data_hora=agora + CONSULTA_ANTECEDENCIA_MINIMA + timedelta(minutes=1),
-            psicologo=self.psicologo_sempre_disponivel,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(days=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertTrue,
-            data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA - timedelta(minutes=1),
-            psicologo=self.psicologo_sempre_disponivel,
-        )
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MINIMA + timedelta(minutes=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                descricao="",
+            )
 
-        proxima_data_hora_agendavel = self.psicologo_sempre_disponivel.proxima_data_hora_agendavel
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA - timedelta(minutes=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                descricao="",
+            )
 
-        fazer_assertions_para_cada_fuso(
-            metodo_assertion=self.assertTrue,
-            data_hora=proxima_data_hora_agendavel,
-            psicologo=self.psicologo_sempre_disponivel,
-        )
+            proxima_data_hora_agendavel = self.psicologo_sempre_disponivel.proxima_data_hora_agendavel
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo_sempre_disponivel,
+                descricao="Oi",
+            )

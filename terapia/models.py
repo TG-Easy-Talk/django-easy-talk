@@ -155,15 +155,12 @@ class Psicologo(BasePacienteOuPsicologo):
 
         while True:
             for data_hora in datas_hora_ordenadas:
-                print("1: ", data_hora)
                 data_hora += timedelta(weeks=semanas)
 
                 if data_hora < datas_hora_ordenadas[0]:
                     data_hora += timedelta(weeks=1)
 
-                print("2: ", data_hora)
                 tempo_decorrido = data_hora - agora_convertido
-                print(tempo_decorrido)
 
                 if tempo_decorrido > CONSULTA_ANTECEDENCIA_MAXIMA:
                     return None
@@ -306,8 +303,9 @@ class Psicologo(BasePacienteOuPsicologo):
         agora = timezone.now()
         
         return bool(
+            self.proxima_data_hora_agendavel is not None and
+            data_hora >= self.proxima_data_hora_agendavel and
             data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
-            data_hora >= agora + CONSULTA_ANTECEDENCIA_MINIMA and
             self.disponibilidade.exists() and
             self._tem_intervalo_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
