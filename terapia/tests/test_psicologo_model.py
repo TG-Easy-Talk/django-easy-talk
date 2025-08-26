@@ -566,6 +566,9 @@ class PsicologoModelTest(TestCase):
             NAO_HA_INTERVALO = "Não é possível estar agendável se não houver intervalo no qual a consulta se encaixe"
             JA_HA_CONSULTA = "Não é possível estar agendável se já houver consulta que toma o tempo da que se deseja agendar"
 
+        def isoformat_se_nao_for_none(data_hora):
+            return data_hora.isoformat() if data_hora is not None else "N/A"
+
         def formatar_msg_assertion(*,
             metodo_assertion,
             fuso,
@@ -576,15 +579,16 @@ class PsicologoModelTest(TestCase):
             motivo_para_nao_estar_agendavel,
         ):
             msg = (
-                f"[DESCRIÇÃO DO TESTE: {descricao}]"
-                f"\n[FUSO: {fuso}"
-                f"\n[DATA HORA ORIGINAL: {data_hora_original.isoformat()}]"
-                f"\n[DATA HORA LOCAL: {data_hora_local.isoformat()}]"
+                f"\n[DESCRIÇÃO DO TESTE: {descricao}]"
+                f"\n[FUSO: {fuso}]"
+                f"\n[DATA-HORA ORIGINAL: {isoformat_se_nao_for_none(data_hora_original)}]"
+                f"\n[DATA-HORA NO FUSO: {isoformat_se_nao_for_none(data_hora_local)}]"
                 f"\n[PSICÓLOGO: {psicologo.nome_completo}]"
-                f"\n[DEVERIA ESTAR AGENDÁVEL? {"Sim" if metodo_assertion is self.assertTrue else "Não"}]"
+                f"\n[DEVERIA ESTAR AGENDÁVEL? {"Sim" if metodo_assertion.__func__ is self.assertTrue.__func__ else "Não"}]"
+                f"\n[PRÓXIMA DATA-HORA AGENDÁVEL DO PSICÓLOGO: {isoformat_se_nao_for_none(psicologo.proxima_data_hora_agendavel)}]"
             )
 
-            if metodo_assertion is self.assertFalse:
+            if metodo_assertion.__func__ is self.assertFalse.__func__:
                 msg += f"\n[MOTIVO PARA NÃO ESTAR AGENDÁVEL: {motivo_para_nao_estar_agendavel}]"
 
             return msg
@@ -626,18 +630,18 @@ class PsicologoModelTest(TestCase):
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertFalse,
-                data_hora=agora + CONSULTA_ANTECEDENCIA_MINIMA - timedelta(seconds=1),
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MINIMA - timedelta(milliseconds=1),
                 psicologo=self.psicologo,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
-                descricao="1 segundo antes do mínimo de antecedência",
+                descricao="Um pouco antes do mínimo de antecedência",
             )
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertFalse,
-                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(seconds=1),
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(milliseconds=1),
                 psicologo=self.psicologo,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
-                descricao="1 segundo depois do máximo de antecedência",
+                descricao="Um pouco depois do máximo de antecedência",
             )
 
             fazer_assertions_para_cada_fuso(
@@ -650,10 +654,10 @@ class PsicologoModelTest(TestCase):
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertFalse,
-                data_hora=proxima_data_hora_agendavel - timedelta(seconds=1),
+                data_hora=proxima_data_hora_agendavel - timedelta(milliseconds=1),
                 psicologo=self.psicologo,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTES_DA_PROXIMA_DATA_HORA_AGENDAVEL,
-                descricao="1 segundo antes da próxima data-hora agendável",
+                descricao="Um pouco antes da próxima data-hora agendável",
             )
 
             intervalos_do_psicologo = self.psicologo.disponibilidade.all()
@@ -684,9 +688,9 @@ class PsicologoModelTest(TestCase):
                 data_hora=data_hora_inicio,
                 psicologo=self.psicologo,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
-                descricao="",
+                descricao="Agendar na data-hora anterior não será possível porque o intervalo acabou de ser deletado",
             )
-
+            
             intervalos_do_psicologo.delete()
             
             fazer_assertions_para_cada_fuso(
@@ -694,7 +698,7 @@ class PsicologoModelTest(TestCase):
                 data_hora=proxima_data_hora_agendavel,
                 psicologo=self.psicologo,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
-                descricao="",
+                descricao="Não é possível agendar na próxima data-hora agendável pois todos os intervalos do psicólogo foram deletados",
             )
 
             self.set_disponibilidade_generica(self.psicologo)
@@ -703,11 +707,11 @@ class PsicologoModelTest(TestCase):
                 metodo_assertion=self.assertTrue,
                 data_hora=proxima_data_hora_agendavel,
                 psicologo=self.psicologo,
-                descricao="",
+                descricao="Os intervalos do psicólogo foram readicionados, permitindo agendamento na próxima data-hora agendável",
             )
 
             consulta = Consulta.objects.create(
-                data_hora_agendada=proxima_data_hora_agendavel,
+                data_hora_agendada=self.psicologo.proxima_data_hora_agendavel,
                 paciente=self.paciente,
                 psicologo=self.psicologo,
             )
@@ -717,23 +721,23 @@ class PsicologoModelTest(TestCase):
                 data_hora=proxima_data_hora_agendavel,
                 psicologo=self.psicologo,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
-                descricao="",
+                descricao="Uma consulta foi criada na próxima data-hora agendável, então não se pode agendar nessa mesma data-hora de novo",
             )
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertFalse,
-                data_hora=proxima_data_hora_agendavel + CONSULTA_DURACAO - timedelta(minutes=1),
+                data_hora=proxima_data_hora_agendavel + CONSULTA_DURACAO - timedelta(milliseconds=1),
                 psicologo=self.psicologo,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
-                descricao="",
+                descricao="Um pouco antes do término de uma consulta já agendada",
             )
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertFalse,
-                data_hora=proxima_data_hora_agendavel + timedelta(minutes=1),
+                data_hora=proxima_data_hora_agendavel + timedelta(milliseconds=1),
                 psicologo=self.psicologo,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
-                descricao="",
+                descricao="Um pouco depois do início de uma consulta já agendada",
             )
             
             consulta.estado = EstadoConsulta.CANCELADA
@@ -743,15 +747,17 @@ class PsicologoModelTest(TestCase):
                 metodo_assertion=self.assertTrue,
                 data_hora=proxima_data_hora_agendavel,
                 psicologo=self.psicologo,
-                descricao="",
+                descricao="A consulta que estava marcada para essa data-hora foi cancelada, permitindo um novo agendamento",
             )
+
+            proxima_data_hora_agendavel = self.psicologo_sempre_disponivel.proxima_data_hora_agendavel
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertFalse,
                 data_hora=agora - timedelta(minutes=1),
                 psicologo=self.psicologo_sempre_disponivel,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.PASSADO,
-                descricao="",
+                descricao="Data-hora no passado",
             )
 
             fazer_assertions_para_cada_fuso(
@@ -759,7 +765,7 @@ class PsicologoModelTest(TestCase):
                 data_hora=agora,
                 psicologo=self.psicologo_sempre_disponivel,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
-                descricao="",
+                descricao="Agendar no instante de agora não atende a antecedência mínima",
             )
 
             fazer_assertions_para_cada_fuso(
@@ -767,36 +773,41 @@ class PsicologoModelTest(TestCase):
                 data_hora=agora + timedelta(minutes=1),
                 psicologo=self.psicologo_sempre_disponivel,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
-                descricao="",
+                descricao="Agendar um minuto depois do instante atual não atende a antecedência mínima",
             )
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertFalse,
-                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(days=1),
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(milliseconds=1),
                 psicologo=self.psicologo_sempre_disponivel,
                 motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
-                descricao="",
+                descricao="Um pouco depois do limite máximo de antecedência",
             )
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertTrue,
-                data_hora=agora + CONSULTA_ANTECEDENCIA_MINIMA + timedelta(minutes=1),
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA,
                 psicologo=self.psicologo_sempre_disponivel,
-                descricao="",
+                descricao="Exatamente no limite máximo de antecedência",
             )
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertTrue,
-                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA - timedelta(minutes=1),
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA - timedelta(milliseconds=1),
                 psicologo=self.psicologo_sempre_disponivel,
-                descricao="",
+                descricao="Um pouco antes do limite máximo de antecedência",
             )
-
-            proxima_data_hora_agendavel = self.psicologo_sempre_disponivel.proxima_data_hora_agendavel
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertTrue,
-                data_hora=proxima_data_hora_agendavel,
+                data_hora=self.psicologo_sempre_disponivel.proxima_data_hora_agendavel,
                 psicologo=self.psicologo_sempre_disponivel,
-                descricao="Oi",
+                descricao="Agendar na próxima data-hora agendável",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=self.psicologo_sempre_disponivel.proxima_data_hora_agendavel + timedelta(milliseconds=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                descricao="Um pouco depois da próxima data-hora agendável",
             )
