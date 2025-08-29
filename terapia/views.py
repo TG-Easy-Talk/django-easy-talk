@@ -32,7 +32,10 @@ class DeveTerCargoMixin(LoginRequiredMixin):
 
 class DeveSerPsicologoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_psicologo:
+        if (
+            request.user.is_authenticated and
+            not request.user.is_psicologo
+        ):
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
     

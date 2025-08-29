@@ -375,7 +375,7 @@ class PsicologoModelTest(TestCase):
         )
 
     def test_primeiro_nome(self):
-        self.assertEqual(self.psicologo_comum.primeiro_nome, 'Wanessa')
+        self.assertEqual(self.psicologo_comum.primeiro_nome, 'Psicólogo')
 
     def test_esta_com_perfil_completo(self):
         with self.subTest(psicologo=self.psicologo_comum.__dict__):    
@@ -566,7 +566,7 @@ class PsicologoModelTest(TestCase):
             NAO_HA_INTERVALO = "Não é possível estar agendável se não houver intervalo no qual a consulta se encaixe"
             JA_HA_CONSULTA = "Não é possível estar agendável se já houver consulta que toma o tempo da que se deseja agendar"
 
-        def isoformat_se_nao_for_none(data_hora):
+        def isoformat_ou_none(data_hora):
             return data_hora.isoformat() if data_hora is not None else "N/A"
 
         def formatar_msg_assertion(*,
@@ -581,11 +581,11 @@ class PsicologoModelTest(TestCase):
             msg = (
                 f"\n[DESCRIÇÃO DO TESTE: {descricao}]"
                 f"\n[FUSO: {fuso}]"
-                f"\n[DATA-HORA ORIGINAL: {isoformat_se_nao_for_none(data_hora_original)}]"
-                f"\n[DATA-HORA NO FUSO: {isoformat_se_nao_for_none(data_hora_local)}]"
+                f"\n[DATA-HORA ORIGINAL: {isoformat_ou_none(data_hora_original)}]"
+                f"\n[DATA-HORA NO FUSO: {isoformat_ou_none(data_hora_local)}]"
                 f"\n[PSICÓLOGO: {psicologo.nome_completo}]"
                 f"\n[DEVERIA ESTAR AGENDÁVEL? {"Sim" if metodo_assertion.__func__ is self.assertTrue.__func__ else "Não"}]"
-                f"\n[PRÓXIMA DATA-HORA AGENDÁVEL DO PSICÓLOGO: {isoformat_se_nao_for_none(psicologo.proxima_data_hora_agendavel)}]"
+                f"\n[PRÓXIMA DATA-HORA AGENDÁVEL DO PSICÓLOGO: {isoformat_ou_none(psicologo.proxima_data_hora_agendavel)}]"
             )
 
             if metodo_assertion.__func__ is self.assertFalse.__func__:

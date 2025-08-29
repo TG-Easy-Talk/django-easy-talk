@@ -157,7 +157,7 @@ class Psicologo(BasePacienteOuPsicologo):
             for data_hora in datas_hora_ordenadas:
                 data_hora += timedelta(weeks=semanas)
 
-                if data_hora < datas_hora_ordenadas[0]:
+                if data_hora <= agora_convertido:
                     data_hora += timedelta(weeks=1)
 
                 tempo_decorrido = data_hora - agora_convertido
@@ -217,18 +217,27 @@ class Psicologo(BasePacienteOuPsicologo):
         Retorna as datas e horas dos intervalos de disponibilidade do psicólogo na ordem do mais
         próximo ao mais distante partindo de um instante no tempo.
         """
+        final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
+            instante.isoweekday(),
+            instante.time(),
+            instante.tzinfo,
+        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
+
         intervalos_ordenados = self._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(instante)
-        
         datas_hora_ordenadas = []
         ultimas_datas_hora = []
+        comeco = 0
 
-        for data_hora in intervalos_ordenados[0].get_datas_hora_locais():
-            if data_hora >= instante + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO:
-                datas_hora_ordenadas.append(data_hora)
-            else:
-                ultimas_datas_hora.append(data_hora)
+        if final_de_consulta_mais_proximo_possivel in intervalos_ordenados[0]:
+            for data_hora in intervalos_ordenados[0].get_datas_hora_locais():
+                if data_hora >= final_de_consulta_mais_proximo_possivel:
+                    datas_hora_ordenadas.append(data_hora)
+                else:
+                    ultimas_datas_hora.append(data_hora)
 
-        for intervalo in intervalos_ordenados[1:]:
+            comeco = 1
+
+        for intervalo in intervalos_ordenados[comeco:]:
             for data_hora in intervalo.get_datas_hora_locais():
                 datas_hora_ordenadas.append(data_hora)
 
@@ -453,15 +462,15 @@ class IntervaloDisponibilidade(models.Model):
         virou_a_semana = False
 
         while True:
+            datas_hora.append(data_hora_atual)
+            data_hora_atual = data_hora_atual + CONSULTA_DURACAO
+            
             if (
                 (self.data_hora_inicio < self.data_hora_fim or virou_a_semana) and
                 data_hora_atual > self.data_hora_fim - CONSULTA_DURACAO
             ):
                 break
 
-            datas_hora.append(data_hora_atual)
-            data_hora_atual = data_hora_atual + CONSULTA_DURACAO
-            
             if data_hora_atual > converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), data_hora_atual.tzinfo):
                 data_hora_atual -= timedelta(weeks=1)
                 virou_a_semana = True
