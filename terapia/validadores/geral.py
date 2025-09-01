@@ -4,22 +4,23 @@ from django.utils import timezone
 from terapia.constantes import (
     CONSULTA_ANTECEDENCIA_MINIMA,
     CONSULTA_ANTECEDENCIA_MAXIMA,
-    CONSULTA_DURACAO,
+    CONSULTA_DURACAO_MINUTOS,
 )
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, UTC
+from terapia.utilidades.geral import desprezar_segundos_e_microssegundos
 from usuario.models import Usuario
     
 
-def validate_antecedencia(value):
+def validate_antecedencia(data_hora):
     agora = timezone.now()
 
-    if value < agora + CONSULTA_ANTECEDENCIA_MINIMA:
+    if data_hora < agora + CONSULTA_ANTECEDENCIA_MINIMA:
         raise ValidationError(
             "A consulta deve ser agendada com, no mínimo, %(antecedencia)s minutos de antecedência.",
             params={'antecedencia': CONSULTA_ANTECEDENCIA_MINIMA.total_seconds() // 60},
             code='antecedencia_minima_nao_atendida',
         )
-    elif value > agora + CONSULTA_ANTECEDENCIA_MAXIMA:
+    elif data_hora > agora + CONSULTA_ANTECEDENCIA_MAXIMA:
         raise ValidationError(
             "A consulta não pode ser agendada para mais de %(antecedencia_maxima) dias no futuro.",
             params={'antecedencia_maxima': CONSULTA_ANTECEDENCIA_MAXIMA.days},
@@ -27,27 +28,28 @@ def validate_antecedencia(value):
         )
 
 
-def validate_final_hora_multiplo_de_duracao_consulta(value):
-    hora = timezone.localtime(value, UTC).time()
-    hora_em_timedelta = timedelta(hours=hora.hour, minutes=hora.minute)
+def validate_divisivel_por_duracao_consulta(data_hora):
+    data_hora = timezone.localtime(desprezar_segundos_e_microssegundos(data_hora), UTC)
+    meia_noite = data_hora.replace(hour=0, minute=0)
+    total_minutos = int((data_hora - meia_noite).total_seconds() // 60)
 
-    if hora_em_timedelta % CONSULTA_DURACAO != 0:
+    if total_minutos % CONSULTA_DURACAO_MINUTOS != 0:
         raise ValidationError(
-            "O horário deve ser um múltiplo de %(multiplo)s minutos.",
-            params={"multiplo": CONSULTA_DURACAO},
-            code="final_horario_invalido",
+            "A data-hora deve ser um múltiplo de %(multiplo)s minutos no fuso-horário UTC.",
+            params={"multiplo": CONSULTA_DURACAO_MINUTOS},
+            code="data_hora_nao_divisivel_por_duracao_consulta",
         )
 
 
-def validate_valor_consulta(value):
+def validate_valor_consulta(valor):
     """
     Garante que o valor da consulta esteja entre R$ 20,00 e R$ 4.999,99.
     """
-    if value is None:
+    if valor is None:
         return
     min_value = Decimal("20.00")
     max_value = Decimal("4999.99")
-    if value < min_value or value > max_value:
+    if valor < min_value or valor > max_value:
         raise ValidationError(
             "O valor da consulta deve ser entre R$%(min_value)s e R$%(max_value)s.",
             params={"min_value": min_value, "max_value": max_value},
@@ -55,16 +57,16 @@ def validate_valor_consulta(value):
         )
     
 
-def validate_intervalo_disponibilidade_datetime_range(value):
+def validate_intervalo_disponibilidade_data_hora_range(data_hora):
     """
-    Garante que a data e hora estejam entre 00:00 de 01/07/2024 e 00:00 de 08/07/2024.
+    Garante que a data-hora esteja entre 00:00 de 01/07/2024 e 23:59 de 07/07/2024.
     """
-    data_hora_minima = datetime(2024, 7, 1, 0, 0, tzinfo=value.tzinfo)
-    data_hora_maxima = datetime(2024, 7, 7, 23, 59, tzinfo=value.tzinfo)
+    data_hora_minima = datetime(2024, 7, 1, 0, 0, tzinfo=data_hora.tzinfo)
+    data_hora_maxima = datetime(2024, 7, 7, 23, 59, tzinfo=data_hora.tzinfo)
 
-    if not (data_hora_minima <= value <= data_hora_maxima):
+    if not (data_hora_minima <= data_hora <= data_hora_maxima):
         raise ValidationError(
-            "A data e hora devem estar entre %(data_hora_minima)s e %(data_hora_maxima)s.",
+            "A data-hora deve estar entre %(data_hora_minima)s e %(data_hora_maxima)s.",
             params={
                 "data_hora_minima": data_hora_minima,
                 "data_hora_maxima": data_hora_maxima,

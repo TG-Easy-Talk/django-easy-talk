@@ -113,6 +113,11 @@ def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
 
     return disponibilidade
 
+
+def desprezar_segundos_e_microssegundos(data_hora):
+    return data_hora.replace(second=0, microsecond=0)
+
+
 def converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_iso, hora, fuso):
     """
     Função para converter um par de dia da semana ISO e hora em um objeto datetime.
@@ -122,9 +127,11 @@ def converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_iso, hora, fuso)
 
     Segundos e microssegundos são desprezados.
     """
+    hora = desprezar_segundos_e_microssegundos(hora)
+
     data_hora_fuso_original = datetime.combine(
         date(2024, 7, dia_semana_iso),
-        hora.replace(second=0, microsecond=0),
+        hora,
         tzinfo=fuso,
     )
 

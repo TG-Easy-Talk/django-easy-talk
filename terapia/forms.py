@@ -1,6 +1,6 @@
 from django import forms
 from .widgets import (
-    CustomDateTimeInputComStepDeDuracaoConsulta,
+    CustomDateTimeInput,
     CustomDateInput,
     DisponibilidadeInput,
 )
@@ -17,7 +17,7 @@ from .models import (
     EstadoConsulta,
     IntervaloDisponibilidade,
 )
-from .utilidades.disponibilidade import get_disponibilidade_pela_matriz
+from .utilidades.geral import get_disponibilidade_pela_matriz
 
 
 Usuario = get_user_model()
@@ -50,7 +50,7 @@ class PsicologoFiltrosForm(forms.Form):
     )
     disponibilidade = forms.DateTimeField(
         required=False,
-        widget=CustomDateTimeInputComStepDeDuracaoConsulta(),
+        widget=CustomDateTimeInput(),
     )
     valor_minimo = forms.DecimalField(
         required=False,
@@ -154,7 +154,7 @@ class ConsultaCreationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
         self.psicologo = psicologo
-        self.fields["data_hora_agendada"].widget = CustomDateTimeInputComStepDeDuracaoConsulta()
+        self.fields["data_hora_agendada"].widget = CustomDateTimeInput()
 
     def _post_clean(self):
         # Setar os campos de paciente e psicólogo antes da validação da model

@@ -16,7 +16,7 @@ from django.utils import timezone
 import json
 from zoneinfo import ZoneInfo
 from terapia.constantes import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MAXIMA
-from terapia.utilidades.disponibilidade import converter_dia_semana_iso_com_hora_para_data_hora, get_matriz_disponibilidade_booleanos_em_json
+from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora, get_matriz_disponibilidade_booleanos_em_json
 from .constantes import FUSOS_PARA_TESTE
 from freezegun import freeze_time
 
