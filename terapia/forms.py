@@ -1,20 +1,23 @@
 from django import forms
 from .widgets import CustomDateTimeInput, CustomDateInput, DisponibilidadeInput
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
+from datetime import datetime
+from decimal import Decimal
 from easy_talk.renderers import (
     FormComValidacaoRenderer,
-    FormDeFiltrosRenderer
+    FormDeFiltrosRenderer,
 )
+from .constants import CONSULTA_ANTECEDENCIA_MINIMA
 from .models import (
     Paciente,
     Psicologo,
     Especializacao,
     Consulta,
     EstadoConsulta,
-    IntervaloDisponibilidade,
 )
-from .utils.disponibilidade import get_disponibilidade_pela_matriz
-
 
 Usuario = get_user_model()
 
@@ -110,6 +113,7 @@ class PsicologoChangeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["sobre_mim"].widget.attrs.update({
             "placeholder": "Apresente-se para os pacientes do EasyTalk...",
+            "rows": "8",
         })
         self.fields["foto"].widget = forms.FileInput()
         self.fields["especializacoes"].widget.attrs.update({"class": "h-100"})
@@ -119,41 +123,97 @@ class PsicologoChangeForm(forms.ModelForm):
         self.fields["sobre_mim"].widget.attrs.update({"rows": "8"})
 
     def clean_disponibilidade(self):
-        return get_disponibilidade_pela_matriz(self.cleaned_data.get("disponibilidade"))
-
-    def save(self, commit=True):
-        psicologo = super().save(commit=False)
-        disponibilidade = self.cleaned_data.get("disponibilidade", [])
-
-        for intervalo in disponibilidade:
-            intervalo.psicologo = psicologo
-
-        IntervaloDisponibilidade.objects.filter(psicologo=psicologo).delete()
-        IntervaloDisponibilidade.objects.bulk_create(disponibilidade)
-
-        if commit:
-            psicologo.save()
-            self.save_m2m()
-
-        return psicologo
+        return self.cleaned_data.get("disponibilidade")
 
 
 class ConsultaCreationForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
     template_name = "perfil/componentes/form.html"
-    
+    disponibilidade = forms.CharField(
+        widget=DisponibilidadeInput(),
+        required=False
+    )
+
     class Meta:
         model = Consulta
-        fields = ["data_hora_agendada"]
+        fields = ["data_hora_agendada", "disponibilidade"]
+
+
+class AgendarConsultasForm(forms.Form):
+    """
+    Conecta com o frontend do calendário (campo hidden `data_hora_agendada`
+    contendo uma lista JSON de datetimes ISO: ["YYYY-MM-DDTHH:MM[:SS]", ...]).
+    Ao salvar, cria consultas com estado SOLICITADA, para posterior confirmação/cancelamento.
+    """
+    default_renderer = FormComValidacaoRenderer
+    template_name = "perfil/componentes/form.html"
+
+    data_hora_agendada = forms.JSONField()
 
     def __init__(self, *args, usuario, psicologo, **kwargs):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
         self.psicologo = psicologo
-        self.fields["data_hora_agendada"].widget = CustomDateTimeInput(attrs={"step": "3600"})
+        self.psicologo_id = getattr(psicologo, "pk", None)
+        self.preco = psicologo.valor_consulta or Decimal("85.00")
 
-    def _post_clean(self):
-        # Setar os campos de paciente e psicólogo antes da validação da model
-        self.instance.paciente = self.usuario.paciente
-        self.instance.psicologo = self.psicologo
-        super()._post_clean()
+    def clean_data_hora_agendada(self):
+        raw = self.cleaned_data["data_hora_agendada"]
+        if not isinstance(raw, list) or not raw:
+            raise ValidationError("Selecione pelo menos um horário.")
+
+        parsed = []
+        tz = timezone.get_current_timezone()
+        for s in raw:
+            if len(s) == 16:
+                s = s + ":00"
+            try:
+                dt_naive = datetime.fromisoformat(s)  # naive
+            except Exception:
+                raise ValidationError(f"Data/hora inválida: {s}")
+
+            dt = (
+                timezone.make_aware(dt_naive, tz)
+                if timezone.is_naive(dt_naive)
+                else dt_naive.astimezone(tz)
+            )
+            parsed.append(dt)
+
+        parsed = sorted(set(parsed))
+
+        agora = timezone.now()
+        for dt in parsed:
+            if dt < agora + CONSULTA_ANTECEDENCIA_MINIMA:
+                raise ValidationError(
+                    f"Horário inválido (no passado ou sem antecedência mínima): {dt}."
+                )
+            if not self.psicologo.esta_agendavel_em(dt):
+                raise ValidationError(f"O psicólogo não tem disponibilidade em {dt}.")
+            if self.usuario.paciente.ja_tem_consulta_em(dt):
+                raise ValidationError(
+                    f"Você já tem uma consulta que conflita com {dt}."
+                )
+
+        return parsed
+
+    def save(self):
+        horarios = self.cleaned_data["data_hora_agendada"]
+        try:
+            with transaction.atomic():
+                criadas = []
+                for dt in horarios:
+                    c = Consulta(
+                        paciente=self.usuario.paciente,
+                        psicologo=self.psicologo,
+                        data_hora_agendada=dt,
+                        estado=EstadoConsulta.SOLICITADA,
+                    )
+                    c.full_clean()
+                    c.save()
+                    criadas.append(c)
+                return criadas
+        except IntegrityError:
+            raise ValidationError(
+                "Um ou mais horários acabaram de ser reservados por outra pessoa. "
+                "Por favor, recarregue a página e tente novamente."
+            )

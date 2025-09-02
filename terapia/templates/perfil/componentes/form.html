@@ -1,7 +1,472 @@
+{% load l10n %}
+
+<style>
+    :root {
+        --brand-600: #2e7d32;
+        --brand-700: #256428;
+        --brand-050: #eaf4ec;
+        --text-muted: #6c757d;
+    }
+
+    .ag-card {
+        max-width: 300px;
+        margin-inline: auto
+    }
+
+    .ag-title {
+        margin: 0 0 .5rem 0;
+        text-align: center
+    }
+
+    .ag-calendar {
+        border: 1px solid var(--brand-050);
+        border-radius: 14px;
+        padding: .5rem;
+        background: #fff
+    }
+
+    .ag-cal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--brand-600);
+        color: #fff;
+        border-radius: 10px;
+        padding: .4rem .6rem;
+        margin-bottom: .5rem
+    }
+
+    .ag-cal-title {
+        font-weight: 600
+    }
+
+    .ag-cal-navbtn {
+        width: 28px;
+        height: 28px;
+        border: 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .18);
+        color: #fff;
+        line-height: 1;
+        font-weight: 700;
+        cursor: pointer
+    }
+
+    .ag-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: .25rem;
+        padding: .35rem .15rem
+    }
+
+    .ag-dow {
+        font-size: .75rem;
+        color: var(--text-muted);
+        text-align: center;
+        padding: .15rem 0
+    }
+
+    .ag-day {
+        background: transparent;
+        border: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: .1rem auto;
+        font-weight: 600;
+        color: #222;
+        cursor: pointer;
+    }
+
+    .ag-day[disabled] {
+        opacity: .35;
+        cursor: not-allowed
+    }
+
+    .ag-day.sel {
+        background: var(--brand-600);
+        color: #fff
+    }
+
+    .ag-day.today {
+        outline: 2px solid var(--brand-600);
+        outline-offset: 1px;
+        border-radius: 999px
+    }
+
+    .ag-line {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-top: .5rem
+    }
+
+    .ag-date-tag {
+        min-width: 68px;
+        height: 38px;
+        border: 1px solid var(--brand-050);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600
+    }
+
+    .ag-line .form-select {
+        border-radius: 10px
+    }
+
+    .ag-remove {
+        border: 0;
+        background: transparent;
+        color: var(--text-muted);
+        font-weight: 700;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        cursor: pointer
+    }
+
+    .ag-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: .75rem
+    }
+
+    .ag-total small {
+        color: var(--text-muted);
+        margin-right: .25rem
+    }
+
+    .ag-btn-confirm.btn {
+        background: var(--brand-600);
+        border-color: var(--brand-600);
+        color: #fff;
+        border-radius: 12px;
+        padding: .55rem 1rem
+    }
+
+    .ag-btn-confirm.btn:hover {
+        background: var(--brand-700);
+        border-color: var(--brand-700)
+    }
+
+    .ag-tip {
+        font-size: .8rem;
+        color: var(--text-muted);
+        margin-top: .25rem;
+        text-align: center;
+    }
+</style>
+
 {{ form.non_field_errors }}
-<h6 class="text-center">Agende sua consulta</h6>
-<div>
-    {{ form.data_hora_agendada }}
-    {{ form.data_hora_agendada.errors }}
+
+<div
+        class="ag-card"
+        id="ag-wrapper"
+        data-preco="
+
+                {% if form.psicologo.valor_consulta %}{{ form.psicologo.valor_consulta|unlocalize|floatformat:2 }}{% else %}85.00{% endif %}"
+        data-moeda="BRL"
+        data-locale="pt-BR"
+        {% if form.psicologo.id %}
+        data-slots-url="{% url 'api_agenda_slots' form.psicologo.id %}"
+        {% else %}
+        data-slots-url=""
+        {% endif %}
+>
+    <h6 class="ag-title">Agende sua consulta</h6>
+
+    <div class="ag-calendar">
+        <div class="ag-cal-header">
+            <button type="button" class="ag-cal-navbtn" id="ag-prev" aria-label="Mês anterior">‹</button>
+            <div class="ag-cal-title" id="ag-month-label">Mês AAAA</div>
+            <button type="button" class="ag-cal-navbtn" id="ag-next" aria-label="Próximo mês">›</button>
+        </div>
+
+        <div class="ag-grid" id="ag-grid">
+            <div class="ag-dow">D</div>
+            <div class="ag-dow">S</div>
+            <div class="ag-dow">T</div>
+            <div class="ag-dow">Q</div>
+            <div class="ag-dow">Q</div>
+            <div class="ag-dow">S</div>
+            <div class="ag-dow">S</div>
+        </div>
+    </div>
+
+    <div id="ag-linhas" class="mt-2" aria-live="polite"></div>
+    <div class="ag-tip">Dica: clique no mesmo dia novamente para adicionar outro horário.</div>
+
+    <div class="ag-total" id="ag-total">
+        <span>Total</span>
+        <span><small id="ag-total-formula"></small> <strong id="ag-total-valor"></strong></span>
+    </div>
+
+    <div class="d-grid mt-2">
+        <button class="btn ag-btn-confirm" type="submit">Confirmar consultas</button>
+    </div>
+
+    <div class="visualmente-hidden visually-hidden">
+        {{ form.data_hora_agendada }}
+        {{ form.data_hora_agendada.errors }}
+    </div>
 </div>
-<button class="btn text-white btn-primary" type="submit">Agendar</button>
+
+<script>
+    (async function () {
+        const $ = (sel, ctx = document) => ctx.querySelector(sel);
+        const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+
+        const WRAP = $('#ag-wrapper');
+        const LOCALE = WRAP.dataset.locale || 'pt-BR';
+        const MOEDA = WRAP.dataset.moeda || 'BRL';
+        const PRECO = parseFloat(WRAP.dataset.preco || '0');
+        const SLOTS_URL = WRAP.dataset.slotsUrl || '';
+        if (!SLOTS_URL) console.warn('SLOTS_URL ausente no dataset do wrapper (#ag-wrapper).');
+
+        const fmtMonth = new Intl.DateTimeFormat(LOCALE, {month: 'long', year: 'numeric'});
+        const fmtBRL = new Intl.NumberFormat(LOCALE, {style: 'currency', currency: MOEDA});
+        const fmtISO = (d) => {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        };
+
+        let DISPONIBILIDADE = {};
+        let view = new Date();
+        view.setDate(1);
+        const selecionados = new Map();
+
+        const labelMes = $('#ag-month-label');
+        const grid = $('#ag-grid');
+        const linhas = $('#ag-linhas');
+        const totalTxt = $('#ag-total-valor');
+        const totalFrm = $('#ag-total-formula');
+        const inputDjango =
+            document.querySelector('[name="{{ form.data_hora_agendada.name|default_if_none:"data_hora_agendada" }}"]') ||
+            document.querySelector('[name="data_hora_agendada"]');
+
+        async function carregarSlotsDoMes(ano, mes0) {
+            if (!SLOTS_URL) {
+                DISPONIBILIDADE = {};
+                return;
+            }
+            const params = new URLSearchParams({year: ano, month: String(mes0 + 1)});
+            const resp = await fetch(`${SLOTS_URL}?${params}`, {credentials: "same-origin", cache: "no-store"});
+            if (!resp.ok) {
+                console.error("Falha ao carregar slots:", resp.status);
+                DISPONIBILIDADE = {};
+                return;
+            }
+            DISPONIBILIDADE = await resp.json();
+        }
+
+        async function renderCalendar() {
+            $$('.ag-day', grid).forEach(el => el.remove());
+
+            const ano = view.getFullYear();
+            const mes = view.getMonth();
+
+            await carregarSlotsDoMes(ano, mes);
+
+            const raw = fmtMonth.format(view);
+            labelMes.textContent = raw.charAt(0).toUpperCase() + raw.slice(1);
+
+            const first = new Date(ano, mes, 1);
+            const startWeekday = first.getDay();
+            const daysInMonth = new Date(ano, mes + 1, 0).getDate();
+
+            for (let i = 0; i < startWeekday; i++) {
+                const pad = document.createElement('div');
+                pad.className = 'ag-day';
+                pad.setAttribute('disabled', '');
+                grid.appendChild(pad);
+            }
+
+            const hoje = new Date();
+            const hojeKey = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).toDateString();
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'ag-day';
+                btn.textContent = String(d);
+
+                const dt = new Date(ano, mes, d);
+                const iso = fmtISO(dt);
+                btn.dataset.date = iso;
+
+                if (dt.toDateString() === hojeKey) btn.classList.add('today');
+
+                const hasSlots = Array.isArray(DISPONIBILIDADE[iso]) && DISPONIBILIDADE[iso].length > 0;
+                if (!hasSlots) btn.setAttribute('disabled', '');
+
+                if (selecionados.has(iso)) btn.classList.add('sel');
+
+                btn.addEventListener('click', () => onClickDay(iso, btn));
+                grid.appendChild(btn);
+            }
+        }
+
+        function refreshSelectOptionsForDate(dateISO) {
+            const set = selecionados.get(dateISO) || new Set();
+            const allSlots = DISPONIBILIDADE[dateISO] || [];
+            $$(`.ag-line[data-row="${dateISO}"] select`, linhas).forEach(sel => {
+                const cur = sel.value || '';
+                sel.innerHTML = '';
+                const opt0 = new Option('Hora', '', cur === '', cur === '');
+                sel.appendChild(opt0);
+                for (const h of allSlots) {
+                    const opt = new Option(h, h, false, h === cur);
+                    if (h !== cur && set.has(h)) opt.disabled = true;
+                    sel.appendChild(opt);
+                }
+            });
+        }
+
+        function algumSelectRestanteParaAdicionar(dateISO) {
+            const set = selecionados.get(dateISO) || new Set();
+            const allSlots = DISPONIBILIDADE[dateISO] || [];
+            return allSlots.some(h => !set.has(h));
+        }
+
+        function onClickDay(dateISO, btn) {
+            const slots = DISPONIBILIDADE[dateISO] || [];
+            if (slots.length === 0) return;
+
+            if (!selecionados.has(dateISO)) {
+                selecionados.set(dateISO, new Set());
+                btn.classList.add('sel');
+                addLinha(dateISO);
+            } else {
+                // Se ainda existem horários não escolhidos, adiciona outra linha; senão apenas foca
+                if (algumSelectRestanteParaAdicionar(dateISO)) {
+                    addLinha(dateISO);
+                } else {
+                    focusLinha(dateISO);
+                }
+            }
+            updateTotalEHidden();
+        }
+
+        function focusLinha(dateISO) {
+            const row = linhas.querySelector(`[data-row="${dateISO}"] select:not([disabled])`);
+            if (row) row.focus();
+        }
+
+        function addLinha(dateISO) {
+            const set = selecionados.get(dateISO) || new Set();
+            const allSlots = (DISPONIBILIDADE[dateISO] || []).filter(h => !set.has(h));
+            if (allSlots.length === 0) return; // nada a adicionar
+
+            const row = document.createElement('div');
+            row.className = 'ag-line';
+            row.dataset.row = dateISO;
+            row.dataset.prev = ''; // horário anterior da linha (se houver)
+
+            const tag = document.createElement('div');
+            tag.className = 'ag-date-tag';
+            const [yy, mm, dd] = dateISO.split('-');
+            tag.textContent = new Intl.DateTimeFormat(LOCALE, {
+                day: '2-digit',
+                month: '2-digit'
+            }).format(new Date(+yy, +mm - 1, +dd));
+
+            const sel = document.createElement('select');
+            sel.className = 'form-select form-select-sm';
+            sel.setAttribute('aria-label', `Horário ${tag.textContent}`);
+
+            // opções serão montadas pelo refresh, mas adicionamos placeholder inicial
+            sel.appendChild(new Option('Hora', '', true, true));
+
+            sel.addEventListener('change', () => {
+                const old = row.dataset.prev || '';
+                const val = sel.value || '';
+                const s = selecionados.get(dateISO);
+
+                if (old) s.delete(old); // libera o horário anterior desta linha
+
+                if (val) {
+                    if (s.has(val)) {
+                        // proteção contra corrida de seleção duplicada
+                        sel.value = '';
+                    } else {
+                        s.add(val);
+                        row.dataset.prev = val;
+                    }
+                } else {
+                    row.dataset.prev = '';
+                }
+
+                refreshSelectOptionsForDate(dateISO);
+                checarSePrecisaDesmarcarDia(dateISO);
+                updateTotalEHidden();
+            });
+
+            const rm = document.createElement('button');
+            rm.type = 'button';
+            rm.className = 'ag-remove';
+            rm.title = 'Remover horário';
+            rm.textContent = '×';
+            rm.addEventListener('click', () => {
+                const old = row.dataset.prev || '';
+                if (old) {
+                    const s = selecionados.get(dateISO);
+                    s.delete(old);
+                }
+                row.remove();
+
+                refreshSelectOptionsForDate(dateISO);
+                checarSePrecisaDesmarcarDia(dateISO);
+                updateTotalEHidden();
+            });
+
+            row.append(tag, sel, rm);
+            linhas.appendChild(row);
+
+            refreshSelectOptionsForDate(dateISO);
+        }
+
+        function checarSePrecisaDesmarcarDia(dateISO) {
+            const s = selecionados.get(dateISO);
+            const aindaTemLinhas = !!linhas.querySelector(`.ag-line[data-row="${dateISO}"]`);
+            if ((!s || s.size === 0) && !aindaTemLinhas) {
+                selecionados.delete(dateISO);
+                const btn = grid.querySelector(`.ag-day[data-date="${dateISO}"]`);
+                if (btn) btn.classList.remove('sel');
+            }
+        }
+
+        function updateTotalEHidden() {
+            const escolhidos = [];
+            for (const [dateISO, set] of selecionados.entries()) {
+                for (const h of set.values()) {
+                    escolhidos.push(`${dateISO}T${h}:00`);
+                }
+            }
+            const qtd = escolhidos.length;
+            totalFrm.textContent = `${fmtBRL.format(PRECO)} × ${qtd} =`;
+            totalTxt.textContent = fmtBRL.format(PRECO * qtd);
+
+            if (inputDjango) inputDjango.value = JSON.stringify(escolhidos);
+        }
+
+        $('#ag-prev').addEventListener('click', async () => {
+            view.setMonth(view.getMonth() - 1);
+            await renderCalendar();
+        });
+        $('#ag-next').addEventListener('click', async () => {
+            view.setMonth(view.getMonth() + 1);
+            await renderCalendar();
+        });
+
+        await renderCalendar();
+        updateTotalEHidden();
+    })();
+</script>

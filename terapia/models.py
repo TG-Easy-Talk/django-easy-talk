@@ -2,7 +2,6 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
-from django.db.models.expressions import Value
 from django.urls import reverse
 from django.contrib import admin
 from django.utils import timezone
@@ -26,9 +25,9 @@ class BasePacienteOuPsicologo(models.Model):
         Verifica se já há alguma consulta que tomaria tempo da data e hora enviadas.
         """
         return self.consultas.filter(
-            Q(data_hora_agendada__gt = data_hora - CONSULTA_DURACAO_MAXIMA) &
-            Q(data_hora_agendada__lt = data_hora + CONSULTA_DURACAO_MAXIMA) &
-            ~ Q(estado=EstadoConsulta.CANCELADA) # Desconsiderar consultas canceladas
+            Q(data_hora_agendada__gt=data_hora - CONSULTA_DURACAO_MAXIMA) &
+            Q(data_hora_agendada__lt=data_hora + CONSULTA_DURACAO_MAXIMA) &
+            ~ Q(estado=EstadoConsulta.CANCELADA)  # Desconsiderar consultas canceladas
         ).exists()
 
     def get_url_foto_propria_ou_padrao(self):
@@ -75,11 +74,11 @@ class Especializacao(models.Model):
 class PsicologoCompletosManager(models.Manager):
     def get_filtros(self):
         return (
-            Q(valor_consulta__isnull=False) &
-            Q(especializacoes__isnull=False) &
-            Q(disponibilidade__isnull=False)
+                Q(valor_consulta__isnull=False) &
+                Q(especializacoes__isnull=False) &
+                Q(disponibilidade__isnull=False)
         )
-    
+
     def get_queryset(self):
         return super().get_queryset().filter(self.get_filtros()).distinct()
 
@@ -112,69 +111,127 @@ class Psicologo(BasePacienteOuPsicologo):
         blank=True,
     )
 
-    objects = models.Manager() # Manager padrão (deve ser declarado explicitamente por conta do manager customizado abaixo)
-    completos = PsicologoCompletosManager() # Manager para psicólogos com perfil completo
+    objects = models.Manager()
+    completos = PsicologoCompletosManager()
 
     class Meta:
         verbose_name = "Psicólogo"
         verbose_name_plural = "Psicólogos"
 
+    @staticmethod
+    def _align_to_slot(dt):
+        """Alinha um datetime para o “degrau” da CONSULTA_DURACAO_MAXIMA (minutos)."""
+        step = int(CONSULTA_DURACAO_MAXIMA.total_seconds() // 60)
+        return dt.replace(minute=(dt.minute // step) * step, second=0, microsecond=0)
+
+    def _to_template_week(self, dt):
+        """
+        Converte um datetime real (aware/naive) para a semana-modelo (01–08/07/2024),
+        preservando weekday/hora/minuto e normalizando para a timezone atual.
+        """
+        tz = timezone.get_current_timezone()
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt, tz)
+        dt_local = timezone.localtime(dt, tz)
+        return datetime(
+            2024, 7, dt_local.isoweekday(),  # 1..7 (seg..dom)
+            dt_local.hour, dt_local.minute, tzinfo=tz
+        )
+
+    def _template_range_for(self, start_dt):
+        """
+        Para um início real, retorna (start_t, end_t) na semana-modelo
+        garantindo que end_t > start_t mesmo quando a consulta cruza a “segunda final”.
+        """
+        start_t = self._to_template_week(start_dt)
+        end_real = start_dt + CONSULTA_DURACAO_MAXIMA
+        end_t = self._to_template_week(end_real)
+        if end_t <= start_t:
+            end_t = end_t + timedelta(days=7)
+        return start_t, end_t
+
+    def _intervalos_para_data(self, dia_real):
+        """
+        Para um 'date' real, projeta todos os IntervaloDisponibilidade (semana-modelo)
+        para esse dia. Retorna lista de pares (inicio_real, fim_real) no fuso atual.
+        """
+        tz = timezone.get_current_timezone()
+        monday = dia_real - timedelta(days=dia_real.isoweekday() - 1)
+        proj = []
+        for it in self.disponibilidade.all():
+            ini_loc = it.data_hora_inicio_local
+            fim_loc = it.data_hora_fim_local
+
+            delta_ini = ini_loc.isoweekday() - 1
+            base_ini = datetime.combine(monday + timedelta(days=delta_ini), ini_loc.timetz())
+            base_ini = base_ini if base_ini.tzinfo else timezone.make_aware(base_ini, tz)
+
+            if fim_loc.isoweekday() >= ini_loc.isoweekday():
+                delta_fim = fim_loc.isoweekday() - 1
+                base_fim = datetime.combine(monday + timedelta(days=delta_fim), fim_loc.timetz())
+            else:
+                delta_fim = fim_loc.isoweekday() - 1 + 7
+                base_fim = datetime.combine(monday + timedelta(days=delta_fim), fim_loc.timetz())
+
+            base_fim = base_fim if base_fim.tzinfo else timezone.make_aware(base_fim, tz)
+            proj.append((base_ini, base_fim))
+        return proj
+
+    def _get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro(self, dias_no_futuro=60):
+        """
+        Gera, a partir de hoje, as janelas reais de disponibilidade (projetadas) por dia,
+        até um limite de 'dias_no_futuro'.
+        """
+        tz = timezone.get_current_timezone()
+        hoje = timezone.localtime(timezone.now(), tz).date()
+        for i in range(dias_no_futuro + 1):
+            dia = hoje + timedelta(days=i)
+            for inicio, fim in self._intervalos_para_data(dia):
+                yield inicio, fim
+
     @property
     def primeiro_nome(self):
         return self.nome_completo.split()[0]
-    
+
     @property
     @admin.display(boolean=True)
     def esta_com_perfil_completo(self):
         """
-        Retorna True se o psicólogo tem perfil completo, ou seja,
-        se possui valor de consulta, pelo menos uma especialização e disponibilidade definida.
+        Tem valor de consulta, ao menos uma especialização e alguma disponibilidade?
         """
         return bool(
             self.valor_consulta and
             self.especializacoes.exists() and
             self.disponibilidade.exists()
         )
-    
+
     @property
     def proxima_data_hora_agendavel(self):
         """
-        Retorna a data e hora agendáveis mais próximas do psicólogo.
+        Retorna o próximo início de consulta disponível (datetime aware) considerando:
+        - disponibilidade projetada para as próximas datas;
+        - passo = CONSULTA_DURACAO_MAXIMA;
+        - antecedência mínima;
+        - conflitos (psicólogo/paciente) via esta_agendavel_em().
         """
         if not self.disponibilidade.exists():
             return None
-        
-        intervalos = self._get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro()
 
-        semanas = 0
-        agora = timezone.localtime()
+        tz = timezone.get_current_timezone()
+        agora = timezone.localtime(timezone.now(), tz)
+        step_min = int(CONSULTA_DURACAO_MAXIMA.total_seconds() // 60)
 
-        while True:
-            for intervalo in intervalos:
-                datas_hora = intervalo.get_datas_hora_locais()
+        for inicio, fim in self._get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro(dias_no_futuro=60):
+            inicio_considerado = max(inicio, agora + CONSULTA_ANTECEDENCIA_MINIMA)
+            cur = self._align_to_slot(inicio_considerado)
 
-                for data_hora in datas_hora:
-                    dias = data_hora.isoweekday() - agora.isoweekday()
+            limite_inicio = fim - CONSULTA_DURACAO_MAXIMA
+            while cur <= limite_inicio:
+                if self.esta_agendavel_em(cur):
+                    return cur
+                cur += timedelta(minutes=step_min)
+        return None
 
-                    if data_hora.isoweekday() < agora.isoweekday():
-                        dias += 7
-
-                    soma_total_tempo = timedelta(days=semanas * 7 + dias)
-
-                    if soma_total_tempo > CONSULTA_ANTECEDENCIA_MAXIMA:
-                        return None
-
-                    data = agora.date() + soma_total_tempo
-                    data_hora_inicio = datetime.combine(data, data_hora.time(), tzinfo=agora.tzinfo)
-
-                    if (
-                        data_hora_inicio >= agora + CONSULTA_ANTECEDENCIA_MINIMA and
-                        not self.ja_tem_consulta_em(data_hora_inicio)
-                    ):
-                        return data_hora_inicio
-                    
-            semanas += 1
-                
     def clean(self):
         super().clean()
         # Caso já exista no banco, checar se já há paciente relacionado
@@ -187,32 +244,6 @@ class Psicologo(BasePacienteOuPsicologo):
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
 
-    def _get_intervalos_do_mais_proximo_ao_mais_distante_no_futuro(self):
-        """
-        Retorna os intervalos de disponibilidade do psicólogo partindo do mais
-        próximo ao mais distante no futuro.
-        """
-        agora = timezone.localtime()
-
-        # Essa variável serve para separar os intervalos que pertencem a essa semana
-        # e os que pertencem à proxima semana, levando em consideração a antecedência
-        # mínima para agendamento e a duração máxima de uma consulta.
-        final_de_consulta_mais_proximo_possivel = datetime.combine(
-            date(2024, 7, agora.isoweekday()),
-            agora.time(),
-            tzinfo=agora.tzinfo,
-        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO_MAXIMA
-
-        intervalos_nessa_semana = self.disponibilidade.filter(
-            data_hora_fim__gte=final_de_consulta_mais_proximo_possivel,
-        ).annotate(proximidade_semana=Value(0)).order_by()
-
-        intervalos_proxima_semana = self.disponibilidade.filter(
-            data_hora_fim__lt=final_de_consulta_mais_proximo_possivel,
-        ).annotate(proximidade_semana=Value(1)).order_by()
-
-        return intervalos_proxima_semana.union(intervalos_nessa_semana).order_by("proximidade_semana", "data_hora_inicio")
-
     def _get_intervalo_em(self, data_hora):
         """
         Retorna, se houver, o intervalo no qual se encaixa uma consulta hipotética
@@ -223,31 +254,20 @@ class Psicologo(BasePacienteOuPsicologo):
         @param data_hora: Data e hora em que a consulta começa.
         @return: O intervalo no qual a consulta se encaixa ou None caso não exista.
         """
+        start_t, end_t = self._template_range_for(data_hora)
         try:
             return self.disponibilidade.get(
-                data_hora_inicio__lte=data_hora,
-                data_hora_fim__gte=data_hora + CONSULTA_DURACAO_MAXIMA,
+                data_hora_inicio__lte=start_t,
+                data_hora_fim__gte=end_t,
             )
         except IntervaloDisponibilidade.DoesNotExist:
             return None
 
     def _tem_intervalo_em(self, data_hora):
-        """
-        Verifica se o psicólogo tem um intervalo de disponibilidade no qual se
-        encaixa uma consulta que começa na data e hora enviadas.
-        
-        (A consulta deve caber completamente no intervalo para que ele seja válido).
-
-        @param data_hora: Data e hora em que a consulta começa.
-        @return: True se a consulta se encaixa no intervalo, False caso contrário.
-        """
-        fuso_atual = timezone.get_current_timezone()
-        data_hora_inicio = datetime.combine(date(2024, 7, data_hora.isoweekday()), data_hora.time(), tzinfo=fuso_atual)
-        data_hora_final = data_hora_inicio + CONSULTA_DURACAO_MAXIMA
-        
+        start_t, end_t = self._template_range_for(data_hora)
         return self.disponibilidade.filter(
-            data_hora_inicio__lte=data_hora_inicio,
-            data_hora_fim__gte=data_hora_final,
+            data_hora_inicio__lte=start_t,
+            data_hora_fim__gte=end_t,
         ).exists()
 
     def esta_agendavel_em(self, data_hora):
@@ -264,7 +284,7 @@ class Psicologo(BasePacienteOuPsicologo):
             self._tem_intervalo_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
         )
-    
+
     def get_matriz_disponibilidade_booleanos_em_javascript(self):
         return get_matriz_disponibilidade_booleanos_em_javascript(self.disponibilidade)
 
@@ -277,8 +297,10 @@ INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (
     " o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja:"
     " 01/07/2024 é segunda (1),"
     " 02/07/2024 é terça (2) ..."
-    " e 07/07/2024 é domingo (7)."
+    " 07/07/2024 é domingo (7),"
+    " e 08/07/2024 é segunda (1) novamente."
 )
+
 
 class IntervaloDisponibilidade(models.Model):
     data_hora_inicio = models.DateTimeField(
@@ -300,28 +322,28 @@ class IntervaloDisponibilidade(models.Model):
 
     @property
     def data_hora_inicio_local(self):
-        return timezone.localtime(self.data_hora_inicio)
-    
+        return self.data_hora_inicio.astimezone(tz=timezone.get_current_timezone())
+
     @property
     def data_hora_fim_local(self):
-        return timezone.localtime(self.data_hora_fim)
+        return self.data_hora_fim.astimezone(tz=timezone.get_current_timezone())
 
     @property
     def dia_semana_inicio_local(self):
         return self.data_hora_inicio_local.day
-    
+
     @property
     def dia_semana_fim_local(self):
         return self.data_hora_fim_local.day
-    
+
     @property
     def hora_inicio_local(self):
         return self.data_hora_inicio_local.time()
-    
+
     @property
     def hora_fim_local(self):
         return self.data_hora_fim_local.time()
-    
+
     dias_semana_iso = {
         1: "Segunda (inicial)",
         2: "Terça",
@@ -330,13 +352,13 @@ class IntervaloDisponibilidade(models.Model):
         5: "Sexta",
         6: "Sábado",
         7: "Domingo",
-        8: "Segunda (final)", # É usado para quando o intervalo vai até a próxima segunda
+        8: "Segunda (final)",  # É usado para quando o intervalo vai até a próxima segunda
     }
 
     @property
     def nome_dia_semana_inicio_local(self):
         return self.dias_semana_iso[self.dia_semana_inicio_local]
-    
+
     @property
     def nome_dia_semana_fim_local(self):
         return self.dias_semana_iso[self.dia_semana_fim_local]
@@ -357,57 +379,29 @@ class IntervaloDisponibilidade(models.Model):
         @return: True se estiver contido, False caso contrário.
         """
         return self.data_hora_inicio <= data_hora <= self.data_hora_fim
-    
-    def _get_datas_hora(self):
-        """
-        Retorna a lista de datas e horas que estão dentro do intervalo,
-        dando passos correspondentes à duração máxima de uma consulta.
-        """
-        datas_hora = []
-        data_hora_atual = self.data_hora_inicio
-
-        while data_hora_atual <= self.data_hora_fim - CONSULTA_DURACAO_MAXIMA:
-            datas_hora.append(data_hora_atual)
-            data_hora_atual = data_hora_atual + CONSULTA_DURACAO_MAXIMA
-            
-        return datas_hora
-    
-    def get_datas_hora_locais(self):
-        """
-        Retorna, no fuso-horário local, a lista de datas e horas que estão dentro do intervalo,
-        dando passos correspondentes à duração máxima de uma consulta.
-        """
-        return [timezone.localtime(data_hora) for data_hora in self._get_datas_hora()]
 
     def clean(self):
         super().clean()
         if self.data_hora_inicio is not None and self.data_hora_fim is not None:
             if self.data_hora_fim < self.data_hora_inicio + CONSULTA_DURACAO_MAXIMA:
                 raise ValidationError(
-                    "O fim do intervalo deve ser posterior ao início por, pelo menos, %(antecedencia)s minutos.",
-                    params={"antecedencia": CONSULTA_DURACAO_MAXIMA.total_seconds() // 60},
-                    code="intervalo_fim_nao_distante_suficiente",
-                )
-        
+                    f"O fim do intervalo deve ser posterior ao início por, pelo menos, {CONSULTA_DURACAO_MAXIMA.total_seconds() // 60} minutos.")
+
             # Desconsiderar segundos e microssegundos
             self.data_hora_inicio = self.data_hora_inicio.replace(minute=0, second=0, microsecond=0)
             self.data_hora_fim = self.data_hora_fim.replace(minute=0, second=0, microsecond=0)
-        
+
             if hasattr(self, "psicologo") and self.psicologo:
                 # Verificar se há sobreposição de intervalos
                 intervalos = self.psicologo.disponibilidade.exclude(pk=self.pk if self.pk else None)
-        
+
                 for intervalo in intervalos:
                     if (
-                        intervalo.data_hora_inicio in self or intervalo.data_hora_fim in self or
-                        self.data_hora_inicio in intervalo or self.data_hora_fim in intervalo
+                            intervalo.data_hora_inicio in self or intervalo.data_hora_fim in self or
+                            self.data_hora_inicio in intervalo or self.data_hora_fim in intervalo
                     ):
-                        raise ValidationError(
-                            "Este intervalo sobrepõe este outro intervalo: %(intervalo)s",
-                            params={"intervalo": intervalo},
-                            code="sobreposicao_intervalos",
-                        )
-        
+                        raise ValidationError(f"Este intervalo sobrepõe este outro intervalo: {intervalo}")
+
 
 class EstadoConsulta(models.TextChoices):
     SOLICITADA = "SOLICITADA", "Solicitada"
@@ -455,22 +449,26 @@ class Consulta(models.Model):
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
         ordering = ["-data_hora_solicitada", "-data_hora_agendada"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["psicologo", "data_hora_agendada"],
+                name="uniq_consulta_psicologo_inicio",
+            )
+        ]
 
     def clean(self):
         super().clean()
 
-        if hasattr(self, "psicologo") and not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
-            raise ValidationError(
-                {"data_hora_agendada": "O psicólogo não tem disponibilidade nessa data e horário"},
-                code="psicologo_nao_disponivel",
-            )
-        
+        if self.data_hora_agendada < timezone.now() + CONSULTA_ANTECEDENCIA_MINIMA:
+            raise ValidationError({
+                "data_hora_agendada": f"A consulta deve ser agendada com, no mínimo, {CONSULTA_ANTECEDENCIA_MINIMA.total_seconds() // 60} minutos de antecedência."
+            })
+        elif hasattr(self, "psicologo") and not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
+            raise ValidationError({"data_hora_agendada": "O psicólogo não tem disponibilidade nessa data e horário"})
         elif hasattr(self, "paciente") and self.paciente.ja_tem_consulta_em(self.data_hora_agendada):
-            raise ValidationError(
-                {"data_hora_agendada": "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar"},
-                code="paciente_nao_disponivel",
-            )
-        
+            raise ValidationError({
+                "data_hora_agendada": "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar"
+            })
+
     def __str__(self):
         return f"Consulta {self.estado.upper()} agendada para {timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
-    

@@ -4,76 +4,76 @@
 {% load static %}
 
 {% block conteudo %}
-<div class="row gap-4 flex-nowrap">
-    <main class="col vstack gap-5">
-        <div class="hstack gap-4">
-            <img class="rounded-circle mx-auto"
-            style="width: 7.5rem; height: 7.5rem;"
-            src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
-            alt="Foto de perfil">
+    <div class="row gap-4 flex-nowrap">
+        <main class="col vstack gap-5">
+            <div class="hstack gap-4">
+                <img
+                        class="rounded-circle mx-auto"
+                        style="width: 7.5rem; height: 7.5rem;"
+                        src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
+                        alt="Foto de perfil"
+                />
 
-            <div class="flex-grow-1">
-                <h4 class="fw-bold">{{ psicologo.nome_completo }}</h4>
-                <hr class="border border-primary opacity-100">
+                <div class="flex-grow-1">
+                    <h4 class="fw-bold">{{ psicologo.nome_completo }}</h4>
+                    <hr class="border border-primary opacity-100"/>
 
-                <div class="hstack gap-5">
-                    <div>
-                        <h6 class="text-body-secondary">Valor da consulta</h6>
-                        <h6 class="fw-semibold">R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}</h6>
-                    </div>
-                    <div>
-                        <h6 class="text-body-secondary">CRP</h6>
-                        <h6 class="fw-semibold">{{ psicologo.crp }}</h6>
+                    <div class="hstack gap-5">
+                        <div>
+                            <h6 class="text-body-secondary">Valor da consulta</h6>
+                            <h6 class="fw-semibold">
+                                R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}
+                            </h6>
+                        </div>
+                        <div>
+                            <h6 class="text-body-secondary">CRP</h6>
+                            <h6 class="fw-semibold">{{ psicologo.crp }}</h6>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="vstack gap-2">
-            <h6>Especializações</h6>
-            <div class="hstack gap-2 flex-wrap">
-                {% include "geral/especializacoes.html" %}
+            <div class="vstack gap-2">
+                <h6>Especializações</h6>
+                <div class="hstack gap-2 flex-wrap">
+                    {% include "geral/especializacoes.html" %}
+                </div>
             </div>
-        </div>
 
-        <div class="vstack gap-2">
-            <h6>Sobre mim</h6>
-            <div class="text-body-secondary">
-                {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre Mim.</i>" }}
+            <div class="vstack gap-2">
+                <h6>Sobre mim</h6>
+                <div class="text-body-secondary">
+                    {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre&nbsp;Mim.</i>"|safe }}
+                </div>
             </div>
-        </div>
 
-        <div class="vstack gap-2">
-            <h6>Disponibilidade</h6>
-            {% if psicologo.disponibilidade %}
-                {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=psicologo.get_matriz_disponibilidade_booleanos_em_javascript %}
-            {% else %}
-                <div class="text-body-secondary"><i>Este psicólogo ainda não definiu sua disponibilidade.</i></div>
-            {% endif %}
-        </div>
+            <div class="vstack gap-2">
+                <h6>Disponibilidade</h6>
+                {% if psicologo.disponibilidade %}
+                    {# usa a tabela resumida já existente #}
+                    {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=psicologo.get_matriz_disponibilidade_booleanos_em_javascript %}
+                {% else %}
+                    <div class="text-body-secondary">
+                        <i>Este psicólogo ainda não definiu sua disponibilidade.</i>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
 
-        {% comment %}
-        Essa parte do código é um acordeão que mostra as especializações do psicólogo em mais detalhes,
-        mas como o sistema ainda não permite que o psicólogo detalhe sua experiência com cada uma das
-        suas especializações, essa parte ficará comentada por enquanto.
-
-        <div class="vstack gap-2">
-            <h6>Sobre minhas especializações</h6>
-            {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
-        </div>
-
-        {% endcomment %}
-
-
-    </main>
-
-    <aside class="col-auto rounded-3" style="width: 250px;">
-        <div class="vstack gap-2 sticky-top" id="agendamentoConsulta">
-            <form method="post">
-                {% csrf_token %}
-                <fieldset class="vstack gap-3" {% if not request.user.is_paciente %} disabled {% endif %}>
-
-                    {{ form }}
+        <aside class="col-auto rounded-3" style="width: 250px;">
+            <div class="vstack gap-2 sticky-top" id="agendamentoConsulta">
+                <form
+                        id="agendar-form"
+                        method="post"
+                        {# >>> Expondo endpoints para o widget do calendário (JS lê via dataset) <<< #}
+                        data-psicologo-id="{{ psicologo.id }}"
+                        data-api-slots="{% url 'api_agenda_slots' psicologo.id %}"
+                        data-api-days="{% url 'api_available_days' psicologo.id %}"
+                        data-api-bounds="{% url 'api_availability_bounds' psicologo.id %}"
+                >
+                    {% csrf_token %}
+                    <fieldset class="vstack gap-3" {% if not request.user.is_paciente %}disabled{% endif %}>
+                        {{ form }}
 
                     {% if request.user.is_anonymous %}
                         <div class="text-body-secondary">
@@ -91,15 +91,61 @@
     </aside>
 </div>
 
-<script>
-    const conteudoContainer = document.getElementById('conteudoContainer');
-    const agendamentoConsulta = document.getElementById('agendamentoConsulta');
+    <style>
+        /* Espaçamento melhor para os controles (+) e (x) dentro do picker de horários */
+        .et-time-row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
 
-    function setTopAgendamentoConsulta() {
-        agendamentoConsulta.style.top = `${cabecalhoEspaco.offsetHeight + 30}px`;
-    }
+        .et-time-row .btn-add-slot {
+            margin-left: .25rem;
+        }
 
-    setTopAgendamentoConsulta();
-    window.addEventListener('resize', setTopAgendamentoConsulta);
-</script>
+        .et-time-row .btn-remove-slot {
+            margin-left: .25rem;
+        }
+
+        .et-time-actions {
+            display: flex;
+            gap: .5rem;
+        }
+    </style>
+
+    <script>
+        // Mantém o aside "grudado" abaixo do header
+        (function () {
+            const header = document.querySelector('header');
+            const aside = document.getElementById('agendamentoConsulta');
+
+            function ajustarTopoAside() {
+                if (header && aside) {
+                    aside.style.top = (header.offsetHeight + 30) + 'px';
+                }
+            }
+
+            ajustarTopoAside();
+            window.addEventListener('resize', ajustarTopoAside);
+        })();
+
+        // Torna os endpoints disponíveis de forma global (caso o widget precise)
+        (function () {
+            const form = document.getElementById('agendar-form');
+            if (!form) return;
+            window.ET_AGENDA = {
+                psicologoId: form.dataset.psicologoId,
+                api: {
+                    slots: form.dataset.apiSlots,
+                    days: form.dataset.apiDays,
+                    bounds: form.dataset.apiBounds
+                }
+            };
+            // Dica: o JS do widget pode chamar:
+            //   GET ET_AGENDA.api.bounds  -> {min:"YYYY-MM-DD", max:"YYYY-MM-DD"}
+            //   GET ET_AGENDA.api.days?year=YYYY&month=M -> ["YYYY-MM-DD", ...]
+            //   GET ET_AGENDA.api.slots?year=YYYY&month=M -> {"YYYY-MM-DD": ["HH:MM", ...]}
+            // e então bloquear navegação fora de [min..max] e habilitar apenas os dias retornados.
+        })();
+    </script>
 {% endblock %}

@@ -14,4 +14,7 @@ urlpatterns = [
     path('pesquisa/', views.PesquisaView.as_view(), name='pesquisa'),
     path('minhas_consultas/', views.MinhasConsultasView.as_view(), name='minhas_consultas'),
     path('meu_perfil/', views.PsicologoMeuPerfilView.as_view(), name='meu_perfil'),
+    path("api/psicologos/<int:psicologo_id>/agenda/slots/", views.api_agenda_slots, name="api_agenda_slots"),
+    path("api/psicologos/<int:psicologo_id>/agenda/days/", views.api_available_days, name="api_available_days"),
+    path("api/psicologos/<int:psicologo_id>/agenda/bounds/", views.api_availability_bounds, name="api_availability_bounds"),
 ]

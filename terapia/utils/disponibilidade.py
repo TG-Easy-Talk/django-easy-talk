@@ -1,8 +1,8 @@
-from datetime import time, datetime, date
+from datetime import datetime
 from django.utils import timezone
 
 
-def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade):
+def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade, **_):
     """
     Cria uma matriz de booleanos que representa a disponibilidade.
     A ideia é que a matriz seja interpretável nos templates, então
@@ -38,9 +38,7 @@ def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade):
                     matriz[(dia_semana_inicio + i) % 7][hora] = True
 
     domingo_a_segunda(matriz)
-    # Usar str.lower() para o JavaScript interpretar corretamente
-    matriz_em_javascript = str(matriz).lower()
-    return matriz_em_javascript
+    return str(matriz).lower()
 
 
 def segunda_a_domingo(matriz_disponibilidade_booleanos):
@@ -57,51 +55,68 @@ def domingo_a_segunda(matriz_disponibilidade_booleanos):
     matriz_disponibilidade_booleanos.insert(0, matriz_disponibilidade_booleanos.pop())
 
 
-def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
+def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos, psicologo=None, **_):
     """
     Converte a matriz de booleanos em JavaScript em objetos de IntervaloDisponibilidade.
     """
     from terapia.models import IntervaloDisponibilidade
     
     segunda_a_domingo(matriz_disponibilidade_booleanos)
-
-    disponibilidade = []
     m = matriz_disponibilidade_booleanos
 
-    i = j = 0
-    while i < len(m):
-        while j < len(m[i]):
+    tz = timezone.get_current_timezone()
+    base_monday = datetime(2024, 7, 1, tzinfo=tz)
+
+    disponibilidade = []
+
+    for i in range(7):
+        j = 0
+        while j < 24:
             if m[i][j]:
-                hora_inicio = time(j, 0)
-                dia_semana_inicio = i + 1 # Somar 1 para ficar no formato ISO de dias de semana (1 = Segunda, 7 = Domingo)
+                start_i, start_h = i, j
+                k_i, k_h = i, j
 
-                while m[i][j]:
-                    if j < len(m[i]) - 1:
-                        j += 1
-                    else:
-                        i += 1
-                        if i >= len(m):
-                            break
-                        j = 0
+                while True:
+                    k_h += 1
+                    if k_h == 24:
+                        k_h = 0
+                        k_i += 1
 
-                j = j if j < 23 else 0
-                hora_fim = time(j, 0)
-                dia_semana_fim = i + 1 # Somar 1 para ficar no formato ISO de dias de semana (1 = Segunda, 7 = Domingo)
-                fuso_atual = timezone.get_current_timezone()
+                    if k_i >= 7:
+                        end_dt = base_monday + timedelta(days=7)  # segunda 00:00 da semana seguinte
+                        break
 
+                    if not m[k_i][k_h]:
+                        end_dt = base_monday + timedelta(days=k_i, hours=k_h)
+                        break
+
+                start_dt = base_monday + timedelta(days=start_i, hours=start_h)
                 intervalo = IntervaloDisponibilidade(
-                    data_hora_inicio=datetime.combine(date(2024, 7, dia_semana_inicio), hora_inicio, tzinfo=fuso_atual),
-                    data_hora_fim=datetime.combine(date(2024, 7, dia_semana_fim), hora_fim, tzinfo=fuso_atual),
+                    data_hora_inicio=start_dt,
+                    data_hora_fim=end_dt,
                 )
+                if psicologo is not None:
+                    intervalo.psicologo = psicologo
 
                 disponibilidade.append(intervalo)
 
-            j += 1
+                p_i, p_h = start_i, start_h
+                while True:
+                    m[p_i][p_h] = False
+                    if p_i == k_i and p_h == k_h:
+                        break
+                    p_h += 1
+                    if p_h == 24:
+                        p_h = 0
+                        p_i += 1
+                        if p_i >= 7:
+                            break
 
-            if i >= len(m):
-                break
-
-        i += 1
-        j = 0
+                if i == k_i:
+                    j = k_h
+                else:
+                    break
+            else:
+                j += 1
 
     return disponibilidade
