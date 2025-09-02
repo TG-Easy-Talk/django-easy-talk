@@ -310,10 +310,10 @@ class Psicologo(BasePacienteOuPsicologo):
         proxima_data_hora_agendavel = self.proxima_data_hora_agendavel
         
         return bool(
+            self.disponibilidade.exists() and
             proxima_data_hora_agendavel is not None and
             data_hora >= proxima_data_hora_agendavel and
             data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
-            self.disponibilidade.exists() and
             self._tem_intervalo_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
         )
@@ -463,16 +463,16 @@ class IntervaloDisponibilidade(models.Model):
             datas_hora.append(data_hora_atual)
             data_hora_atual = data_hora_atual + CONSULTA_DURACAO
             
+            if data_hora_atual > converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), data_hora_atual.tzinfo):
+                data_hora_atual -= timedelta(weeks=1)
+                virou_a_semana = True
+
             if (
                 (self.data_hora_inicio < self.data_hora_fim or virou_a_semana) and
                 data_hora_atual > self.data_hora_fim - CONSULTA_DURACAO
             ):
                 break
 
-            if data_hora_atual > converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), data_hora_atual.tzinfo):
-                data_hora_atual -= timedelta(weeks=1)
-                virou_a_semana = True
-                
         return datas_hora
     
     def get_datas_hora_locais(self):
@@ -480,7 +480,18 @@ class IntervaloDisponibilidade(models.Model):
         Retorna, no fuso-horário local, a lista de datas e horas que estão dentro do intervalo,
         dando passos correspondentes à duração de uma consulta.
         """
-        return [timezone.localtime(data_hora) for data_hora in self._get_datas_hora()]
+        datas_hora_locais = []
+
+        for data_hora in self._get_datas_hora():
+            data_hora_local = timezone.localtime(data_hora)
+            data_hora_local_convertido = converter_dia_semana_iso_com_hora_para_data_hora(
+                data_hora_local.isoweekday(),
+                data_hora_local.time(),
+                data_hora_local.tzinfo,
+            )
+            datas_hora_locais.append(data_hora_local_convertido)
+
+        return datas_hora_locais
 
     def _checar_sobreposicao_de_intervalos(self):
         intervalos = self.psicologo.disponibilidade.exclude(pk=self.pk if self.pk else None)

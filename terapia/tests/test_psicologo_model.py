@@ -2,6 +2,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from terapia.models import (
     Paciente,
     Psicologo,
@@ -248,6 +249,12 @@ class PsicologoModelTest(TestCase):
         
     def test_str_representation(self):
         self.assertEqual(str(self.psicologo_comum), 'Psicólogo Comum')
+
+    def test_get_absolute_url(self):
+        url = self.psicologo_comum.get_absolute_url()
+        self.assertEqual(url, '/perfil/1')
+        self.assertEqual(url, reverse('perfil', kwargs={'pk': 1}))
+        self.assertEqual(url, reverse('perfil', kwargs={'pk': self.psicologo_comum.pk}))
 
     def test_dados_corretos(self):
         self.assertEqual(self.psicologo_comum.nome_completo, 'Psicólogo Comum')
@@ -501,6 +508,7 @@ class PsicologoModelTest(TestCase):
                         intervalos_ordenados=intervalos_ordenados,
                         intervalos_essa_semana=intervalos_essa_semana,
                         intervalos_proxima_semana=intervalos_proxima_semana,
+                        psicologo=psicologo.__dict__,
                     ):
                         self.assertQuerySetEqual(intervalos_ordenados, psicologo.disponibilidade.all(), ordered=False)
 
@@ -517,6 +525,50 @@ class PsicologoModelTest(TestCase):
                             data_hora_fim = intervalo.data_hora_fim
                             self.assertLess(data_hora_fim, atual)
                             atual = data_hora_fim
+
+    def test_get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self):
+        datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(22, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 1), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(2, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 30), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(0, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(8, 30), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(12, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(4, time(23, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(3, time(6, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(2, time(17, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(7, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(8, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(8, 1), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(10, 13), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(11, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(12, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(12, 1), UTC),
+        ]] + [
+            timezone.localtime(),
+            timezone.now(),
+        ]
+
+        for psicologo in [self.psicologo_comum, self.psicologo_sempre_disponivel]:
+            for data_hora in datas_hora_para_teste:
+                for fuso in FUSOS_PARA_TESTE:
+                    data_hora = timezone.localtime(data_hora, fuso)
+                    datas_hora_ordenadas = self.psicologo_sempre_disponivel._get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(data_hora)
+                    
+                    with self.subTest(data_hora=data_hora, psicologo=psicologo.__dict__, datas_hora_ordenadas=datas_hora_ordenadas):
+                        self.assertEqual(len(datas_hora_ordenadas), len(set(datas_hora_ordenadas)))
+
+                        for data_hora_atual, data_hora_posterior in zip(datas_hora_ordenadas, datas_hora_ordenadas[1:]):
+                            if data_hora_atual > data_hora_posterior:
+                                continue
+                            
+                            self.assertLess(data_hora_atual, data_hora_posterior)
 
     def test_proxima_data_hora_agendavel(self):
         self.skipTest("TODO test_proxima_data_hora_agendavel")
@@ -600,7 +652,7 @@ class PsicologoModelTest(TestCase):
             motivo_para_nao_estar_agendavel="",
             descricao,
         ):
-            with self.subTest(data_hora=data_hora, psicologo=psicologo.__dict__):
+            with self.subTest(agora=agora, data_hora=data_hora, psicologo=psicologo.__dict__):
                 for fuso in FUSOS_PARA_TESTE:
                     data_hora_local = timezone.localtime(data_hora, fuso)
                     esta_agendavel_em = psicologo.esta_agendavel_em(data_hora_local)
