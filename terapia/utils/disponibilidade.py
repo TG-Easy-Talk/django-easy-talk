@@ -1,122 +1,142 @@
-from datetime import datetime
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from datetime import datetime, timedelta, date
+from itertools import groupby
+from typing import List
+
 from django.utils import timezone
 
-
-def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade, **_):
-    """
-    Cria uma matriz de booleanos que representa a disponibilidade.
-    A ideia é que a matriz seja interpretável nos templates, então
-    ela é retornada como uma string que pode ser decodificada pelo
-    JavaScript no template.
-    """
-    matriz = [[False] * 24 for _ in range(7)]
-
-    if disponibilidade.exists():
-        for intervalo in disponibilidade.all():
-            dia_semana_inicio = intervalo.dia_semana_inicio_local - 1
-            dia_semana_fim = intervalo.dia_semana_fim_local - 1
-            hora_inicio = intervalo.hora_inicio_local.hour
-            hora_fim = intervalo.hora_fim_local.hour
-
-            ranges = []
-
-            if dia_semana_inicio == dia_semana_fim:
-                ranges = [range(hora_inicio, hora_fim)]
-            else:
-                ranges.append(range(hora_inicio, 24))
-                i = dia_semana_inicio + 1
-
-                while i <= dia_semana_fim:
-                    if i != dia_semana_fim:
-                        ranges.append(range(0, 24))
-                    else:
-                        ranges.append(range(0, hora_fim))
-                    i += 1
-
-            for i, _range in enumerate(ranges):
-                for hora in _range:
-                    matriz[(dia_semana_inicio + i) % 7][hora] = True
-
-    domingo_a_segunda(matriz)
-    return str(matriz).lower()
+MatrizSemana = List[List[bool]]
+HORAS_SEMANA = 7 * 24
 
 
-def segunda_a_domingo(matriz_disponibilidade_booleanos):
-    """
-    Converte uma matriz de domingo a sábado para uma matriz de segunda a domingo.
-    """
-    matriz_disponibilidade_booleanos.append(matriz_disponibilidade_booleanos.pop(0))
+@dataclass(frozen=True)
+class BlocoHoras:
+    inicio: int
+    fim: int
 
 
-def domingo_a_segunda(matriz_disponibilidade_booleanos):
-    """
-    Converte uma matriz de segunda a domingo para uma matriz de domingo a sábado.
-    """
-    matriz_disponibilidade_booleanos.insert(0, matriz_disponibilidade_booleanos.pop())
+def nova_matriz_vazia() -> MatrizSemana:
+    return [[False] * 24 for _ in range(7)]
 
 
-def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos, psicologo=None, **_):
-    """
-    Converte a matriz de booleanos em JavaScript em objetos de IntervaloDisponibilidade.
-    """
+def segunda_para_domingo(m: MatrizSemana) -> MatrizSemana:
+    return [m[6]] + m[:6]
+
+
+def domingo_para_segunda(m: MatrizSemana) -> MatrizSemana:
+    if len(m) == 7 and len(m[0]) == 24:
+        pass
+    return m[1:] + [m[0]]
+
+
+def matriz_para_json_js(m: MatrizSemana) -> str:
+    return json.dumps(m)
+
+
+def flatten_semana(m: MatrizSemana) -> List[bool]:
+    return [flag for dia in m for flag in dia]
+
+
+def unflatten_semana(v: List[bool]) -> MatrizSemana:
+    return [v[i * 24:(i + 1) * 24] for i in range(7)]
+
+
+def marcar_intervalo_na_matriz(
+        m: MatrizSemana,
+        dia_semana_1a7: int,
+        hora_ini: int,
+        hora_fim: int
+) -> None:
+    idx_dia = dia_semana_1a7 - 1
+    hora_ini = max(0, min(23, hora_ini))
+    hora_fim = max(0, min(24, hora_fim))
+    for h in range(hora_ini, hora_fim):
+        m[idx_dia][h] = True
+
+
+def disponibilidade_queryset_para_matriz(disponibilidade_qs) -> MatrizSemana:
+    m = nova_matriz_vazia()
+    if not disponibilidade_qs.exists():
+        return m
+
+    for intervalo in disponibilidade_qs.all():
+        di = max(1, min(7, intervalo.dia_semana_inicio_local))
+        df = max(1, min(7, intervalo.dia_semana_fim_local))
+        hi = int(intervalo.hora_inicio_local.hour)
+        hf = int(intervalo.hora_fim_local.hour)
+
+        abs_ini = (di - 1) * 24 + hi
+        abs_fim = (df - 1) * 24 + hf
+
+        if abs_fim <= abs_ini:
+            abs_fim += HORAS_SEMANA
+
+        for h_abs in range(abs_ini, abs_fim):
+            dia = (h_abs // 24) % 7
+            hora = h_abs % 24
+            m[dia][hora] = True
+
+    return m
+
+
+def extrair_blocos_contiguos(v: List[bool]) -> List[BlocoHoras]:
+    blocos: List[BlocoHoras] = []
+    idx = 0
+    for valor, grupo in groupby(
+            v):
+        tamanho = sum(1 for _ in grupo)
+        if valor:
+            blocos.append(BlocoHoras(inicio=idx, fim=idx + tamanho))
+        idx += tamanho
+    if len(blocos) >= 2 and blocos[0].inicio == 0 and blocos[-1].fim == HORAS_SEMANA:
+        primeiro = blocos.pop(0)
+        ultimo = blocos.pop()
+        blocos.append(BlocoHoras(inicio=ultimo.inicio, fim=primeiro.fim + HORAS_SEMANA))
+
+    return blocos
+
+
+def matriz_para_intervalos(
+        m: MatrizSemana,
+        psicologo=None,
+        base_segunda: date | None = None,
+) -> list:
     from terapia.models import IntervaloDisponibilidade
-    
-    segunda_a_domingo(matriz_disponibilidade_booleanos)
-    m = matriz_disponibilidade_booleanos
 
     tz = timezone.get_current_timezone()
-    base_monday = datetime(2024, 7, 1, tzinfo=tz)
+    if base_segunda is None:
+        hoje_local = timezone.localtime(timezone.now())
+        delta_dias = (hoje_local.isoweekday() - 1)
+        base_naive = datetime(hoje_local.year, hoje_local.month, hoje_local.day) - timedelta(days=delta_dias)
+    else:
+        base_naive = datetime.combine(base_segunda, datetime.min.time())
 
-    disponibilidade = []
+    base = timezone.make_aware(base_naive, tz)
 
-    for i in range(7):
-        j = 0
-        while j < 24:
-            if m[i][j]:
-                start_i, start_h = i, j
-                k_i, k_h = i, j
+    v = flatten_semana(m)
+    blocos = extrair_blocos_contiguos(v)
 
-                while True:
-                    k_h += 1
-                    if k_h == 24:
-                        k_h = 0
-                        k_i += 1
+    intervalos = []
+    for b in blocos:
+        inicio_dt = base + timedelta(hours=b.inicio)
+        fim_dt = base + timedelta(hours=b.fim)
+        obj = IntervaloDisponibilidade(data_hora_inicio=inicio_dt, data_hora_fim=fim_dt)
+        if psicologo is not None:
+            obj.psicologo = psicologo
+        intervalos.append(obj)
 
-                    if k_i >= 7:
-                        end_dt = base_monday + timedelta(days=7)  # segunda 00:00 da semana seguinte
-                        break
+    return intervalos
 
-                    if not m[k_i][k_h]:
-                        end_dt = base_monday + timedelta(days=k_i, hours=k_h)
-                        break
 
-                start_dt = base_monday + timedelta(days=start_i, hours=start_h)
-                intervalo = IntervaloDisponibilidade(
-                    data_hora_inicio=start_dt,
-                    data_hora_fim=end_dt,
-                )
-                if psicologo is not None:
-                    intervalo.psicologo = psicologo
+def get_matriz_disponibilidade_booleanos_em_javascript(disponibilidade, **_) -> str:
+    m_segunda = disponibilidade_queryset_para_matriz(disponibilidade)
+    m_domingo = segunda_para_domingo(m_segunda)
+    return matriz_para_json_js(m_domingo)
 
-                disponibilidade.append(intervalo)
 
-                p_i, p_h = start_i, start_h
-                while True:
-                    m[p_i][p_h] = False
-                    if p_i == k_i and p_h == k_h:
-                        break
-                    p_h += 1
-                    if p_h == 24:
-                        p_h = 0
-                        p_i += 1
-                        if p_i >= 7:
-                            break
-
-                if i == k_i:
-                    j = k_h
-                else:
-                    break
-            else:
-                j += 1
-
-    return disponibilidade
+def get_disponibilidade_pela_matriz(matriz_domingo_sabado: MatrizSemana, psicologo=None, **_) -> list:
+    m_segunda = domingo_para_segunda(matriz_domingo_sabado)
+    return matriz_para_intervalos(m_segunda, psicologo=psicologo)
