@@ -1,4 +1,6 @@
 import datetime
+from datetime import timedelta
+
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -29,16 +31,14 @@ class ConsultaModelTest(TestCase):
             nome_completo='Psicólogo Teste',
             crp='06/54321'
         )
-        cls.base_dt = datetime.datetime(
-            2025, 12, 26, 13, 30,
-            tzinfo=timezone.get_current_timezone()
+        cls.base_dt = timezone.make_aware(datetime.datetime(2025, 12, 26, 13, 30))
+
+        start = cls.base_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
+        cls.psicologo.disponibilidade.create(
+            data_hora_inicio=start,
+            data_hora_fim=end,
         )
-        dia = cls.base_dt.isoweekday()
-        cls.psicologo.disponibilidade = [{
-            "dia_semana": dia,
-            "intervalos": [{"horario_inicio": "00:00", "horario_fim": "23:59"}]
-        }]
-        cls.psicologo.save()
 
     def test_tu03_e_conflito_agendamento(self):
         """

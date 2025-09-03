@@ -1,6 +1,6 @@
 import datetime
+from datetime import timedelta
 from django.test import TestCase
-from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from terapia.models import Paciente, Psicologo, Consulta, EstadoConsulta
@@ -11,7 +11,6 @@ Usuario = get_user_model()
 class ConsultaModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        # usuário, paciente e psicólogo
         cls.usuario_cliente = Usuario.objects.create_user(
             email='c1@example.com',
             password='senha123'
@@ -30,17 +29,13 @@ class ConsultaModelTest(TestCase):
             nome_completo='Psicólogo Teste',
             crp='06/54321'
         )
-        # data base com disponibilidade
-        cls.base_dt = datetime.datetime(
-            2025, 12, 26, 13, 30,
-            tzinfo=timezone.get_current_timezone()
+        cls.base_dt = timezone.make_aware(datetime.datetime(2025, 12, 26, 13, 30))
+        start = cls.base_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
+        cls.psicologo.disponibilidade.create(
+            data_hora_inicio=start,
+            data_hora_fim=end,
         )
-        dia = (cls.base_dt.isoweekday() % 7) + 1
-        cls.psicologo.disponibilidade = [{
-            "dia_semana": dia,
-            "intervalos": [{"horario_inicio": "00:00", "horario_fim": "23:59"}]
-        }]
-        cls.psicologo.save()
 
     def test_tu03_d_estado_solicitada(self):
         """
