@@ -150,17 +150,19 @@ class Psicologo(BasePacienteOuPsicologo):
             return None
 
         semanas = 0
+        tempo_decorrido = timedelta(0)
         agora = timezone.localtime()
         agora_convertido = converter_dia_semana_iso_com_hora_para_data_hora(agora.isoweekday(), agora.time(), agora.tzinfo)
         datas_hora_ordenadas = self._get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(agora)
 
         while True:
             for data_hora in datas_hora_ordenadas:
-                data_hora += timedelta(weeks=semanas)
+                esta_na_outra_semana = data_hora <= agora_convertido
 
-                if data_hora <= agora_convertido:
+                if esta_na_outra_semana:
                     data_hora += timedelta(weeks=1)
 
+                data_hora += timedelta(weeks=semanas)
                 tempo_decorrido = data_hora - agora_convertido
 
                 if tempo_decorrido > CONSULTA_ANTECEDENCIA_MAXIMA:
@@ -173,7 +175,7 @@ class Psicologo(BasePacienteOuPsicologo):
                     not self.ja_tem_consulta_em(data_hora_inicio)
                 ):
                     return data_hora_inicio
-
+                
             semanas += 1
                 
     def clean(self):
