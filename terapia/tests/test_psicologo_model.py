@@ -628,6 +628,7 @@ class PsicologoModelTest(TestCase):
                     consultas[0].estado = EstadoConsulta.SOLICITADA
                     consultas[0].save()
                     consultas[2].estado = EstadoConsulta.SOLICITADA
+                    
                     consultas[2].save()
                     print("\n***************\n", consultas.values('data_hora_agendada', 'estado'),"\n***************\n")
                     self.assertEqual(
