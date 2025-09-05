@@ -30,11 +30,13 @@ class BasePacienteOuPsicologo(models.Model):
         """
         Verifica se já há alguma consulta que tomaria tempo da data-hora enviada.
         """
-        return self.consultas.filter(
+        print('\n\n????????????????????????\n\n', self.consultas.values('data_hora_agendada', 'estado'), '\n\n????????????????????????\n\n')
+        c = self.consultas.filter(
             Q(data_hora_agendada__gt = data_hora - CONSULTA_DURACAO) &
             Q(data_hora_agendada__lt = data_hora + CONSULTA_DURACAO) &
-            ~ Q(estado=EstadoConsulta.CANCELADA)
-        ).exists()
+            ~ Q(estado = EstadoConsulta.CANCELADA)
+        )
+        return c.exists()
 
     def get_url_foto_propria_ou_padrao(self):
         if self.foto:
