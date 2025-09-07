@@ -11,13 +11,13 @@ Usuario = get_user_model()
 class PacienteModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.usuario_paciente = Usuario.objects.create_user(
+        cls.usuario_com_paciente = Usuario.objects.create_user(
             email='paciente@example.com',
             password='senha123'
         )
 
         cls.paciente = Paciente.objects.create(
-            usuario=cls.usuario_paciente,
+            usuario=cls.usuario_com_paciente,
             nome='Carlos Alberto',
             cpf='987.654.321-11',
         )
@@ -25,35 +25,32 @@ class PacienteModelTest(TestCase):
     def test_str_representation(self):
         self.assertEqual(str(self.paciente), 'Carlos Alberto')
 
-    def test_criar_paciente(self):
-        """
-        Inserir dados válidos.
-        """
+    def test_dados_corretos(self):
         self.assertEqual(self.paciente.nome, 'Carlos Alberto')
         self.assertEqual(self.paciente.cpf, '987.654.321-11')
-        self.assertEqual(self.paciente.usuario, self.usuario_paciente)
+        self.assertEqual(self.paciente.usuario, self.usuario_com_paciente)
         self.assertIsNone(self.paciente.foto.name)
 
+    def test_fk_usuario_obrigatoria(self):
+        with self.assertRaisesMessage(IntegrityError, "NOT NULL"):
+            Paciente.objects.create(
+                nome='Paciente sem usuário',
+                cpf='369.720.320-75',
+            )
+
     def test_cpf_unico(self):
-        """
-        Garantir unicidade de CPF.
-        """
         usuario2 = Usuario.objects.create_user(
             email='paciente2@example.com',
             password='senha123'
         )
-        with self.assertRaises(IntegrityError) as ctx:
+        with self.assertRaisesMessage(IntegrityError, "UNIQUE"):
             Paciente.objects.create(
                 usuario=usuario2,
                 nome='Maria Souza',
                 cpf='987.654.321-11',
             )
-        self.assertIn('unique constraint failed', str(ctx.exception).lower())
 
     def test_cpf_invalido(self):
-        """
-        Inserir um CPF inexistente.
-        """
         cpfs_invalidos = [
             '574.768.960-67',
             '57476896067',
@@ -77,26 +74,23 @@ class PacienteModelTest(TestCase):
                 )
 
     def test_impede_usuario_com_psicologo(self):
-        """
-        Impedir usuário já vinculado a um psicólogo.
-        """
-        usuario_psicologo = Usuario.objects.create_user(
+        usuario_com_psicologo = Usuario.objects.create_user(
             email='psicologo@example.com',
             password='senha456',
         )
         Psicologo.objects.create(
-            usuario=usuario_psicologo,
+            usuario=usuario_com_psicologo,
             nome_completo='Dra. Ana Paula',
             crp='06/12345',
         )
-        paciente_em_usuario_psicologo = Paciente(
-            usuario=usuario_psicologo,
+        paciente_em_usuario_com_psicologo = Paciente(
+            usuario=usuario_com_psicologo,
             nome='Novo Paciente',
             cpf='446.753.260-99',
         )
 
         with self.assertRaises(ValidationError) as ctx:
-            paciente_em_usuario_psicologo.full_clean()
+            paciente_em_usuario_com_psicologo.full_clean()
 
         self.assertEqual(
             "psicologo_ja_relacionado",
@@ -104,17 +98,14 @@ class PacienteModelTest(TestCase):
         )
 
     def test_impede_usuario_com_outro_paciente(self):
-        """
-        Impedir usuário já vinculado a outro paciente.
-        """
-        paciente_em_usuario_paciente = Paciente(
-            usuario=self.usuario_paciente,
+        paciente_em_usuario_com_paciente = Paciente(
+            usuario=self.usuario_com_paciente,
             nome='Outro Paciente',
             cpf='963.562.490-56',
         )
 
         with self.assertRaises(ValidationError) as ctx:
-            paciente_em_usuario_paciente.full_clean()
+            paciente_em_usuario_com_paciente.full_clean()
 
         self.assertEqual(
             'unique',

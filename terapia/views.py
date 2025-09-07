@@ -17,6 +17,7 @@ from .models import Psicologo, Consulta, EstadoConsulta
 from django.http import HttpResponseForbidden
 from datetime import timedelta
 from django.shortcuts import redirect
+from django.utils import timezone
 
 
 class DeveTerCargoMixin(LoginRequiredMixin):
@@ -32,7 +33,10 @@ class DeveTerCargoMixin(LoginRequiredMixin):
 
 class DeveSerPsicologoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_psicologo:
+        if (
+            request.user.is_authenticated and
+            not request.user.is_psicologo
+        ):
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
     
@@ -54,6 +58,13 @@ class FluxoAlternativoLoginContextMixin(ContextMixin):
                 'link_texto': 'Faça login',
             }
         ]
+        return context
+    
+
+class LocalUtcMinuteOffsetContextMixin(ContextMixin):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["utc_minute_offset"] = timezone.localtime().utcoffset().seconds // 60 % 60
         return context
     
     
@@ -169,7 +180,7 @@ class ConsultaView(DeveTerCargoMixin, TemplateView):
     template_name = "consulta/consulta.html"
 
 
-class PerfilView(FormView, SingleObjectMixin):
+class PerfilView(FormView, SingleObjectMixin, LocalUtcMinuteOffsetContextMixin):
     model = Psicologo
     context_object_name = "psicologo"
     template_name = "perfil/perfil.html"
@@ -183,7 +194,6 @@ class PerfilView(FormView, SingleObjectMixin):
         return kwargs
     
     def get_context_data(self, **kwargs):
-        # Setar self.object para o SingleObjectMixin funcionar
         self.object = self.get_object()
         context = super().get_context_data(**kwargs)
         context[self.context_object_name] = self.object
@@ -298,7 +308,7 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
         return context
 
 
-class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
+class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView, LocalUtcMinuteOffsetContextMixin):
     template_name = "meu_perfil/meu_perfil.html"
     form_class = PsicologoChangeForm
     context_object_name = "psicologo"

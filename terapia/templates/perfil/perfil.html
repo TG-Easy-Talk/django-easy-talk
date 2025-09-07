@@ -46,7 +46,7 @@
         <div class="vstack gap-2">
             <h6>Disponibilidade</h6>
             {% if psicologo.disponibilidade %}
-                {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos=psicologo.get_matriz_disponibilidade_booleanos_em_javascript %}
+                {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos_em_json=psicologo.get_matriz_disponibilidade_booleanos_em_json %}
             {% else %}
                 <div class="text-body-secondary"><i>Este psicólogo ainda não definiu sua disponibilidade.</i></div>
             {% endif %}

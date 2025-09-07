@@ -1,5 +1,9 @@
 from django import forms
-from .widgets import CustomDateTimeInput, CustomDateInput, DisponibilidadeInput
+from .widgets import (
+    CustomDateTimeInput,
+    CustomDateInput,
+    DisponibilidadeInput,
+)
 from django.contrib.auth import get_user_model
 from easy_talk.renderers import (
     FormComValidacaoRenderer,
@@ -13,7 +17,7 @@ from .models import (
     EstadoConsulta,
     IntervaloDisponibilidade,
 )
-from .utils.disponibilidade import get_disponibilidade_pela_matriz
+from .utilidades.geral import get_disponibilidade_pela_matriz
 
 
 Usuario = get_user_model()
@@ -150,7 +154,7 @@ class ConsultaCreationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
         self.psicologo = psicologo
-        self.fields["data_hora_agendada"].widget = CustomDateTimeInput(attrs={"step": "3600"})
+        self.fields["data_hora_agendada"].widget = CustomDateTimeInput()
 
     def _post_clean(self):
         # Setar os campos de paciente e psicólogo antes da validação da model

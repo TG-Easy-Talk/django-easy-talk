@@ -2,11 +2,177 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from terapia.models import Paciente, Psicologo, Especializacao
+from django.urls import reverse
+from terapia.models import (
+    Paciente,
+    Psicologo,
+    Especializacao,
+    IntervaloDisponibilidade,
+    Consulta,
+    EstadoConsulta,
+)
 from decimal import Decimal
+from datetime import UTC, datetime, timedelta, time
+from django.utils import timezone
+import json
+from zoneinfo import ZoneInfo
+from terapia.constantes import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MAXIMA
+from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora, get_matriz_disponibilidade_booleanos_em_json
+from .constantes import FUSOS_PARA_TESTE
+from freezegun import freeze_time
 
 
 Usuario = get_user_model()
+
+
+MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
+    UTC: [
+        [True] * 12 + [False] * 10 + [True] * 2,
+        [True] * 2 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
+        [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
+        [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
+        [False] * 22 + [True] * 1 + [False] * 1,
+        [False] * 1 + [True] * 2 + [False] * 21,
+        [False] * 23 + [True] * 1,
+    ],
+    ZoneInfo("Etc/GMT+1"): [
+        [True] * 11 + [False] * 10 + [True] * 3,
+        [True] * 1 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
+        [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
+        [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
+        [False] * 21 + [True] * 1 + [False] * 2,
+        [True] * 2 + [False] * 22,
+        [False] * 22 + [True] * 2,
+    ],
+    ZoneInfo("Etc/GMT+2"): [
+        [True] * 10 + [False] * 10 + [True] * 4,
+        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
+        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
+        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
+        [False] * 20 + [True] * 1 + [False] * 2 + [True] * 1,
+        [True] * 1 + [False] * 23,
+        [False] * 21 + [True] * 3,
+    ],
+    ZoneInfo("Etc/GMT-1"): [
+        [True] * 13 + [False] * 10 + [True] * 1,
+        [True] * 3 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
+        [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
+        [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
+        [False] * 23 + [True] * 1,
+        [False] * 2 + [True] * 2 + [False] * 20,
+        [False] * 24,
+    ],
+    ZoneInfo("Etc/GMT-7"): [
+        [False] * 6 + [True] * 13 + [False] * 5,
+        [False] * 5 + [True] * 4 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 3,
+        [True] * 1 + [False] * 14 + [True] * 4 + [False] * 2 + [True] * 3,
+        [True] * 1 + [False] * 14 + [True] * 4 + [False] * 2 + [True] * 3,
+        [True] * 1 + [False] * 23,
+        [False] * 5 + [True] * 1 + [False] * 2 + [True] * 2 + [False] * 14,
+        [False] * 24,
+    ],
+}
+
+MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON = {
+    fuso: json.dumps(matriz) for fuso, matriz in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS.items()
+}
+
+OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS = (
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(23, 0), 1, time(0, 0), UTC), [
+        [False] * 23 + [True] * 1,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(23, 0), 1, time(1, 0), UTC), [
+        [False] * 23 + [True] * 1,
+        [True] * 1 + [False] * 23,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(22, 0), 2, time(2, 0), UTC), [
+        [False] * 22 + [True] * 2,
+        [True] * 24,
+        [True] * 2 + [False] * 22,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(6, time(22, 0), 2, time(23, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 23 + [False] * 1,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 22 + [True] * 2,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(5, time(22, 0), 2, time(3, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 3 + [False] * 21,
+        [False] * 24,
+        [False] * 24,
+        [False] * 22 + [True] * 2,
+        [True] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(4, time(22, 0), 3, time(0, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [False] * 24,
+        [False] * 22 + [True] * 2,
+        [True] * 24,
+        [True] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(6, time(13, 0), 5, time(13, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 13 + [False] * 11,
+        [False] * 13 + [True] * 11,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(4, time(0, 0), 4, time(0, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(3, time(10, 0), 3, time(12, 0), UTC), [
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+        [False] * 10 + [True] * 2 + [False] * 12,
+        [False] * 24,
+        [False] * 24,
+        [False] * 24,
+    ]),
+    (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(2, time(12, 0), 2, time(10, 0), UTC), [
+        [True] * 24,
+        [True] * 24,
+        [True] * 10 + [False] * 2 + [True] * 12,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+        [True] * 24,
+    ]),
+)
+
+OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON = (
+    (intervalo, json.dumps(matriz)) for intervalo, matriz in OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS
+)
 
 
 class PsicologoModelTest(TestCase):
@@ -20,57 +186,168 @@ class PsicologoModelTest(TestCase):
             Especializacao.objects.create(titulo='Psicologia Escolar', descricao='Apoio psicológico em ambientes educacionais.'),
             Especializacao.objects.create(titulo='Psicologia Organizacional', descricao='Consultoria e desenvolvimento organizacional.'),
         ]
-        cls.usuario_psicologo = Usuario.objects.create_user(
-            email='psicologo@example.com',
-            password='senha456'
+        cls.paciente = Paciente.objects.create(
+            usuario=Usuario.objects.create_user(email="paciente@example.com", password="senha123"),
+            nome="Paciente Dummy",
+            cpf="342.738.610-46",
         )
-        cls.psicologo = Psicologo.objects.create(
-            usuario=cls.usuario_psicologo,
-            nome_completo='Wanessa Vasconcelos',
+        cls.usuario_com_psicologo = Usuario.objects.create_user(
+            email='psicologo@example.com',
+            password='senha456',
+        )
+        
+        cls.psicologo_comum = Psicologo.objects.create(
+            usuario=cls.usuario_com_psicologo,
+            nome_completo='Psicólogo Comum',
             crp='06/12345',
             sobre_mim='Psicóloga clínica com 10 anos de experiência.',
             valor_consulta=Decimal('100.00'),
         )
-        cls.psicologo.especializacoes.set(cls.especializacoes)
+        cls.psicologo_comum.especializacoes.set(cls.especializacoes)
+        cls.set_disponibilidade_generica(cls.psicologo_comum)
+
+        cls.psicologo_sempre_disponivel = Psicologo.objects.create(
+            usuario=Usuario.objects.create_user(email="psicologo.hiperativo@example.com", password="senha123"),
+            nome_completo='Psicólogo Sempre Disponível',
+            crp='06/22223',
+            sobre_mim='Disponível 24 horas por dia.',
+            valor_consulta=Decimal('100.00'),
+        )
+        cls.psicologo_sempre_disponivel.especializacoes.set(cls.especializacoes)
+        IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            dia_semana_inicio_iso=1,
+            hora_inicio=time(0, 0),
+            dia_semana_fim_iso=1,
+            hora_fim=time(0, 0),
+            fuso=UTC,
+            psicologo=cls.psicologo_sempre_disponivel,
+        ),
+
+        cls.psicologo_com_agenda_lotada = Psicologo.objects.create(
+            usuario=Usuario.objects.create_user(email="psicologo.lotado@example.com", password="senha123"),
+            nome_completo='Psicólogo Com Agenda Lotada',
+            crp='06/33333',
+            valor_consulta=Decimal('100.00'),
+        )
+        cls.psicologo_com_agenda_lotada.especializacoes.set(cls.especializacoes)
+        cls.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada = converter_dia_semana_iso_com_hora_para_data_hora(
+            dia_semana_iso=1,
+            hora=time(0, 0),
+            fuso=UTC,
+        ) - CONSULTA_ANTECEDENCIA_MINIMA
+        cls.criar_disponibilidade_e_ocupar_psicologo_com_agenda_lotada()
+
+    @classmethod
+    def set_disponibilidade_generica(cls, psicologo):
+        intervalos = [
+            (7, time(22, 0), 1, time(2, 0)),
+            (1, time(8, 0), 1, time(12, 0)),
+            (1, time(14, 0), 1, time(18, 0)),
+            (2, time(8, 0), 2, time(12, 0)),
+            (2, time(14, 0), 2, time(18, 0)),
+            (3, time(8, 0), 3, time(12, 0)),
+            (3, time(14, 0), 3, time(18, 0)),
+            (4, time(22, 0), 4, time(23, 0)),
+            (5, time(1, 0), 5, time(3, 0)),
+            (6, time(23, 0), 7, time(12, 0)),
+        ]
+
+        for intervalo in intervalos:
+            IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+                dia_semana_inicio_iso=intervalo[0],
+                hora_inicio=intervalo[1],
+                dia_semana_fim_iso=intervalo[2],
+                hora_fim=intervalo[3],
+                fuso=UTC,
+                psicologo=psicologo,
+            )
+
+    @classmethod
+    def criar_disponibilidade_e_ocupar_psicologo_com_agenda_lotada(cls):
+        data_hora_inicio = cls.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada + CONSULTA_ANTECEDENCIA_MINIMA
+        data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
+        IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            dia_semana_inicio_iso=data_hora_inicio.isoweekday(),
+            hora_inicio=data_hora_inicio.time(),
+            dia_semana_fim_iso=data_hora_fim.isoweekday(),
+            hora_fim=data_hora_fim.time(),
+            fuso=data_hora_inicio.tzinfo,
+            psicologo=cls.psicologo_com_agenda_lotada,
+        ),
+        
+        with freeze_time(cls.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
+            tempo_decorrido = CONSULTA_ANTECEDENCIA_MINIMA
+
+            while tempo_decorrido <= CONSULTA_ANTECEDENCIA_MAXIMA:
+                Consulta.objects.create(
+                    data_hora_agendada=data_hora_inicio + tempo_decorrido - CONSULTA_ANTECEDENCIA_MINIMA,
+                    paciente=cls.paciente,
+                    psicologo=cls.psicologo_com_agenda_lotada,
+                )
+                tempo_decorrido += timedelta(weeks=1)
 
     def test_str_representation(self):
-        self.assertEqual(str(self.psicologo), 'Wanessa Vasconcelos')
+        self.assertEqual(str(self.psicologo_comum), 'Psicólogo Comum')
 
-    def test_criar_psicologo(self):
-        """
-        Inserir dados válidos.
-        """
-        self.assertEqual(self.psicologo.nome_completo, 'Wanessa Vasconcelos')
-        self.assertEqual(self.psicologo.crp, '06/12345')
-        self.assertEqual(self.psicologo.usuario, self.usuario_psicologo)
-        self.assertEqual(self.psicologo.sobre_mim, 'Psicóloga clínica com 10 anos de experiência.')
-        self.assertEqual(self.psicologo.valor_consulta, Decimal('100.00'))
-        self.assertQuerySetEqual(self.psicologo.especializacoes.all(), self.especializacoes, ordered=False)
-        self.assertIsNone(self.psicologo.foto.name)
+    def test_get_absolute_url(self):
+        url = self.psicologo_comum.get_absolute_url()
+        self.assertEqual(url, '/perfil/1')
+        self.assertEqual(url, reverse('perfil', kwargs={'pk': 1}))
+        self.assertEqual(url, reverse('perfil', kwargs={'pk': self.psicologo_comum.pk}))
+
+    def test_dados_corretos(self):
+        self.assertEqual(self.psicologo_comum.nome_completo, 'Psicólogo Comum')
+        self.assertEqual(self.psicologo_comum.crp, '06/12345')
+        self.assertEqual(self.psicologo_comum.usuario, self.usuario_com_psicologo)
+        self.assertEqual(self.psicologo_comum.sobre_mim, 'Psicóloga clínica com 10 anos de experiência.')
+        self.assertEqual(self.psicologo_comum.valor_consulta, Decimal('100.00'))
+        self.assertQuerySetEqual(self.psicologo_comum.especializacoes.all(), self.especializacoes, ordered=False)
+        self.assertQuerySetEqual(self.psicologo_comum.disponibilidade.all(), IntervaloDisponibilidade.objects.filter(psicologo=self.psicologo_comum), ordered=False)
+        self.assertIsNone(self.psicologo_comum.foto.name)
+
+    def test_fk_usuario_obrigatoria(self):
+        with self.assertRaisesMessage(IntegrityError, "NOT NULL"):
+            Psicologo.objects.create(
+                nome_completo='Psicólogo sem usuário',
+                crp='06/12345',
+            )
 
     def test_valor_consulta_invalido(self):
-        pass
+        valores_invalidos = [
+            Decimal('0.00'),
+            Decimal('5000.00'),
+            Decimal('-100.00'),
+            Decimal('19.99'),
+        ]
+
+        for valor in valores_invalidos:
+            with self.subTest(valor=valor):
+                with self.assertRaises(ValidationError) as ctx:
+                    Psicologo(
+                        usuario=self.usuario_com_psicologo,
+                        nome_completo='Psicólogo Inválido',
+                        crp='06/12345',
+                        valor_consulta=valor
+                    ).full_clean()
+
+                self.assertEqual(
+                    'valor_consulta_invalido',
+                    ctx.exception.error_dict["valor_consulta"][0].code,
+                )
 
     def test_crp_unico(self):
-        """
-        Garantir unicidade de CPF.
-        """
-        usuario2 = Usuario.objects.create_user(
-            email='paciente2@example.com',
+        usuario = Usuario.objects.create_user(
+            email='psicologo2@example.com',
             password='senha123'
         )
-        with self.assertRaises(IntegrityError) as ctx:
+        with self.assertRaisesMessage(IntegrityError, "UNIQUE"):
             Psicologo.objects.create(
-                usuario=usuario2,
+                usuario=usuario,
                 nome_completo='Maria Souza',
                 crp='06/12345',
             )
-        self.assertIn('unique constraint failed', str(ctx.exception).lower())
 
     def test_crp_invalido(self):
-        """
-        Inserir um CRP inexistente.
-        """
         crps_invalidos = [
             "06-12345",
             "06/123456",
@@ -105,26 +382,23 @@ class PsicologoModelTest(TestCase):
                 )
 
     def test_impede_usuario_com_paciente(self):
-        """
-        Impedir usuário já vinculado a um paciente.
-        """
-        usuario_paciente = Usuario.objects.create_user(
-            email='paciente2@example.com',
+        usuario_com_paciente = Usuario.objects.create_user(
+            email='psicologo2@example.com',
             password='senha789'
         )
         Paciente.objects.create(
-            usuario=usuario_paciente,
+            usuario=usuario_com_paciente,
             nome='Laura Mendes',
             cpf='555.666.777-88'
         )
-        psicologo_em_usuario_paciente = Psicologo(
-            usuario=usuario_paciente,
+        psicologo_em_usuario_com_paciente = Psicologo(
+            usuario=usuario_com_paciente,
             nome_completo='Novo Psicólogo',
             crp='06/99999'
         )
 
         with self.assertRaises(ValidationError) as ctx:
-            psicologo_em_usuario_paciente.full_clean()
+            psicologo_em_usuario_com_paciente.full_clean()
 
         self.assertEqual(
             "paciente_ja_relacionado",
@@ -132,19 +406,548 @@ class PsicologoModelTest(TestCase):
         )
 
     def test_impede_usuario_com_outro_psicologo(self):
-        """
-        Impedir usuário já vinculado a outro psicólogo.
-        """
-        psicologo_em_usuario_psicologo = Psicologo(
-            usuario=self.usuario_psicologo,
+        psicologo_em_usuario_com_psicologo = Psicologo(
+            usuario=self.usuario_com_psicologo,
             nome_completo='Outro Psicólogo',
             crp='06/88888',
         )
 
         with self.assertRaises(ValidationError) as ctx:
-            psicologo_em_usuario_psicologo.full_clean()
+            psicologo_em_usuario_com_psicologo.full_clean()
 
         self.assertEqual(
             'unique',
             ctx.exception.error_dict['usuario'][0].code
         )
+
+    def test_primeiro_nome(self):
+        self.assertEqual(self.psicologo_comum.primeiro_nome, 'Psicólogo')
+
+    def test_esta_com_perfil_completo(self):
+        with self.subTest(psicologo=self.psicologo_comum.nome_completo):    
+            self.assertTrue(self.psicologo_comum.esta_com_perfil_completo)
+
+        psicologos_com_perfil_incompleto = {
+            "falta_especializacao": Psicologo.objects.create(
+                usuario=Usuario.objects.create_user(email='usuario1@example.com', password='senha123'),
+                nome_completo='Psicólogo Incompleto',
+                crp='06/11112',
+                valor_consulta=Decimal('100.00'),
+            ),
+            "falta_disponibilidade": Psicologo.objects.create(
+                usuario=Usuario.objects.create_user(email='usuario2@example.com', password='senha123'),
+                nome_completo='Psicólogo Incompleto',
+                crp='06/11113',
+                valor_consulta=Decimal('100.00'),
+            ),
+            "falta_valor_consulta": Psicologo.objects.create(
+                usuario=Usuario.objects.create_user(email='usuario3@example.com', password='senha123'),
+                nome_completo='Psicólogo Incompleto',
+                crp='06/11114',
+            ),
+        }
+
+        for motivo, psicologo in psicologos_com_perfil_incompleto.items():
+            if motivo != "falta_especializacao":
+                psicologo.especializacoes.set(self.especializacoes)
+            if motivo != "falta_disponibilidade":
+                self.set_disponibilidade_generica(psicologo)
+
+            with self.subTest(motivo=motivo, psicologo=psicologo.nome_completo):
+                self.assertFalse(psicologo.esta_com_perfil_completo)
+
+    def test_tem_intervalo_em(self):
+        datas_hora_para_teste = {
+            "tem_intervalo": [
+                datetime(2024, 8, 7, 11, 0, tzinfo=UTC),
+                datetime(2025, 8, 10, 11, 0, tzinfo=UTC),
+                datetime(2025, 8, 10, 10, 30, tzinfo=UTC),
+                datetime(2025, 8, 14, 22, 00, tzinfo=UTC),
+                datetime(2025, 8, 15, 1, 30, tzinfo=UTC),
+                datetime(2025, 8, 16, 23, 0, tzinfo=UTC),
+                datetime(2025, 8, 16, 23, 30, tzinfo=UTC),
+                datetime(2025, 8, 17, 0, 0, tzinfo=UTC),
+                datetime(2025, 8, 17, 0, 30, tzinfo=UTC),
+            ],
+            "nao_tem_intervalo": [
+                datetime(2024, 8, 7, 11, 30, tzinfo=UTC),
+                datetime(2025, 8, 10, 11, 30, tzinfo=UTC),
+                datetime(2025, 8, 10, 12, 0, tzinfo=UTC),
+                datetime(2025, 8, 10, 11, 1, tzinfo=UTC),
+                datetime(2025, 8, 14, 21, 59, tzinfo=UTC),
+                datetime(2025, 8, 14, 22, 1, tzinfo=UTC),
+            ],
+        }
+        
+        for fuso in FUSOS_PARA_TESTE:
+            for expectativa, datas_hora in datas_hora_para_teste.items():
+                for data_hora in datas_hora:
+                    
+                    data_hora = timezone.localtime(data_hora, fuso)
+
+                    with self.subTest(data_hora=data_hora):
+                        if expectativa == "tem_intervalo":    
+                            self.assertTrue(self.psicologo_comum._tem_intervalo_em(data_hora))
+                        elif expectativa == "nao_tem_intervalo":
+                            self.assertFalse(self.psicologo_comum._tem_intervalo_em(data_hora))
+
+    def test_get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self):
+        datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(22, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 1), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(2, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 30), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(0, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(8, 30), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(12, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(4, time(23, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(3, time(6, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(2, time(17, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(7, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(8, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(8, 1), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(10, 13), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(11, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(12, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(12, 1), UTC),
+        ]] + [
+            timezone.localtime(),
+            timezone.now(),
+        ]
+
+        for psicologo in [self.psicologo_comum, self.psicologo_sempre_disponivel]:
+            for data_hora in datas_hora_para_teste:
+                for fuso in FUSOS_PARA_TESTE:
+                    data_hora = timezone.localtime(data_hora, fuso)
+                    datas_hora_ordenadas = self.psicologo_sempre_disponivel._get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(data_hora)
+                    
+                    with self.subTest(data_hora=data_hora, psicologo=psicologo.nome_completo, datas_hora_ordenadas=datas_hora_ordenadas):
+                        self.assertEqual(len(datas_hora_ordenadas), len(set(datas_hora_ordenadas)))
+
+                        for data_hora_atual, data_hora_posterior in zip(datas_hora_ordenadas, datas_hora_ordenadas[1:]):
+                            if data_hora_atual > data_hora_posterior:
+                                continue
+                            
+                            self.assertLess(data_hora_atual, data_hora_posterior)
+
+    def test_proxima_data_hora_agendavel(self):
+        with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
+            for fuso in FUSOS_PARA_TESTE:
+                with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_com_agenda_lotada.nome_completo):    
+                    self.assertIsNone(self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel, "A agenda está lotada")
+                    
+                    consultas = Consulta.objects.filter(psicologo=self.psicologo_com_agenda_lotada).order_by('data_hora_agendada')
+                    consultas.update(estado=EstadoConsulta.CANCELADA)
+                    
+                    self.assertEqual(
+                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        consultas[0].data_hora_agendada,
+                        "Todas as consultas foram canceladas, então a próxima data-hora agendável deve ser a da primeira consulta que estava agendada",
+                    )
+                    
+                    consultas.filter(pk=consultas[0].pk).update(estado=EstadoConsulta.SOLICITADA)
+                    consultas.filter(pk=consultas[2].pk).update(estado=EstadoConsulta.SOLICITADA)
+                    
+                    self.assertEqual(
+                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        consultas[1].data_hora_agendada,
+                        "A primeira e terceira consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da segunda consulta que estava agendada",
+                    )
+                    
+                    consultas.filter(pk=consultas[1].pk).update(estado=EstadoConsulta.SOLICITADA)
+                    
+                    self.assertEqual(
+                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        consultas[3].data_hora_agendada,
+                        "As primeiras três consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da quarta consulta que estava agendada",
+                    )
+
+                    for i in range(3, 6):
+                        consultas.filter(pk=consultas[i].pk).update(estado=EstadoConsulta.SOLICITADA)
+                    
+                    self.assertEqual(
+                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        consultas[6].data_hora_agendada,
+                        "As primeiras seis consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da sétima consulta que estava agendada",
+                    )
+
+                    consultas.update(estado=EstadoConsulta.SOLICITADA)
+                    consultas.filter(pk=consultas.last().pk).update(estado=EstadoConsulta.CANCELADA)
+
+                    self.assertEqual(
+                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        consultas.last().data_hora_agendada,
+                        "Todas as consultas exceto a última foram solicitadas de novo, então a próxima data-hora agendável deve ser a da última consulta que estava agendada",
+                    )
+
+                    consultas.filter(pk=consultas.last().pk).update(estado=EstadoConsulta.SOLICITADA)
+
+        for fuso in FUSOS_PARA_TESTE:
+            with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_comum.nome_completo):
+                Consulta.objects.filter(psicologo=self.psicologo_comum).delete()
+                
+                with freeze_time(timezone.localtime(converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 0), UTC))):
+                    self.assertEqual(
+                        self.psicologo_comum.proxima_data_hora_agendavel,
+                        converter_dia_semana_iso_com_hora_para_data_hora(7, time(22, 0), UTC),
+                        "O psicólogo está disponível às 22h de domingo. Como agora são 21h de domingo e a antecedência mínima é de 1 hora, é possível agendar para as 22h.",
+                    )
+
+                Consulta.objects.create(
+                    data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 0), UTC),
+                    paciente=self.paciente,
+                    psicologo=self.psicologo_comum,
+                )
+
+                with freeze_time(timezone.localtime(converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 30), UTC))):
+                    self.assertEqual(
+                        self.psicologo_comum.proxima_data_hora_agendavel,
+                        converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC) + timedelta(weeks=1),
+                        "São 21h30 de domingo. Não é possível agendar às 22h porque é antes da antecedência mínima. 22h30 também não é agendável porque não é um passo de 1 em 1 hora. A próxima data-hora possivelmente agendável é 23h, mas já há consulta nesse horário. Assim, a próxima data-hora agendável é 0h de segunda.",
+                    )
+
+                    Consulta.objects.create(
+                        data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC) + timedelta(weeks=1),
+                        paciente=self.paciente,
+                        psicologo=self.psicologo_comum,
+                    )
+
+                    self.assertEqual(
+                        self.psicologo_comum.proxima_data_hora_agendavel,
+                        converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC) + timedelta(weeks=1),
+                        "É o mesmo que o teste anterior, porém 0h de segunda também já está agendado, então a próxima data-hora agendável é 1h de segunda.",
+                    )
+
+                    Consulta.objects.create(
+                        data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC) + timedelta(weeks=1),
+                        paciente=self.paciente,
+                        psicologo=self.psicologo_comum,
+                    )
+
+                    for hora in [8, 9, 10, 11, 14, 15, 17]:
+                        Consulta.objects.create(
+                            data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(hora, 0), UTC) + timedelta(weeks=1),
+                            paciente=self.paciente,
+                            psicologo=self.psicologo_comum,
+                        )
+
+                    self.assertEqual(
+                        self.psicologo_comum.proxima_data_hora_agendavel,
+                        converter_dia_semana_iso_com_hora_para_data_hora(1, time(16, 0), UTC) + timedelta(weeks=1),
+                        "É o mesmo que o teste anterior, porém o intervalo de DOM 22h - SEG 2h está cheio, assim como o intervalo de SEG 8h - SEG 12h. O intervalo SEG 14h - SEG 18h está quase cheio, só restando 16h que ainda está disponível. Portanto, a próxima data-hora agendável deve ser SEG 16h.",
+                    )
+
+    def test_get_matriz_disponibilidade_booleanos_em_json(self):
+        for fuso, matriz_em_json in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON.items():
+            with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_comum.nome_completo):
+                self.assertEqual(
+                    self.psicologo_comum.get_matriz_disponibilidade_booleanos_em_json(),
+                    matriz_em_json,
+                )
+                self.assertEqual(
+                    get_matriz_disponibilidade_booleanos_em_json(self.psicologo_comum.disponibilidade),
+                    matriz_em_json,
+                )
+
+        psicologo_dummy = Psicologo.objects.create(
+            usuario=Usuario.objects.create_user(email="psicologo.dummy@example.com", password="dummy123"),
+            nome_completo="Psicologo Dummy",
+            crp='06/94949',
+            sobre_mim='Psicólogo dummy feito apenas para testes.',
+        )
+        fuso = UTC
+
+        with timezone.override(fuso):
+            for intervalo, matriz in OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON:
+                psicologo_dummy.disponibilidade.all().delete()
+                intervalo.psicologo = psicologo_dummy
+                intervalo.save()
+                
+                with self.subTest(fuso=fuso, intervalo=intervalo.__dict__):
+                    self.assertEqual(
+                        psicologo_dummy.get_matriz_disponibilidade_booleanos_em_json(),
+                        matriz,
+                    )
+                    self.assertEqual(
+                        get_matriz_disponibilidade_booleanos_em_json(psicologo_dummy.disponibilidade),
+                        matriz,
+                    )
+
+    def test_esta_agendavel_em(self):
+        class MotivosParaNaoEstarAgendavel:
+            PASSADO = "Não é possível estar agendável no passado"
+            ANTECEDENCIA_MUITO_PEQUENA = "Não é possível estar agendável com uma antecedência menor que a permitida"
+            ANTECEDENCIA_MUITO_GRANDE = "Não é possível estar agendável com uma antecedência maior que a permitida"
+            ANTES_DA_PROXIMA_DATA_HORA_AGENDAVEL = "Não é possível estar agendável antes da próxima data-hora agendável"
+            NAO_HA_INTERVALO = "Não é possível estar agendável se não houver intervalo no qual a consulta se encaixe"
+            JA_HA_CONSULTA = "Não é possível estar agendável se já houver consulta que toma o tempo da que se deseja agendar"
+            AGENDA_LOTADA = "Não é possível estar agendável se o psicólogo estiver com a agenda lotada até a antecedência máxima"
+
+        def isoformat_ou_none(data_hora):
+            return data_hora.isoformat() if data_hora is not None else "N/A"
+
+        def formatar_msg_assertion(*,
+            metodo_assertion,
+            fuso,
+            data_hora_original,
+            data_hora_local,
+            psicologo,
+            descricao,
+            motivo_para_nao_estar_agendavel,
+        ):
+            msg = (
+                f"\n[DESCRIÇÃO DO TESTE: {descricao}]"
+                f"\n[FUSO: {fuso}]"
+                f"\n[DATA-HORA ORIGINAL: {isoformat_ou_none(data_hora_original)}]"
+                f"\n[DATA-HORA NO FUSO: {isoformat_ou_none(data_hora_local)}]"
+                f"\n[PSICÓLOGO: {psicologo.nome_completo}]"
+                f"\n[DEVERIA ESTAR AGENDÁVEL? {"Sim" if metodo_assertion.__func__ is self.assertTrue.__func__ else "Não"}]"
+                f"\n[PRÓXIMA DATA-HORA AGENDÁVEL DO PSICÓLOGO: {isoformat_ou_none(psicologo.proxima_data_hora_agendavel)}]"
+            )
+
+            if metodo_assertion.__func__ is self.assertFalse.__func__:
+                msg += f"\n[MOTIVO PARA NÃO ESTAR AGENDÁVEL: {motivo_para_nao_estar_agendavel}]"
+
+            return msg
+
+        def fazer_assertions_para_cada_fuso(*,
+            metodo_assertion,
+            data_hora,
+            psicologo,
+            motivo_para_nao_estar_agendavel="",
+            descricao,
+        ):
+            for fuso in FUSOS_PARA_TESTE:
+                data_hora_local = timezone.localtime(data_hora, fuso)
+                
+                with self.subTest(agora=agora, data_hora=data_hora_local, psicologo=psicologo.nome_completo):
+                    esta_agendavel_em = psicologo.esta_agendavel_em(data_hora_local)
+                    msg = formatar_msg_assertion(
+                        metodo_assertion=metodo_assertion,
+                        fuso=fuso,
+                        data_hora_original=data_hora,
+                        data_hora_local=data_hora_local,
+                        psicologo=psicologo,
+                        descricao=descricao,
+                        motivo_para_nao_estar_agendavel=motivo_para_nao_estar_agendavel,
+                    )
+                    metodo_assertion(esta_agendavel_em, msg)
+
+        agora = timezone.localtime()
+
+        with freeze_time(agora):
+            proxima_data_hora_agendavel = self.psicologo_comum.proxima_data_hora_agendavel
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora - timedelta(minutes=1),
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.PASSADO,
+                descricao="Data-hora no passado",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MINIMA - timedelta(milliseconds=1),
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
+                descricao="Um pouco antes do mínimo de antecedência",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(milliseconds=1),
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
+                descricao="Um pouco depois do máximo de antecedência",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel + CONSULTA_ANTECEDENCIA_MAXIMA,
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
+                descricao="Próxima data-hora agendável + máximo de antecedência",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel - timedelta(milliseconds=1),
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTES_DA_PROXIMA_DATA_HORA_AGENDAVEL,
+                descricao="Um pouco antes da próxima data-hora agendável",
+            )
+
+            intervalos_do_psicologo = self.psicologo_comum.disponibilidade.all()
+            intervalo = intervalos_do_psicologo.first()
+            fuso_intervalo = intervalo.data_hora_inicio.tzinfo
+            data_intervalo = intervalo.data_hora_inicio.date()
+            agora_fuso_intervalo = timezone.localtime(agora, fuso_intervalo)
+            diferenca_dias_semana = data_intervalo.isoweekday() - agora_fuso_intervalo.isoweekday()
+            diferenca_dias_semana = diferenca_dias_semana + 7 if diferenca_dias_semana <= 0 else diferenca_dias_semana
+
+            data_hora_inicio = datetime.combine(
+                agora_fuso_intervalo.date(),
+                intervalo.data_hora_inicio.time(),
+                fuso_intervalo,
+            ) + timedelta(days=diferenca_dias_semana)
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=data_hora_inicio,
+                psicologo=self.psicologo_comum,
+                descricao="Cálculo de uma data-hora de início válida a partir de um intervalo existente do psicólogo",
+            )
+
+            intervalo.delete()
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=data_hora_inicio,
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
+                descricao="Agendar na data-hora anterior não será possível porque o intervalo acabou de ser deletado",
+            )
+            
+            intervalos_do_psicologo.delete()
+            
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.NAO_HA_INTERVALO,
+                descricao="Não é possível agendar na próxima data-hora agendável pois todos os intervalos do psicólogo foram deletados",
+            )
+
+            self.set_disponibilidade_generica(self.psicologo_comum)
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo_comum,
+                descricao="Os intervalos do psicólogo foram readicionados, permitindo agendamento na próxima data-hora agendável",
+            )
+
+            consulta = Consulta.objects.create(
+                data_hora_agendada=self.psicologo_comum.proxima_data_hora_agendavel,
+                paciente=self.paciente,
+                psicologo=self.psicologo_comum,
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+                descricao="Uma consulta foi criada na próxima data-hora agendável, então não se pode agendar nessa mesma data-hora de novo",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel + CONSULTA_DURACAO - timedelta(milliseconds=1),
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+                descricao="Um pouco antes do término de uma consulta já agendada",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=proxima_data_hora_agendavel + timedelta(milliseconds=1),
+                psicologo=self.psicologo_comum,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.JA_HA_CONSULTA,
+                descricao="Um pouco depois do início de uma consulta já agendada",
+            )
+            
+            consulta.estado = EstadoConsulta.CANCELADA
+            consulta.save()
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=proxima_data_hora_agendavel,
+                psicologo=self.psicologo_comum,
+                descricao="A consulta que estava marcada para essa data-hora foi cancelada, permitindo um novo agendamento",
+            )
+
+            proxima_data_hora_agendavel = self.psicologo_sempre_disponivel.proxima_data_hora_agendavel
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora - timedelta(minutes=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.PASSADO,
+                descricao="Data-hora no passado",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora,
+                psicologo=self.psicologo_sempre_disponivel,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
+                descricao="Agendar no instante de agora não atende a antecedência mínima",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora + timedelta(minutes=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_PEQUENA,
+                descricao="Agendar um minuto depois do instante atual não atende a antecedência mínima",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertFalse,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(milliseconds=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.ANTECEDENCIA_MUITO_GRANDE,
+                descricao="Um pouco depois do limite máximo de antecedência",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA,
+                psicologo=self.psicologo_sempre_disponivel,
+                descricao="Exatamente no limite máximo de antecedência",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=agora + CONSULTA_ANTECEDENCIA_MAXIMA - timedelta(milliseconds=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                descricao="Um pouco antes do limite máximo de antecedência",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=self.psicologo_sempre_disponivel.proxima_data_hora_agendavel,
+                psicologo=self.psicologo_sempre_disponivel,
+                descricao="Agendar na próxima data-hora agendável",
+            )
+
+            fazer_assertions_para_cada_fuso(
+                metodo_assertion=self.assertTrue,
+                data_hora=self.psicologo_sempre_disponivel.proxima_data_hora_agendavel + timedelta(milliseconds=1),
+                psicologo=self.psicologo_sempre_disponivel,
+                descricao="Um pouco depois da próxima data-hora agendável",
+            )
+
+            with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
+                fazer_assertions_para_cada_fuso(
+                    metodo_assertion=self.assertFalse,
+                    data_hora=self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                    psicologo=self.psicologo_com_agenda_lotada,
+                    descricao="O psicólogo está com agenda lotada até a antecedência máxima, não havendo espaço para novas consultas",
+                    motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.AGENDA_LOTADA,
+                )
+
+            with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada + timedelta(weeks=1)):
+                fazer_assertions_para_cada_fuso(
+                    metodo_assertion=self.assertTrue,
+                    data_hora=self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                    psicologo=self.psicologo_com_agenda_lotada,
+                    descricao="Se passou uma semana desde que o psicólogo estava com a agenda lotada, então a antecedência máxima avançou e agora há espaço para um novo agendamento",
+                )

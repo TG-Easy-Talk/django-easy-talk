@@ -28,7 +28,7 @@
 <script>
 
     class DisponibilidadeTabela {
-        static matriz_disponibilidade_booleanos = {{ matriz_disponibilidade_booleanos }}
+        static matriz_disponibilidade_booleanos = JSON.parse("{{ matriz_disponibilidade_booleanos_em_json }}")
         static tbody = document.getElementById('tbodyDisponibilidade')
 
         static getNumeroMaximoIntervalos() {
@@ -62,12 +62,12 @@
 
                 for (let i = 0; i < dia.length; i++) {
                     if (dia[i] === true) {
-                        const horarioInicio = `${i.toString().padStart(2, '0')}:00`
+                        const horarioInicio = `${i.toString().padStart(2, '0')}:{{ utc_minute_offset }}`
                         i++
                         while (dia[i] === true && i < dia.length)
                             i++
 
-                        const horarioFim = `${i.toString().padStart(2, '0')}:00`
+                        const horarioFim = `${i.toString().padStart(2, '0')}:{{ utc_minute_offset }}`
                         intervalos.push(`${horarioInicio} - ${horarioFim}`)
                     } 
                 } 

@@ -23,11 +23,13 @@
                 <h6 class="fw-semibold mb-0">R${{ psicologo.valor_consulta }}</h6>
                 <div>Disponível em
                     <span class="text-primary fw-medium text-wrap text-nowrap">
-                        {% if psicologo.proxima_data_hora_agendavel %}
-                            {{ psicologo.proxima_data_hora_agendavel|date:"d/m à\s H:i" }}
-                        {% else %}
-                            2 meses ou mais
-                        {% endif %}
+                        {% with proxima_data_hora_agendavel=psicologo.proxima_data_hora_agendavel %}
+                            {% if proxima_data_hora_agendavel %}
+                                {{ proxima_data_hora_agendavel|date:"d/m à\s H:i" }}
+                            {% else %}
+                                2 meses ou mais
+                            {% endif %}
+                        {% endwith %}
                     </span>
                 </div>
             </div>

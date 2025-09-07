@@ -1,7 +1,6 @@
 from django.forms.renderers import TemplatesSetting
 from django.forms import widgets
 from django import forms
-from pprint import pprint
 
 
 class CustomFormRenderer(TemplatesSetting):

@@ -50,9 +50,9 @@ class EmailAuthenticationForm(AuthenticationForm):
     """
     default_renderer = FormComValidacaoRenderer
         
-    username = forms.EmailField(label="E-mail")
+    username = forms.EmailField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Sobrescrever a mensagem padrão de login inválido
-        self.error_messages["invalid_login"] = ("Por favor, informe e-mail e senha válidos.")
+        self.error_messages["invalid_login"] = ("Por favor, informe email e senha válidos.")
