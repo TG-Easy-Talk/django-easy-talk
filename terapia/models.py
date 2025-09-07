@@ -30,13 +30,11 @@ class BasePacienteOuPsicologo(models.Model):
         """
         Verifica se já há alguma consulta que tomaria tempo da data-hora enviada.
         """
-        print('\n\n????????????????????????\n\n', self.consultas.values('data_hora_agendada', 'estado'), '\n\n????????????????????????\n\n')
-        c = self.consultas.filter(
+        return self.consultas.filter(
             Q(data_hora_agendada__gt = data_hora - CONSULTA_DURACAO) &
             Q(data_hora_agendada__lt = data_hora + CONSULTA_DURACAO) &
             ~ Q(estado = EstadoConsulta.CANCELADA)
-        )
-        return c.exists()
+        ).exists()
 
     def get_url_foto_propria_ou_padrao(self):
         if self.foto:
@@ -192,58 +190,28 @@ class Psicologo(BasePacienteOuPsicologo):
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
 
-    def _get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(self, instante):
-        """
-        Retorna os intervalos de disponibilidade do psicólogo na ordem do mais
-        próximo ao mais distante partindo de um instante no tempo.
-        """
-        final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
-            instante.isoweekday(),
-            instante.time(),
-            instante.tzinfo,
-        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
-
-        intervalos_nessa_semana = self.disponibilidade.filter(
-            data_hora_fim__gte=final_de_consulta_mais_proximo_possivel,
-        ).annotate(proximidade_semana=Value(0)).order_by()
-
-        intervalos_proxima_semana = self.disponibilidade.filter(
-            data_hora_fim__lt=final_de_consulta_mais_proximo_possivel,
-        ).annotate(proximidade_semana=Value(1)).order_by()
-
-        return intervalos_proxima_semana.union(intervalos_nessa_semana).order_by("proximidade_semana", "data_hora_fim")
-
     def _get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self, instante):
         """
         Retorna as datas e horas dos intervalos de disponibilidade do psicólogo na ordem do mais
         próximo ao mais distante partindo de um instante no tempo.
         """
-        final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
+        instante_convertido = converter_dia_semana_iso_com_hora_para_data_hora(
             instante.isoweekday(),
             instante.time(),
             instante.tzinfo,
-        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
+        )
+        
+        datas_hora_essa_semana = []
+        datas_hora_proxima_semana = []
 
-        intervalos_ordenados = self._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(instante)
-        datas_hora_ordenadas = []
-        ultimas_datas_hora = []
-        comeco = 0
-
-        if final_de_consulta_mais_proximo_possivel in intervalos_ordenados[0]:
-            for data_hora in intervalos_ordenados[0].get_datas_hora_locais():
-                if data_hora >= final_de_consulta_mais_proximo_possivel - CONSULTA_DURACAO:
-                    datas_hora_ordenadas.append(data_hora)
-                else:
-                    ultimas_datas_hora.append(data_hora)
-
-            comeco = 1
-
-        for intervalo in intervalos_ordenados[comeco:]:
+        for intervalo in self.disponibilidade.all():
             for data_hora in intervalo.get_datas_hora_locais():
-                datas_hora_ordenadas.append(data_hora)
+                if data_hora >= instante_convertido + CONSULTA_ANTECEDENCIA_MINIMA:
+                    datas_hora_essa_semana.append(data_hora)
+                else:
+                    datas_hora_proxima_semana.append(data_hora)
 
-        datas_hora_ordenadas += ultimas_datas_hora
-
+        datas_hora_ordenadas = sorted(datas_hora_essa_semana) + sorted(datas_hora_proxima_semana)
         return datas_hora_ordenadas
 
     def _tem_intervalo_em(self, data_hora):

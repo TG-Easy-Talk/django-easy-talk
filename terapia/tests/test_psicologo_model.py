@@ -491,80 +491,6 @@ class PsicologoModelTest(TestCase):
                         elif expectativa == "nao_tem_intervalo":
                             self.assertFalse(self.psicologo_comum._tem_intervalo_em(data_hora))
 
-    def test_get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(self):
-        datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [
-            converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 59), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(7, time(22, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 1), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(2, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(6, time(23, 30), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(7, time(0, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(7, time(8, 30), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(7, time(12, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(4, time(23, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(3, time(6, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(2, time(17, 59), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(7, 59), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(8, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(8, 1), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(10, 13), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(11, 59), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(12, 0), UTC),
-            converter_dia_semana_iso_com_hora_para_data_hora(1, time(12, 1), UTC),
-        ]] + [
-            timezone.localtime(),
-            timezone.now(),
-        ]
-
-        for psicologo in [self.psicologo_comum, self.psicologo_sempre_disponivel]:
-            for data_hora in datas_hora_para_teste:
-                for fuso in FUSOS_PARA_TESTE:
-                    data_hora = timezone.localtime(data_hora, fuso)
-
-                    final_de_consulta_mais_proximo_possivel = converter_dia_semana_iso_com_hora_para_data_hora(
-                            data_hora.isoweekday(),
-                            data_hora.time(),
-                            data_hora.tzinfo,
-                        ) + CONSULTA_ANTECEDENCIA_MINIMA + CONSULTA_DURACAO
-                
-                    intervalos_ordenados = psicologo._get_intervalos_do_mais_proximo_ao_mais_distante_partindo_de(data_hora)
-
-                    intervalos_essa_semana = []
-                    intervalos_proxima_semana = []
-
-                    for intervalo in intervalos_ordenados.iterator():
-                        if intervalo.proximidade_semana == 0:
-                            intervalos_essa_semana.append(intervalo)
-                        elif intervalo.proximidade_semana == 1:
-                            intervalos_proxima_semana.append(intervalo)
-
-                    with self.subTest(
-                        final_de_consulta_mais_proximo_possivel=final_de_consulta_mais_proximo_possivel,
-                        intervalos_ordenados=intervalos_ordenados,
-                        intervalos_essa_semana=intervalos_essa_semana,
-                        intervalos_proxima_semana=intervalos_proxima_semana,
-                        psicologo=psicologo.nome_completo,
-                    ):
-                        self.assertQuerySetEqual(intervalos_ordenados, psicologo.disponibilidade.all(), ordered=False)
-
-                        atual = final_de_consulta_mais_proximo_possivel
-
-                        for intervalo in intervalos_essa_semana:
-                            data_hora_fim = intervalo.data_hora_fim
-                            self.assertGreaterEqual(data_hora_fim, atual)
-                            atual = data_hora_fim
-
-                        atual = final_de_consulta_mais_proximo_possivel
-
-                        for intervalo in reversed(intervalos_proxima_semana):
-                            data_hora_fim = intervalo.data_hora_fim
-                            self.assertLess(data_hora_fim, atual)
-                            atual = data_hora_fim
-
     def test_get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self):
         datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [
             converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 59), UTC),
@@ -610,59 +536,111 @@ class PsicologoModelTest(TestCase):
                             self.assertLess(data_hora_atual, data_hora_posterior)
 
     def test_proxima_data_hora_agendavel(self):
-        def refresh_consultas():
-            return self.psicologo_com_agenda_lotada.consultas.all().order_by('data_hora_agendada')
-        
         with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
-            for fuso in [UTC, UTC]:
+            for fuso in FUSOS_PARA_TESTE:
                 with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_com_agenda_lotada.nome_completo):    
                     self.assertIsNone(self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel, "A agenda está lotada")
-                    consultas = refresh_consultas()
+                    
+                    consultas = Consulta.objects.filter(psicologo=self.psicologo_com_agenda_lotada).order_by('data_hora_agendada')
                     consultas.update(estado=EstadoConsulta.CANCELADA)
-                    print("\n-----------------\n", consultas.values('data_hora_agendada', 'estado'),"\n-----------------\n")
+                    
                     self.assertEqual(
                         self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas[0].data_hora_agendada,
                         "Todas as consultas foram canceladas, então a próxima data-hora agendável deve ser a da primeira consulta que estava agendada",
                     )
-                    consultas[0].estado = EstadoConsulta.SOLICITADA
-                    consultas[0].save()
-                    consultas[2].estado = EstadoConsulta.SOLICITADA
                     
-                    consultas[2].save()
-                    print("\n***************\n", consultas.values('data_hora_agendada', 'estado'),"\n***************\n")
+                    consultas.filter(pk=consultas[0].pk).update(estado=EstadoConsulta.SOLICITADA)
+                    consultas.filter(pk=consultas[2].pk).update(estado=EstadoConsulta.SOLICITADA)
+                    
                     self.assertEqual(
                         self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas[1].data_hora_agendada,
                         "A primeira e terceira consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da segunda consulta que estava agendada",
                     )
-                    consultas.update(estado=EstadoConsulta.SOLICITADA)
-                    continue
-                    consultas[1].estado = EstadoConsulta.CANCELADA
-                    consultas[1].save()
+                    
+                    consultas.filter(pk=consultas[1].pk).update(estado=EstadoConsulta.SOLICITADA)
+                    
                     self.assertEqual(
                         self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas[3].data_hora_agendada,
                         "As primeiras três consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da quarta consulta que estava agendada",
                     )
+
                     for i in range(3, 6):
-                        consultas[i].estado = EstadoConsulta.SOLICITADA
-                        consultas[i].save()
+                        consultas.filter(pk=consultas[i].pk).update(estado=EstadoConsulta.SOLICITADA)
+                    
                     self.assertEqual(
                         self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas[6].data_hora_agendada,
                         "As primeiras seis consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da sétima consulta que estava agendada",
                     )
+
                     consultas.update(estado=EstadoConsulta.SOLICITADA)
-                    consultas[-1].estado = EstadoConsulta.CANCELADA
-                    consultas[-1].save()
+                    consultas.filter(pk=consultas.last().pk).update(estado=EstadoConsulta.CANCELADA)
+
                     self.assertEqual(
                         self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
-                        consultas[-1].data_hora_agendada,
+                        consultas.last().data_hora_agendada,
                         "Todas as consultas exceto a última foram solicitadas de novo, então a próxima data-hora agendável deve ser a da última consulta que estava agendada",
                     )
-                    consultas[-1].estado = EstadoConsulta.SOLICITADA
-                    consultas[-1].save()
+
+                    consultas.filter(pk=consultas.last().pk).update(estado=EstadoConsulta.SOLICITADA)
+
+        for fuso in FUSOS_PARA_TESTE:
+            with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_comum.nome_completo):
+                Consulta.objects.filter(psicologo=self.psicologo_comum).delete()
+                
+                with freeze_time(timezone.localtime(converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 0), UTC))):
+                    self.assertEqual(
+                        self.psicologo_comum.proxima_data_hora_agendavel,
+                        converter_dia_semana_iso_com_hora_para_data_hora(7, time(22, 0), UTC),
+                        "O psicólogo está disponível às 22h de domingo. Como agora são 21h de domingo e a antecedência mínima é de 1 hora, é possível agendar para as 22h.",
+                    )
+
+                Consulta.objects.create(
+                    data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 0), UTC),
+                    paciente=self.paciente,
+                    psicologo=self.psicologo_comum,
+                )
+
+                with freeze_time(timezone.localtime(converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 30), UTC))):
+                    self.assertEqual(
+                        self.psicologo_comum.proxima_data_hora_agendavel,
+                        converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC) + timedelta(weeks=1),
+                        "São 21h30 de domingo. Não é possível agendar às 22h porque é antes da antecedência mínima. 22h30 também não é agendável porque não é um passo de 1 em 1 hora. A próxima data-hora possivelmente agendável é 23h, mas já há consulta nesse horário. Assim, a próxima data-hora agendável é 0h de segunda.",
+                    )
+
+                    Consulta.objects.create(
+                        data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC) + timedelta(weeks=1),
+                        paciente=self.paciente,
+                        psicologo=self.psicologo_comum,
+                    )
+
+                    self.assertEqual(
+                        self.psicologo_comum.proxima_data_hora_agendavel,
+                        converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC) + timedelta(weeks=1),
+                        "É o mesmo que o teste anterior, porém 0h de segunda também já está agendado, então a próxima data-hora agendável é 1h de segunda.",
+                    )
+
+                    Consulta.objects.create(
+                        data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC) + timedelta(weeks=1),
+                        paciente=self.paciente,
+                        psicologo=self.psicologo_comum,
+                    )
+
+                    for hora in [8, 9, 10, 11, 14, 15, 17]:
+                        Consulta.objects.create(
+                            data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(hora, 0), UTC) + timedelta(weeks=1),
+                            paciente=self.paciente,
+                            psicologo=self.psicologo_comum,
+                        )
+
+                    self.assertEqual(
+                        self.psicologo_comum.proxima_data_hora_agendavel,
+                        converter_dia_semana_iso_com_hora_para_data_hora(1, time(16, 0), UTC) + timedelta(weeks=1),
+                        "É o mesmo que o teste anterior, porém o intervalo de DOM 22h - SEG 2h está cheio, assim como o intervalo de SEG 8h - SEG 12h. O intervalo SEG 14h - SEG 18h está quase cheio, só restando 16h que ainda está disponível. Portanto, a próxima data-hora agendável deve ser SEG 16h.",
+                    )
 
     def test_get_matriz_disponibilidade_booleanos_em_json(self):
         for fuso, matriz_em_json in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON.items():
