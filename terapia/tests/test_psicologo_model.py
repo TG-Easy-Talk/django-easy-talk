@@ -487,9 +487,9 @@ class PsicologoModelTest(TestCase):
 
                     with self.subTest(data_hora=data_hora):
                         if expectativa == "tem_intervalo":    
-                            self.assertTrue(self.psicologo_comum._tem_intervalo_em(data_hora))
+                            self.assertTrue(self.psicologo_comum._tem_intervalo_onde_cabe_uma_consulta_em(data_hora))
                         elif expectativa == "nao_tem_intervalo":
-                            self.assertFalse(self.psicologo_comum._tem_intervalo_em(data_hora))
+                            self.assertFalse(self.psicologo_comum._tem_intervalo_onde_cabe_uma_consulta_em(data_hora))
 
     def test_get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self):
         datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [

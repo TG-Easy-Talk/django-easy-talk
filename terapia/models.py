@@ -131,10 +131,6 @@ class Psicologo(BasePacienteOuPsicologo):
     @property
     @admin.display(boolean=True)
     def esta_com_perfil_completo(self):
-        """
-        Retorna True se o psicólogo tem perfil completo, ou seja,
-        se possui valor de consulta, pelo menos uma especialização e disponibilidade definida.
-        """
         return bool(
             self.valor_consulta and
             self.especializacoes.exists() and
@@ -142,10 +138,19 @@ class Psicologo(BasePacienteOuPsicologo):
         )
     
     @property
+    def intervalo_de_semana_completa(self):
+        return self.disponibilidade.filter(data_hora_inicio=F("data_hora_fim"))
+    
+    @property
+    def intervalos_que_nao_viram_a_semana(self):
+        return self.disponibilidade.filter(data_hora_inicio__lt=F("data_hora_fim"))
+    
+    @property
+    def intervalos_que_viram_a_semana(self):
+        return self.disponibilidade.filter(data_hora_fim__lt=F("data_hora_inicio"))
+    
+    @property
     def proxima_data_hora_agendavel(self):
-        """
-        Retorna a data-hora agendável mais próxima do psicólogo.
-        """
         if not self.disponibilidade.exists():
             return None
 
@@ -214,12 +219,12 @@ class Psicologo(BasePacienteOuPsicologo):
         datas_hora_ordenadas = sorted(datas_hora_essa_semana) + sorted(datas_hora_proxima_semana)
         return datas_hora_ordenadas
 
-    def _tem_intervalo_em(self, data_hora):
+    def _tem_intervalo_onde_cabe_uma_consulta_em(self, data_hora):
         """
         Verifica se o psicólogo tem um intervalo de disponibilidade no qual se
         encaixa uma consulta que começa na data-hora enviada.
         
-        (A consulta deve caber completamente no intervalo para que ele seja válido).
+        A consulta deve caber completamente no intervalo para que ele seja válido.
 
         @param data_hora: Data-hora em que a consulta começa.
         @return: True se a consulta se encaixa no intervalo, False caso contrário.
@@ -236,32 +241,29 @@ class Psicologo(BasePacienteOuPsicologo):
             data_hora_fim.tzinfo,
         )
 
-        qs_intervalo_de_semana_completa = self.disponibilidade.filter(data_hora_inicio=F("data_hora_fim"))
-        qs_intervalos_que_nao_viram_de_semana = self.disponibilidade.filter(data_hora_inicio__lt=F("data_hora_fim"))
-        qs_intervalos_que_viram_de_semana = self.disponibilidade.filter(data_hora_fim__lt=F("data_hora_inicio"))
-        consulta_vira_a_semana = data_hora_fim < data_hora_inicio
+        consulta_vira_a_semana = data_hora_fim <= data_hora_inicio
 
-        if qs_intervalo_de_semana_completa.exists():
+        if self.intervalo_de_semana_completa.exists():
             return True
 
         if data_hora_inicio == data_hora_fim:
             return False
 
-        if qs_intervalos_que_nao_viram_de_semana.filter(
+        if self.intervalos_que_nao_viram_a_semana.filter(
             Q(data_hora_inicio__lte=data_hora_inicio) &
             Q(data_hora_fim__gte=data_hora_fim)
         ).exists():
             if not consulta_vira_a_semana:
                 return True
-        
-        if qs_intervalos_que_viram_de_semana.filter(
+
+        if self.intervalos_que_viram_a_semana.filter(
             Q(data_hora_inicio__lte=data_hora_inicio) |
             Q(data_hora_fim__gte=data_hora_fim)
         ).exists():
             if not consulta_vira_a_semana:
                 return True
 
-        if qs_intervalos_que_viram_de_semana.filter(
+        if self.intervalos_que_viram_a_semana.filter(
             Q(data_hora_inicio__lte=data_hora_inicio) &
             Q(data_hora_fim__gte=data_hora_fim)
         ).exists():
@@ -269,6 +271,29 @@ class Psicologo(BasePacienteOuPsicologo):
                 return True
 
         return False
+    
+    def tem_intervalo_que_sobrepoe(self, intervalo):
+        """
+        Verifica se o psicólogo tem um intervalo de disponibilidade que sobrepõe
+        o intervalo enviado como parâmetro.
+        
+        Se houver qualquer sobreposição, mesmo que parcial, com extremidades inclusas,
+        retorna True.
+        """
+        if self.intervalo_de_semana_completa.exists():
+            return True
+
+        if intervalo.data_hora_inicio == intervalo.data_hora_fim and self.disponibilidade.exists():
+            return True
+        
+        intervalo_vira_a_semana = intervalo.data_hora_fim <= intervalo.data_hora_inicio
+
+        if self.intervalos_que_nao_viram_a_semana.filter(
+            Q(data_hora_inicio__lte=intervalo.data_hora_inicio) &
+            Q(data_hora_fim__gte=intervalo.data_hora_fim)
+        ).exists():
+            if not intervalo_vira_a_semana:
+                return True
 
     def esta_agendavel_em(self, data_hora):
         """
@@ -286,7 +311,7 @@ class Psicologo(BasePacienteOuPsicologo):
             proxima_data_hora_agendavel is not None and
             data_hora >= proxima_data_hora_agendavel and
             data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
-            self._tem_intervalo_em(data_hora) and
+            self._tem_intervalo_onde_cabe_uma_consulta_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
         )
     
@@ -481,12 +506,18 @@ class IntervaloDisponibilidade(models.Model):
 
     def clean(self):
         super().clean()
+
         if self.data_hora_inicio is not None and self.data_hora_fim is not None:
             self.data_hora_inicio = desprezar_segundos_e_microssegundos(self.data_hora_inicio)
             self.data_hora_fim = desprezar_segundos_e_microssegundos(self.data_hora_fim)
             
             if hasattr(self, "psicologo") and self.psicologo:
-                self._checar_sobreposicao_de_intervalos()
+                if self.psicologo.tem_intervalo_que_sobrepoe(self):
+                    raise ValidationError(
+                        "Este intervalo sobrepõe outro intervalo que já existe: %(intervalo)s",
+                        params={"intervalo": self},
+                        code="sobreposicao_intervalos",
+                    )
                         
 
 class EstadoConsulta(models.TextChoices):
