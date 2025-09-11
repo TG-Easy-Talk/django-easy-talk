@@ -507,20 +507,6 @@ class IntervaloDisponibilidade(models.Model):
 
         return datas_hora_locais
 
-    def _checar_sobreposicao_de_intervalos(self):
-        intervalos = self.psicologo.disponibilidade.exclude(pk=self.pk if self.pk else None)
-        
-        for intervalo in intervalos:
-            if (
-                intervalo.data_hora_inicio in self or intervalo.data_hora_fim in self or
-                self.data_hora_inicio in intervalo or self.data_hora_fim in intervalo
-            ):
-                raise ValidationError(
-                    "Este intervalo sobrepõe este outro intervalo: %(intervalo)s",
-                    params={"intervalo": intervalo},
-                    code="sobreposicao_intervalos",
-                )
-
     def clean(self):
         super().clean()
 

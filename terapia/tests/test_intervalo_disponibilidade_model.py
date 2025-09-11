@@ -67,6 +67,28 @@ class IntervaloDisponibilidadeModelTest(TestCase):
     def test_contains(self):
         self.psicologo_dummy.disponibilidade.all().delete()
         
+        datas_hora_iguais = [
+            converter_dia_semana_iso_com_hora_para_data_hora(3, time(12, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(12, 0), UTC),
+        ]
+
+        datas_hora_dentro = [
+            converter_dia_semana_iso_com_hora_para_data_hora(3, time(12, 1), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(11, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(5, time(6, 0), UTC),
+        ]
+        
+        datas_hora_fora = [
+            converter_dia_semana_iso_com_hora_para_data_hora(3, time(11, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(12, 1), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(2, time(12, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 1), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(6, time(20, 0), UTC),
+            converter_dia_semana_iso_com_hora_para_data_hora(7, time(10, 0), UTC),
+        ]
+
         testes = [
             {
                 "intervalo": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
@@ -81,32 +103,24 @@ class IntervaloDisponibilidadeModelTest(TestCase):
                     ],
                 },
             },
-            # {
-            #     "intervalo": IntervaloDisponibilidade.objects.create(
-            #         data_hora_inicio=data_hora_inicio_e_fim,
-            #         data_hora_fim=data_hora_inicio_e_fim,
-            #         psicologo=self.psicologo_dummy,
-            #     ),
-            #     "datas_hora": [
-            #         converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
-            #         converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 1), UTC),
-            #         converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC),
-            #         converter_dia_semana_iso_com_hora_para_data_hora(4, time(12, 0), UTC),
-            #     ],
-            # },
-            # {
-            #     "intervalo": IntervaloDisponibilidade.objects.create(
-            #         data_hora_inicio=data_hora_inicio_e_fim,
-            #         data_hora_fim=data_hora_inicio_e_fim,
-            #         psicologo=self.psicologo_dummy,
-            #     ),
-            #     "datas_hora": [
-            #         converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
-            #         converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 1), UTC),
-            #         converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC),
-            #         converter_dia_semana_iso_com_hora_para_data_hora(4, time(12, 0), UTC),
-            #     ],
-            # },
+            {
+                "intervalo": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                    3, time(12, 0), 6, time(12, 0), UTC,
+                ),
+                "datas_hora": {
+                    "contem": datas_hora_dentro + datas_hora_iguais,
+                    "nao_contem": datas_hora_fora,
+                },
+            },
+            {
+                "intervalo": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                    6, time(12, 0), 3, time(12, 0), UTC,
+                ),
+                "datas_hora": {
+                    "contem": datas_hora_fora + datas_hora_iguais,
+                    "nao_contem": datas_hora_dentro,
+                },
+            },
         ]
 
         for fuso in FUSOS_PARA_TESTE:
