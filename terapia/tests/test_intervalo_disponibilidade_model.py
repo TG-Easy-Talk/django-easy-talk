@@ -28,6 +28,7 @@ class IntervaloDisponibilidadeModelTest(TestCase):
             cls.data_hora_inicio.time(),
             cls.data_hora_fim.isoweekday(),
             cls.data_hora_fim.time(),
+            cls.data_hora_inicio.tzinfo,
             cls.psicologo_comum,
         )
 
@@ -39,7 +40,7 @@ class IntervaloDisponibilidadeModelTest(TestCase):
 
     def test_str_representation(self):
         with timezone.override(UTC):    
-            self.assertEqual(str(self.intervalo), "Quarta às 00:00:00 - Quinta às 12:00:00")
+            self.assertEqual(str(self.intervalo), "Quarta às 00:00:00 até Quinta às 12:00:00 (UTC)")
 
     def test_dados_corretos(self):
         self.assertEqual(self.intervalo.data_hora_inicio, self.data_hora_inicio)
@@ -57,6 +58,7 @@ class IntervaloDisponibilidadeModelTest(TestCase):
             data_hora_inicio.time(),
             data_hora_fim.isoweekday(),
             data_hora_fim.time(),
+            data_hora_inicio.tzinfo,
             self.psicologo_dummy,
         )
         self.assertEqual(intervalo.data_hora_inicio, data_hora_inicio.replace(second=0, microsecond=0))

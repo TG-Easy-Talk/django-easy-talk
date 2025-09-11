@@ -482,7 +482,6 @@ class PsicologoModelTest(TestCase):
         for fuso in FUSOS_PARA_TESTE:
             for expectativa, datas_hora in datas_hora_para_teste.items():
                 for data_hora in datas_hora:
-                    
                     data_hora = timezone.localtime(data_hora, fuso)
 
                     with self.subTest(data_hora=data_hora):
@@ -491,12 +490,16 @@ class PsicologoModelTest(TestCase):
                         elif expectativa == "nao_tem_intervalo":
                             self.assertFalse(self.psicologo_comum._tem_intervalo_onde_cabe_uma_consulta_em(data_hora))
 
+                    with self.subTest(data_hora=data_hora):
+                        self.assertTrue(self.psicologo_sempre_disponivel._tem_intervalo_onde_cabe_uma_consulta_em(data_hora))
+
     def test_tem_intervalo_que_sobrepoe(self):
         psicologo_dummy = Psicologo.objects.create(
             usuario=Usuario.objects.create_user(email="psicologo.dummy@gmail.com", password="senha123"),
             nome_completo='Psicólogo Dummy',
             crp='06/11413',
         )
+
         IntervaloDisponibilidade.objects.bulk_create([
             IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
                 7, time(20, 0), 1, time(4, 0), UTC, psicologo_dummy,
@@ -512,47 +515,146 @@ class PsicologoModelTest(TestCase):
             ),
         ])
 
-        intervalos_para_teste = {
-            "tem_sobreposicao": [
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    4, time(21, 59), 5, time(2, 1), UTC,
-                ),
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    4, time(22, 1), 5, time(1, 59), UTC,
-                ),
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    4, time(20, 0), 4, time(22, 0), UTC,
-                ),
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    5, time(2, 0), 5, time(3, 0), UTC,
-                ),
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    4, time(20, 0), 4, time(23, 0), UTC,
-                ),
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    5, time(1, 59), 5, time(3, 0), UTC,
-                ),
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    4, time(22, 0), 1, time(2, 0), UTC,
-                ),
-            ],
-            "nao_tem_sobreposicao": [
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    4, time(20, 0), 4, time(21, 59), UTC,
-                ),
-                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    5, time(2, 30), 5, time(3, 30), UTC,
-                ),
-            ],
+        conjuntos_de_intervalos_para_teste = {
+            "com_intervalo_que_vira_a_semana": {
+                "tem_sobreposicao": [
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        4, time(21, 59), 5, time(2, 1), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        2, time(10, 1), 2, time(13, 59), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        4, time(20, 0), 4, time(22, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        6, time(14, 0), 6, time(15, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        4, time(20, 0), 4, time(23, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        5, time(1, 59), 5, time(3, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        4, time(22, 0), 5, time(2, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        3, time(17, 0), 3, time(17, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        1, time(4, 0), 1, time(5, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(1, 0), 7, time(20, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(23, 0), 1, time(0, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        1, time(1, 0), 1, time(2, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(22, 0), 7, time(23, 0), UTC,
+                    ),
+                ],
+                "nao_tem_sobreposicao": [
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        4, time(20, 0), 4, time(21, 59), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        5, time(2, 30), 5, time(3, 30), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(18, 0), 7, time(19, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        1, time(4, 1), 2, time(9, 59), UTC,
+                    ),
+                ],
+            },
+
+            "sem_intervalo_que_vira_a_semana": {
+                "tem_sobreposicao": [
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(23, 0), 2, time(10, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        5, time(2, 0), 4, time(22, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        5, time(1, 0), 4, time(23, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        6, time(14, 0), 1, time(0, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        6, time(14, 0), 2, time(10, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        6, time(20, 0), 2, time(11, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        6, time(13, 59), 2, time(9, 59), UTC,
+                    ),
+                ],
+                "nao_tem_sobreposicao": [
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(20, 0), 1, time(4, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        1, time(4, 0), 1, time(5, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(1, 0), 7, time(20, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(23, 0), 1, time(0, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        1, time(1, 0), 1, time(2, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(22, 0), 7, time(23, 0), UTC,
+                    ),
+                ],
+            },
+
+            "sem_nenhum_intervalo": {
+                "nao_tem_sobreposicao": [
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        7, time(23, 59), 7, time(23, 59), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        1, time(0, 0), 1, time(0, 0), UTC,
+                    ),
+                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        1, time(0, 1), 1, time(0, 1), UTC,
+                    ),
+                ],
+            },
         }
-    
-        for expectativa, intervalos in intervalos_para_teste.items():
-            for intervalo in intervalos:
-                with self.subTest(intervalo=intervalo.descrever(), psicologo=psicologo_dummy.nome_completo):
-                    if expectativa == "tem_sobreposicao":
-                        self.assertTrue(psicologo_dummy.tem_intervalo_que_sobrepoe(intervalo))
-                    elif expectativa == "nao_tem_sobreposicao":
-                        self.assertFalse(psicologo_dummy.tem_intervalo_que_sobrepoe(intervalo))
+
+        for nome, conjunto in conjuntos_de_intervalos_para_teste.items():
+            if nome == "sem_intervalo_que_vira_a_semana":
+                psicologo_dummy.intervalo_que_vira_a_semana.delete()
+            elif nome == "sem_nenhum_intervalo":
+                psicologo_dummy.disponibilidade.all().delete()
+
+            for expectativa, intervalos in conjunto.items():
+                for intervalo in intervalos:
+                    with self.subTest(intervalo=intervalo.descrever(), psicologo=psicologo_dummy.nome_completo):
+                        if expectativa == "tem_sobreposicao":
+                            self.assertTrue(psicologo_dummy.tem_intervalo_que_sobrepoe(intervalo))
+                        elif expectativa == "nao_tem_sobreposicao":
+                            self.assertFalse(psicologo_dummy.tem_intervalo_que_sobrepoe(intervalo))
+
+        intervalo_qualquer = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+            3, time(10, 0), 3, time(11, 0), UTC,
+        )
+
+        with self.subTest(intervalo = intervalo_qualquer.descrever(), psicologo=self.psicologo_sempre_disponivel.nome_completo):
+            self.assertTrue(self.psicologo_sempre_disponivel.tem_intervalo_que_sobrepoe(intervalo_qualquer))
 
     def test_get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self):
         datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [

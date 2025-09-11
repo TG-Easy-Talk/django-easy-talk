@@ -286,37 +286,24 @@ class Psicologo(BasePacienteOuPsicologo):
         intervalo_vira_a_semana = intervalo.data_hora_fim <= intervalo.data_hora_inicio
 
         if not intervalo_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
-            (
-                Q(data_hora_inicio__lte=intervalo.data_hora_inicio) &
-                Q(data_hora_fim__gte=intervalo.data_hora_inicio)
-            ) | (
-                Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
-                Q(data_hora_fim__gte=intervalo.data_hora_fim)
-            ) | (
-                Q(data_hora_inicio__gte=intervalo.data_hora_inicio) &
-                Q(data_hora_fim__lte=intervalo.data_hora_fim)
-            )
-        ).exists():
-            return True
-
-        if intervalo_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
-            (
-                Q(data_hora_inicio__lte=intervalo.data_hora_inicio) &
-                Q(data_hora_fim__gte=intervalo.data_hora_inicio)
-            ) | (
-                Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
-                Q(data_hora_fim__gte=intervalo.data_hora_fim)
-            )
+            Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
+            Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         ).exists():
             return True
 
         if not intervalo_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
-            Q(data_hora_inicio__gte=intervalo.data_hora_inicio) |
-            Q(data_hora_fim__lte=intervalo.data_hora_fim)
+            Q(data_hora_inicio__lte=intervalo.data_hora_fim) |
+            Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         ).exists():
             return True
         
         if intervalo_vira_a_semana and self.intervalo_que_vira_a_semana.exists():
+            return True
+
+        if intervalo_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
+            Q(data_hora_inicio__lte=intervalo.data_hora_fim) |
+            Q(data_hora_fim__gte=intervalo.data_hora_inicio)
+        ).exists():
             return True
         
         return False
