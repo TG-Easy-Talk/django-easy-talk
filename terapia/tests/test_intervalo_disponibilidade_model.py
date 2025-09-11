@@ -23,10 +23,12 @@ class IntervaloDisponibilidadeModelTest(TestCase):
         cls.data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(3, time(0, 0), UTC)
         cls.data_hora_fim = cls.data_hora_inicio + (timedelta(days=1.5) // CONSULTA_DURACAO) * CONSULTA_DURACAO
 
-        cls.intervalo = IntervaloDisponibilidade.objects.create(
-            data_hora_inicio=cls.data_hora_inicio,
-            data_hora_fim=cls.data_hora_fim,
-            psicologo=cls.psicologo_comum,
+        cls.intervalo = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            cls.data_hora_inicio.isoweekday(),
+            cls.data_hora_inicio.time(),
+            cls.data_hora_fim.isoweekday(),
+            cls.data_hora_fim.time(),
+            cls.psicologo_comum,
         )
 
         cls.psicologo_dummy = Psicologo.objects.create(
@@ -50,10 +52,12 @@ class IntervaloDisponibilidadeModelTest(TestCase):
         
         self.psicologo_dummy.disponibilidade.all().delete()
 
-        intervalo = IntervaloDisponibilidade.objects.create(
-            data_hora_inicio=data_hora_inicio,
-            data_hora_fim=data_hora_fim,
-            psicologo=self.psicologo_dummy,
+        intervalo = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            data_hora_inicio.isoweekday(),
+            data_hora_inicio.time(),
+            data_hora_fim.isoweekday(),
+            data_hora_fim.time(),
+            self.psicologo_dummy,
         )
         self.assertEqual(intervalo.data_hora_inicio, data_hora_inicio.replace(second=0, microsecond=0))
         self.assertEqual(intervalo.data_hora_fim, data_hora_fim.replace(second=0, microsecond=0))
@@ -63,10 +67,8 @@ class IntervaloDisponibilidadeModelTest(TestCase):
         
         testes = [
             {
-                "intervalo": IntervaloDisponibilidade.objects.create(
-                    data_hora_inicio=converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
-                    data_hora_fim=converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC),
-                    psicologo=self.psicologo_dummy,
+                "intervalo": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                    1, time(0, 0), 1, time(0, 0), UTC,
                 ),
                 "datas_hora": {
                     "contem": [
@@ -114,7 +116,7 @@ class IntervaloDisponibilidadeModelTest(TestCase):
                         for data_hora in datas_hora:
                             data_hora = timezone.localtime(data_hora)
 
-                            with self.subTest(fuso=fuso, data_hora=data_hora, intervalo=intervalo):
+                            with self.subTest(data_hora=data_hora, intervalo=intervalo):
                                 if expectativa == "contem":
                                     self.assertTrue(data_hora in intervalo)
                                 elif expectativa == "nao_contem":

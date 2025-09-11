@@ -22,7 +22,7 @@ from .validadores.geral import (
     validate_divisivel_por_duracao_consulta,
 )
 from .constantes import CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
-from datetime import timedelta, time
+from datetime import UTC, timedelta, time
 
 
 class BasePacienteOuPsicologo(models.Model):
@@ -146,7 +146,7 @@ class Psicologo(BasePacienteOuPsicologo):
         return self.disponibilidade.filter(data_hora_inicio__lt=F("data_hora_fim"))
     
     @property
-    def intervalos_que_viram_a_semana(self):
+    def intervalo_que_vira_a_semana(self):
         return self.disponibilidade.filter(data_hora_fim__lt=F("data_hora_inicio"))
     
     @property
@@ -249,26 +249,23 @@ class Psicologo(BasePacienteOuPsicologo):
         if data_hora_inicio == data_hora_fim:
             return False
 
-        if self.intervalos_que_nao_viram_a_semana.filter(
+        if not consulta_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
             Q(data_hora_inicio__lte=data_hora_inicio) &
             Q(data_hora_fim__gte=data_hora_fim)
         ).exists():
-            if not consulta_vira_a_semana:
-                return True
+            return True
 
-        if self.intervalos_que_viram_a_semana.filter(
+        if not consulta_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
             Q(data_hora_inicio__lte=data_hora_inicio) |
             Q(data_hora_fim__gte=data_hora_fim)
         ).exists():
-            if not consulta_vira_a_semana:
-                return True
+            return True
 
-        if self.intervalos_que_viram_a_semana.filter(
+        if consulta_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
             Q(data_hora_inicio__lte=data_hora_inicio) &
             Q(data_hora_fim__gte=data_hora_fim)
         ).exists():
-            if consulta_vira_a_semana:
-                return True
+            return True
 
         return False
     
@@ -288,12 +285,41 @@ class Psicologo(BasePacienteOuPsicologo):
         
         intervalo_vira_a_semana = intervalo.data_hora_fim <= intervalo.data_hora_inicio
 
-        if self.intervalos_que_nao_viram_a_semana.filter(
-            Q(data_hora_inicio__lte=intervalo.data_hora_inicio) &
-            Q(data_hora_fim__gte=intervalo.data_hora_fim)
+        if not intervalo_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
+            (
+                Q(data_hora_inicio__lte=intervalo.data_hora_inicio) &
+                Q(data_hora_fim__gte=intervalo.data_hora_inicio)
+            ) | (
+                Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
+                Q(data_hora_fim__gte=intervalo.data_hora_fim)
+            ) | (
+                Q(data_hora_inicio__gte=intervalo.data_hora_inicio) &
+                Q(data_hora_fim__lte=intervalo.data_hora_fim)
+            )
         ).exists():
-            if not intervalo_vira_a_semana:
-                return True
+            return True
+
+        if intervalo_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
+            (
+                Q(data_hora_inicio__lte=intervalo.data_hora_inicio) &
+                Q(data_hora_fim__gte=intervalo.data_hora_inicio)
+            ) | (
+                Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
+                Q(data_hora_fim__gte=intervalo.data_hora_fim)
+            )
+        ).exists():
+            return True
+
+        if not intervalo_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
+            Q(data_hora_inicio__gte=intervalo.data_hora_inicio) |
+            Q(data_hora_fim__lte=intervalo.data_hora_fim)
+        ).exists():
+            return True
+        
+        if intervalo_vira_a_semana and self.intervalo_que_vira_a_semana.exists():
+            return True
+        
+        return False
 
     def esta_agendavel_em(self, data_hora):
         """
@@ -384,7 +410,7 @@ class IntervaloDisponibilidade(models.Model):
         related_name="disponibilidade",
     )
     objects = IntervaloDisponibilidadeManager()
-
+    
     @property
     def data_hora_inicio_local(self):
         return timezone.localtime(self.data_hora_inicio)
@@ -432,8 +458,12 @@ class IntervaloDisponibilidade(models.Model):
         verbose_name_plural = "Intervalos de Disponibilidade"
         ordering = ["data_hora_inicio"]
 
+    def descrever(self, fuso=UTC):
+        with timezone.override(fuso):
+            return f"{self.nome_dia_semana_inicio_local} às {self.hora_inicio_local} até {self.nome_dia_semana_fim_local} às {self.hora_fim_local} ({fuso})"
+
     def __str__(self):
-        return f"{self.nome_dia_semana_inicio_local} às {self.hora_inicio_local} - {self.nome_dia_semana_fim_local} às {self.hora_fim_local}"
+        return self.descrever(timezone.get_current_timezone())
 
     def __contains__(self, data_hora):
         """
