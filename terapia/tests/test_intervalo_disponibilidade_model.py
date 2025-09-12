@@ -48,10 +48,16 @@ class IntervaloDisponibilidadeModelTest(TestCase):
         self.assertEqual(self.intervalo.data_hora_fim, self.data_hora_fim)
         self.assertEqual(self.intervalo.psicologo, self.psicologo_comum)
 
-    # def test_impede_sobreposicao_com_outro_intervalo_do_psicologo(self):
-    #     self.assertEqual(self.intervalo.data_hora_inicio, self.data_hora_inicio)
-    #     self.assertEqual(self.intervalo.data_hora_fim, self.data_hora_fim)
-    #     self.assertEqual(self.intervalo.psicologo, self.psicologo_comum)
+    def test_impede_sobreposicao_com_outro_intervalo_do_psicologo(self):
+        with self.assertRaises(ValidationError) as ctx:
+            IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                1, time(0, 0), 1, time(0, 0), UTC, self.psicologo_comum,
+            ).full_clean()
+
+        self.assertEqual(
+            "sobreposicao_intervalos",
+            ctx.exception.error_dict["__all__"][0].code,
+        )
 
     def test_impede_data_hora_fora_do_range(self):
         with self.assertRaises(ValidationError) as ctx:
