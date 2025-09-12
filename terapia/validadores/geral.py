@@ -71,7 +71,7 @@ def validate_intervalo_disponibilidade_data_hora_range(data_hora):
                 "data_hora_minima": data_hora_minima,
                 "data_hora_maxima": data_hora_maxima,
             },
-            code="intervalo_disponibilidade_datetime_range_invalido",
+            code="intervalo_data_hora_range_invalido",
         )
     
 
