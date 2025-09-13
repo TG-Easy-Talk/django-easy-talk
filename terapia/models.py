@@ -66,7 +66,7 @@ class Paciente(BasePacienteOuPsicologo):
 
 
 class Especializacao(models.Model):
-    titulo = models.CharField("Título", max_length=100, unique=True)
+    titulo = models.CharField("Título", max_length=50, unique=True)
     descricao = models.TextField("Descrição")
 
     class Meta:
