@@ -538,7 +538,7 @@ class Consulta(models.Model):
         "Data-hora agendada para a consulta",
         validators=[validate_antecedencia, validate_divisivel_por_duracao_consulta],
     )
-    duracao = models.IntegerField(
+    duracao = models.DurationField(
         "Duração que a consulta teve em minutos",
         blank=True,
         null=True,
@@ -573,17 +573,21 @@ class Consulta(models.Model):
 
         if criando_um_novo_objeto:
             if hasattr(self, "psicologo") and not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
-                raise ValidationError(
-                    {"data_hora_agendada": "O psicólogo não tem disponibilidade nessa data e horário"},
-                    code="psicologo_nao_disponivel",
-                )
+                raise ValidationError({
+                    "data_hora_agendada": ValidationError(
+                        "O psicólogo não tem disponibilidade nessa data e horário",
+                        code="psicologo_nao_disponivel"
+                    )
+                })
             
             elif hasattr(self, "paciente") and self.paciente.ja_tem_consulta_em(self.data_hora_agendada):
-                raise ValidationError(
-                    {"data_hora_agendada": "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar"},
-                    code="paciente_nao_disponivel",
-                )
-        
+                raise ValidationError({
+                    "data_hora_agendada": ValidationError(
+                        "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar",
+                        code="paciente_nao_disponivel"
+                    )
+                })
+
     def __str__(self):
         return f"Consulta {self.estado.upper()} agendada para {timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
     

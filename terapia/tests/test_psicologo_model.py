@@ -206,6 +206,19 @@ class PsicologoModelTest(TestCase):
         cls.psicologo_comum.especializacoes.set(cls.especializacoes)
         cls.set_disponibilidade_generica(cls.psicologo_comum)
 
+        cls.consultas = [
+            Consulta.objects.create(
+                paciente=cls.paciente,
+                psicologo=cls.psicologo_comum,
+                data_hora_agendada=timezone.now(),
+            ),
+            Consulta.objects.create(
+                paciente=cls.paciente,
+                psicologo=cls.psicologo_comum,
+                data_hora_agendada=timezone.now() + CONSULTA_DURACAO,
+            ),
+        ]
+
         cls.psicologo_sempre_disponivel = Psicologo.objects.create(
             usuario=Usuario.objects.create_user(email="psicologo.hiperativo@example.com", password="senha123"),
             nome_completo='Psicólogo Sempre Disponível',
@@ -303,6 +316,7 @@ class PsicologoModelTest(TestCase):
         self.assertEqual(self.psicologo_comum.valor_consulta, Decimal('100.00'))
         self.assertQuerySetEqual(self.psicologo_comum.especializacoes.all(), self.especializacoes, ordered=False)
         self.assertQuerySetEqual(self.psicologo_comum.disponibilidade.all(), IntervaloDisponibilidade.objects.filter(psicologo=self.psicologo_comum), ordered=False)
+        self.assertQuerySetEqual(self.psicologo_comum.consultas.all(), self.consultas, ordered=False)
         self.assertIsNone(self.psicologo_comum.foto.name)
 
     def test_fk_usuario_obrigatoria(self):

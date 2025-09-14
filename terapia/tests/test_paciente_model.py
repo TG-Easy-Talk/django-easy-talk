@@ -1,7 +1,10 @@
+from datetime import UTC, time
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from terapia.models import Paciente, Psicologo
+from terapia.constantes import CONSULTA_DURACAO
+from terapia.models import Consulta, Paciente, Psicologo, IntervaloDisponibilidade
 from django.db import IntegrityError
 
 
@@ -22,6 +25,29 @@ class PacienteModelTest(TestCase):
             cpf='987.654.321-11',
         )
 
+        cls.psicologo_sempre_disponivel = Psicologo.objects.create(
+            usuario=Usuario.objects.create_user(email='psicologo1@example.com', password='senha123'),
+            nome_completo='Psicólogo Sempre Disponível',
+            crp='02/19583',
+        )
+
+        IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            1, time(0, 0), 1, time(0, 0), UTC, cls.psicologo_sempre_disponivel
+        )
+
+        cls.consultas = [
+            Consulta.objects.create(
+                paciente=cls.paciente,
+                psicologo=cls.psicologo_sempre_disponivel,
+                data_hora_agendada=timezone.now(),
+            ),
+            Consulta.objects.create(
+                paciente=cls.paciente,
+                psicologo=cls.psicologo_sempre_disponivel,
+                data_hora_agendada=timezone.now() + CONSULTA_DURACAO,
+            ),
+        ]
+
     def test_str_representation(self):
         self.assertEqual(str(self.paciente), 'Carlos Alberto')
 
@@ -29,6 +55,7 @@ class PacienteModelTest(TestCase):
         self.assertEqual(self.paciente.nome, 'Carlos Alberto')
         self.assertEqual(self.paciente.cpf, '987.654.321-11')
         self.assertEqual(self.paciente.usuario, self.usuario_com_paciente)
+        self.assertQuerySetEqual(self.paciente.consultas.all(), self.consultas, ordered=False)
         self.assertIsNone(self.paciente.foto.name)
 
     def test_fk_usuario_obrigatoria(self):
