@@ -1,62 +1,44 @@
 from django.forms import ValidationError
-from django.test import TestCase
 from django.contrib.auth import get_user_model
-from terapia.models import Psicologo, IntervaloDisponibilidade
+from terapia.models import IntervaloDisponibilidade
 from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, time
 from terapia.constantes import CONSULTA_DURACAO
 from django.utils import timezone
-from .constantes import FUSOS_PARA_TESTE
+from .base_test_case import BaseTestCase
 
 
 Usuario = get_user_model()
 
 
-class IntervaloDisponibilidadeModelTest(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.psicologo_comum = Psicologo.objects.create(
-            usuario=Usuario.objects.create_user(email="psicologo@example.com"),
-            nome_completo='Psicólogo Comum',
-            crp='01/11111',
-        )
-
-        cls.data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(3, time(0, 0), UTC)
-        cls.data_hora_fim = cls.data_hora_inicio + (timedelta(days=1.5) // CONSULTA_DURACAO) * CONSULTA_DURACAO
-
-        cls.intervalo = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
-            cls.data_hora_inicio.isoweekday(),
-            cls.data_hora_inicio.time(),
-            cls.data_hora_fim.isoweekday(),
-            cls.data_hora_fim.time(),
-            cls.data_hora_inicio.tzinfo,
-            cls.psicologo_comum,
-        )
-
-        cls.psicologo_dummy = Psicologo.objects.create(
-            usuario=Usuario.objects.create_user(email="psicologo.dummy@example.com"),
-            nome_completo='Psicólogo Dummy',
-            crp='01/11112',
-        )
-
+class IntervaloDisponibilidadeModelTest(BaseTestCase):
     def test_str_representation(self):
         with timezone.override(UTC):    
-            self.assertEqual(str(self.intervalo), "Quarta às 00:00:00 até Quinta às 12:00:00 (UTC)")
+            self.assertEqual(str(self.intervalo_de_semana_completa), "Segunda às 00:00:00 até Segunda às 00:00:00 (UTC)")
 
     def test_dados_corretos(self):
-        self.assertEqual(self.intervalo.data_hora_inicio, self.data_hora_inicio)
-        self.assertEqual(self.intervalo.data_hora_fim, self.data_hora_fim)
-        self.assertEqual(self.intervalo.psicologo, self.psicologo_comum)
+        data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(3, time(12, 0), UTC)
+        data_hora_fim = converter_dia_semana_iso_com_hora_para_data_hora(4, time(12, 0), UTC)
+
+        intervalo = IntervaloDisponibilidade.objects.create(
+            data_hora_inicio=data_hora_inicio,
+            data_hora_fim=data_hora_fim,
+            psicologo=self.psicologo_dummy,
+        )
+
+        self.assertEqual(intervalo.data_hora_inicio, data_hora_inicio)
+        self.assertEqual(intervalo.data_hora_fim, data_hora_fim)
+        self.assertEqual(intervalo.psicologo, self.psicologo_dummy)
 
     def test_impede_sobreposicao_com_outro_intervalo_do_psicologo(self):
         with self.assertRaises(ValidationError) as ctx:
             IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                1, time(0, 0), 1, time(0, 0), UTC, self.psicologo_comum,
-            ).full_clean()
+                1, time(0, 0), 1, time(0, 0), UTC, self.psicologo_completo,
+            ).clean()
 
         self.assertEqual(
             "sobreposicao_intervalos",
-            ctx.exception.error_dict["__all__"][0].code,
+            ctx.exception.code,
         )
 
     def test_impede_data_hora_fora_do_range(self):
@@ -65,7 +47,7 @@ class IntervaloDisponibilidadeModelTest(TestCase):
                 data_hora_inicio=datetime(2024, 6, 30, 23, 59, tzinfo=UTC),
                 data_hora_fim=datetime(2024, 7, 1, 10, 0, tzinfo=UTC),
                 psicologo=self.psicologo_dummy,
-            ).full_clean()
+            ).clean_fields()
 
         self.assertEqual(
             "intervalo_data_hora_range_invalido",
@@ -77,7 +59,7 @@ class IntervaloDisponibilidadeModelTest(TestCase):
                 data_hora_inicio=datetime(2024, 7, 7, 20, 0, tzinfo=UTC),
                 data_hora_fim=datetime(2024, 7, 8, 0, 1, tzinfo=UTC),
                 psicologo=self.psicologo_dummy,
-            ).full_clean()
+            ).clean_fields()
 
         self.assertEqual(
             "intervalo_data_hora_range_invalido",
@@ -88,39 +70,18 @@ class IntervaloDisponibilidadeModelTest(TestCase):
         data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0, 30, 59), UTC)
         data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
         
-        self.psicologo_dummy.disponibilidade.all().delete()
-
         intervalo = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
             data_hora_inicio.isoweekday(),
             data_hora_inicio.time(),
             data_hora_fim.isoweekday(),
             data_hora_fim.time(),
             data_hora_inicio.tzinfo,
-            self.psicologo_dummy,
-        )
-        self.assertEqual(intervalo.data_hora_inicio, data_hora_inicio.replace(second=0, microsecond=0))
-        self.assertEqual(intervalo.data_hora_fim, data_hora_fim.replace(second=0, microsecond=0))
-
-    def test_segundos_e_microssegundos_sao_desprezados(self):
-        data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0, 30, 59), UTC)
-        data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
-        
-        self.psicologo_dummy.disponibilidade.all().delete()
-
-        intervalo = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
-            data_hora_inicio.isoweekday(),
-            data_hora_inicio.time(),
-            data_hora_fim.isoweekday(),
-            data_hora_fim.time(),
-            data_hora_inicio.tzinfo,
-            self.psicologo_dummy,
+            self.psicologo_incompleto,
         )
         self.assertEqual(intervalo.data_hora_inicio, data_hora_inicio.replace(second=0, microsecond=0))
         self.assertEqual(intervalo.data_hora_fim, data_hora_fim.replace(second=0, microsecond=0))
 
     def test_contains(self):
-        self.psicologo_dummy.disponibilidade.all().delete()
-        
         datas_hora_iguais = [
             converter_dia_semana_iso_com_hora_para_data_hora(3, time(12, 0), UTC),
             converter_dia_semana_iso_com_hora_para_data_hora(6, time(12, 0), UTC),
@@ -177,7 +138,7 @@ class IntervaloDisponibilidadeModelTest(TestCase):
             },
         ]
 
-        for fuso in FUSOS_PARA_TESTE:
+        for fuso in self.fusos_para_teste:
             with timezone.override(fuso):
                 for teste in testes:
                     intervalo = teste["intervalo"]

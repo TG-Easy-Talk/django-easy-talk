@@ -18,8 +18,8 @@ import json
 from zoneinfo import ZoneInfo
 from terapia.constantes import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MAXIMA
 from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora, get_matriz_disponibilidade_booleanos_em_json
-from .constantes import FUSOS_PARA_TESTE
 from freezegun import freeze_time
+from .base_test_case import BaseTestCase
 
 
 Usuario = get_user_model()
@@ -175,7 +175,7 @@ OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON = (
 )
 
 
-class PsicologoModelTest(TestCase):
+class PsicologoModelTest(BaseTestCase):
     @classmethod
     def setUpTestData(cls):
         Especializacao.objects.create(titulo='Depressão', descricao='Tratamento de depressão e transtornos relacionados.')
@@ -249,31 +249,6 @@ class PsicologoModelTest(TestCase):
             fuso=UTC,
         ) - CONSULTA_ANTECEDENCIA_MINIMA
         cls.criar_disponibilidade_e_ocupar_psicologo_com_agenda_lotada()
-
-    @classmethod
-    def set_disponibilidade_generica(cls, psicologo):
-        intervalos = [
-            (7, time(22, 0), 1, time(2, 0)),
-            (1, time(8, 0), 1, time(12, 0)),
-            (1, time(14, 0), 1, time(18, 0)),
-            (2, time(8, 0), 2, time(12, 0)),
-            (2, time(14, 0), 2, time(18, 0)),
-            (3, time(8, 0), 3, time(12, 0)),
-            (3, time(14, 0), 3, time(18, 0)),
-            (4, time(22, 0), 4, time(23, 0)),
-            (5, time(1, 0), 5, time(3, 0)),
-            (6, time(23, 0), 7, time(12, 0)),
-        ]
-
-        for intervalo in intervalos:
-            IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
-                dia_semana_inicio_iso=intervalo[0],
-                hora_inicio=intervalo[1],
-                dia_semana_fim_iso=intervalo[2],
-                hora_fim=intervalo[3],
-                fuso=UTC,
-                psicologo=psicologo,
-            )
 
     @classmethod
     def criar_disponibilidade_e_ocupar_psicologo_com_agenda_lotada(cls):
@@ -493,7 +468,7 @@ class PsicologoModelTest(TestCase):
             ],
         }
         
-        for fuso in FUSOS_PARA_TESTE:
+        for fuso in self.fusos_para_teste:
             for expectativa, datas_hora in datas_hora_para_teste.items():
                 for data_hora in datas_hora:
                     data_hora = timezone.localtime(data_hora, fuso)
@@ -701,7 +676,7 @@ class PsicologoModelTest(TestCase):
 
         for psicologo in [self.psicologo_comum, self.psicologo_sempre_disponivel]:
             for data_hora in datas_hora_para_teste:
-                for fuso in FUSOS_PARA_TESTE:
+                for fuso in self.fusos_para_teste:
                     data_hora = timezone.localtime(data_hora, fuso)
                     datas_hora_ordenadas = self.psicologo_sempre_disponivel._get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(data_hora)
                     
@@ -716,7 +691,7 @@ class PsicologoModelTest(TestCase):
 
     def test_proxima_data_hora_agendavel(self):
         with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
-            for fuso in FUSOS_PARA_TESTE:
+            for fuso in self.fusos_para_teste:
                 with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_com_agenda_lotada.nome_completo):    
                     self.assertIsNone(self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel, "A agenda está lotada")
                     
@@ -766,7 +741,7 @@ class PsicologoModelTest(TestCase):
 
                     consultas.filter(pk=consultas.last().pk).update(estado=EstadoConsulta.SOLICITADA)
 
-        for fuso in FUSOS_PARA_TESTE:
+        for fuso in self.fusos_para_teste:
             with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_comum.nome_completo):
                 Consulta.objects.filter(psicologo=self.psicologo_comum).delete()
                 
@@ -901,7 +876,7 @@ class PsicologoModelTest(TestCase):
             motivo_para_nao_estar_agendavel="",
             descricao,
         ):
-            for fuso in FUSOS_PARA_TESTE:
+            for fuso in self.fusos_para_teste:
                 data_hora_local = timezone.localtime(data_hora, fuso)
                 
                 with self.subTest(agora=agora, data_hora=data_hora_local, psicologo=psicologo.nome_completo):

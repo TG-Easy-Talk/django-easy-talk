@@ -589,5 +589,5 @@ class Consulta(models.Model):
                 })
 
     def __str__(self):
-        return f"Consulta {self.estado.upper()} agendada para {timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} com {self.paciente.nome} e {self.psicologo.nome_completo}"
+        return f"Consulta {self.estado.upper()} agendada para {timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} ({timezone.get_current_timezone_name()}) com {self.paciente.nome} e {self.psicologo.nome_completo}"
     
