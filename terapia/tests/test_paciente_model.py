@@ -69,7 +69,7 @@ class PacienteModelTest(BaseTestCase):
                 usuario=self.psicologo_dummy.usuario,
                 nome='Paciente em usuário com psicólogo',
                 cpf='446.753.260-99',
-            ).full_clean()
+            ).clean_fields()
 
         self.assertEqual(
             "psicologo_ja_relacionado",
@@ -82,7 +82,7 @@ class PacienteModelTest(BaseTestCase):
                 usuario=self.paciente_dummy.usuario,
                 nome='Paciente em usuário com paciente',
                 cpf='963.562.490-56',
-            ).full_clean()
+            ).validate_unique()
 
         self.assertEqual(
             'unique',

@@ -30,8 +30,10 @@ class EspecializacaoModelTest(BaseTestCase):
 
     def test_impede_titulo_longo(self):
         with self.assertRaises(ValidationError) as ctx:
+            max_length = Especializacao._meta.get_field("titulo").max_length
+
             Especializacao(
-                titulo="E" * 51, descricao="Especialização com título longo"
+                titulo="E" * (max_length + 1), descricao="Especialização com título longo"
             ).clean_fields()
 
         self.assertEqual("max_length", ctx.exception.error_dict["titulo"][0].code)

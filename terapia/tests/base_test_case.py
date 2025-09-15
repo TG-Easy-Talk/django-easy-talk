@@ -1,7 +1,7 @@
 from datetime import datetime, time, UTC
 from zoneinfo import ZoneInfo
 from django.test import TestCase
-from terapia.constantes import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO
+from terapia.constantes import CONSULTA_DURACAO
 from terapia.models import Especializacao, Paciente, Psicologo, IntervaloDisponibilidade, Consulta
 from django.contrib.auth import get_user_model
 from django.utils import timezone

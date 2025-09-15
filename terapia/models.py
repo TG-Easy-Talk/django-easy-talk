@@ -182,12 +182,6 @@ class Psicologo(BasePacienteOuPsicologo):
                     return data_hora_inicio
                 
             semanas += 1
-                
-    def clean(self):
-        super().clean()
-        # Caso já exista no banco, checar se já há paciente relacionado
-        if hasattr(self, "usuario") and self.usuario.is_paciente:
-            raise ValidationError({"usuario": "Este usuário já está relacionado a um paciente."})
 
     def __str__(self):
         return self.nome_completo

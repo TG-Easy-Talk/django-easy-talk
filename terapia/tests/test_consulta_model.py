@@ -1,11 +1,10 @@
-from datetime import datetime, time, UTC, timedelta
-from django.test import TestCase
+from datetime import datetime, UTC, timedelta
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from freezegun import freeze_time
 from terapia.constantes import CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO
-from terapia.models import Especializacao, Paciente, Psicologo, Consulta, IntervaloDisponibilidade, EstadoConsulta
+from terapia.models import Consulta, EstadoConsulta
 from .base_test_case import BaseTestCase
 
 
@@ -138,7 +137,7 @@ class ConsultaModelTest(BaseTestCase):
                 Consulta(
                     paciente=self.paciente_dummy,
                     psicologo=self.psicologo_sempre_disponivel,
-                    data_hora_agendada=self.agora_fake + CONSULTA_ANTECEDENCIA_MINIMA - timedelta(minutes=1),
+                    data_hora_agendada=self.agora_fake + CONSULTA_ANTECEDENCIA_MINIMA - timedelta(microseconds=1),
                 ).clean_fields()
 
             self.assertEqual("antecedencia_minima_nao_atendida", ctx.exception.error_dict["data_hora_agendada"][0].code)
@@ -149,7 +148,7 @@ class ConsultaModelTest(BaseTestCase):
                 Consulta(
                     paciente=self.paciente_dummy,
                     psicologo=self.psicologo_sempre_disponivel,
-                    data_hora_agendada=self.agora_fake + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(minutes=1),
+                    data_hora_agendada=self.agora_fake + CONSULTA_ANTECEDENCIA_MAXIMA + timedelta(microseconds=1),
                 ).clean_fields()
 
             self.assertEqual("antecedencia_maxima_nao_atendida", ctx.exception.error_dict["data_hora_agendada"][0].code)
