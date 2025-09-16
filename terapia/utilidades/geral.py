@@ -4,6 +4,16 @@ import json
 from terapia.constantes import NUMERO_PERIODOS_POR_DIA
 
 
+def regra_de_3_numero_periodos_por_dia(n):
+    """
+    Recebe um número "n" que representa um horário num dia de 24 horas e retorna
+    o seu correspondente num dia de NUMERO_PERIODOS_POR_DIA horas.
+
+    Exemplo: se n=6 e NUMERO_PERIODOS_POR_DIA=12, então a função retorna 3.
+    """
+    return int(n * NUMERO_PERIODOS_POR_DIA // 24)
+
+
 def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
     """
     Cria uma matriz de booleanos que representa a disponibilidade.
@@ -19,8 +29,8 @@ def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
             dia_semana_fim = intervalo.dia_semana_fim_local - 1
             hil = intervalo.hora_inicio_local
             hfl = intervalo.hora_fim_local
-            hora_inicio_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hil.hour, minutes=hil.minute).total_seconds() // 3600)
-            hora_fim_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hfl.hour, minutes=hfl.minute).total_seconds() // 3600)
+            hora_inicio_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hil.hour, minutes=hil.minute).total_seconds() / 3600)
+            hora_fim_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hfl.hour, minutes=hfl.minute).total_seconds() / 3600)
 
             ranges = []
 
@@ -145,13 +155,3 @@ def converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_iso, hora, fuso)
         data_hora_convertida.time(),
         data_hora_convertida.tzinfo,
     )
-
-
-def regra_de_3_numero_periodos_por_dia(n):
-    """
-    Recebe um número "n" que representa um horário num dia de 24 horas e retorna
-    o seu correspondente num dia de NUMERO_PERIODOS_POR_DIA horas.
-
-    Exemplo: se n=6 e NUMERO_PERIODOS_POR_DIA=12, então a função retorna 3.
-    """
-    return int(n * NUMERO_PERIODOS_POR_DIA // 24)

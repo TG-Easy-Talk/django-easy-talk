@@ -436,7 +436,7 @@ class PsicologoModelTest(BaseTestCase):
                     with self.subTest(data_hora=data_hora):
                         self.assertTrue(self.psicologo_sempre_disponivel._tem_intervalo_onde_cabe_uma_consulta_em(data_hora))
 
-    def test_tem_intervalo_que_sobrepoe(self):
+    def test_get_intervalo_que_sobrepoe(self):
         psicologo = Psicologo.objects.create(
             usuario=Usuario.objects.create_user(email="psicologo@gmail.com", password="senha123"),
             nome_completo='Psicólogo Teste Sobreposição',
@@ -588,18 +588,18 @@ class PsicologoModelTest(BaseTestCase):
                 for intervalo in intervalos:
                     with self.subTest(intervalo=intervalo.descrever(), psicologo=psicologo.nome_completo):
                         if expectativa == "tem_sobreposicao":
-                            self.assertTrue(psicologo.tem_intervalo_que_sobrepoe(intervalo))
+                            self.assertIsNotNone(psicologo.get_intervalo_que_sobrepoe(intervalo))
                         elif expectativa == "nao_tem_sobreposicao":
-                            self.assertFalse(psicologo.tem_intervalo_que_sobrepoe(intervalo))
+                            self.assertIsNone(psicologo.get_intervalo_que_sobrepoe(intervalo))
 
         intervalo_qualquer = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
             3, time(10, 0), 3, time(11, 0), UTC,
         )
 
         with self.subTest(intervalo = intervalo_qualquer.descrever(), psicologo=self.psicologo_sempre_disponivel.nome_completo):
-            self.assertTrue(self.psicologo_sempre_disponivel.tem_intervalo_que_sobrepoe(intervalo_qualquer))
+            self.assertTrue(self.psicologo_sempre_disponivel.get_intervalo_que_sobrepoe(intervalo_qualquer))
 
-    def test_get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self):
+    def test_get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self):
         datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [
             converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 59), UTC),
             converter_dia_semana_iso_com_hora_para_data_hora(7, time(22, 0), UTC),
@@ -632,7 +632,7 @@ class PsicologoModelTest(BaseTestCase):
             for data_hora in datas_hora_para_teste:
                 for fuso in self.fusos_para_teste:
                     data_hora = timezone.localtime(data_hora, fuso)
-                    datas_hora_ordenadas = self.psicologo_sempre_disponivel._get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(data_hora)
+                    datas_hora_ordenadas = self.psicologo_sempre_disponivel._get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(data_hora)
                     
                     with self.subTest(data_hora=data_hora, psicologo=psicologo.nome_completo, datas_hora_ordenadas=datas_hora_ordenadas):
                         self.assertEqual(len(datas_hora_ordenadas), len(set(datas_hora_ordenadas)))

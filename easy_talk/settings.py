@@ -101,7 +101,8 @@ LOGIN_URL = reverse_lazy('login')
 
 LANGUAGE_CODE = 'pt-br'
 
-TIME_ZONE = 'America/Sao_Paulo'
+# TIME_ZONE = 'Australia/Eucla'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -128,3 +129,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Other settings
 
 FORM_RENDERER = 'easy_talk.renderers.CustomFormRenderer'
+FIXTURE_DIRS = [BASE_DIR / 'fixtures']

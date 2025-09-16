@@ -158,7 +158,7 @@ class Psicologo(BasePacienteOuPsicologo):
         tempo_decorrido = timedelta(0)
         agora = timezone.localtime()
         agora_convertido = converter_dia_semana_iso_com_hora_para_data_hora(agora.isoweekday(), agora.time(), agora.tzinfo)
-        datas_hora_ordenadas = self._get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(agora)
+        datas_hora_ordenadas = self._get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(agora)
 
         while True:
             for data_hora in datas_hora_ordenadas:
@@ -189,7 +189,7 @@ class Psicologo(BasePacienteOuPsicologo):
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
 
-    def _get_datas_hora_locais_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self, instante):
+    def _get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self, instante):
         """
         Retorna as datas e horas dos intervalos de disponibilidade do psicólogo na ordem do mais
         próximo ao mais distante partindo de um instante no tempo.
@@ -204,7 +204,7 @@ class Psicologo(BasePacienteOuPsicologo):
         datas_hora_proxima_semana = []
 
         for intervalo in self.disponibilidade.all():
-            for data_hora in intervalo.get_datas_hora_locais():
+            for data_hora in intervalo.get_datas_hora():
                 if data_hora >= instante_convertido + CONSULTA_ANTECEDENCIA_MINIMA:
                     datas_hora_essa_semana.append(data_hora)
                 else:
@@ -263,7 +263,7 @@ class Psicologo(BasePacienteOuPsicologo):
 
         return False
     
-    def tem_intervalo_que_sobrepoe(self, intervalo):
+    def get_intervalo_que_sobrepoe(self, intervalo):
         """
         Verifica se o psicólogo tem um intervalo de disponibilidade que sobrepõe
         o intervalo enviado como parâmetro.
@@ -271,7 +271,15 @@ class Psicologo(BasePacienteOuPsicologo):
         Se houver qualquer sobreposição, mesmo que parcial, com extremidades inclusas,
         retorna True.
         """
-        if self.intervalo_de_semana_completa.exists():
+        intervalos_que_nao_viram_a_semana, intervalo_que_vira_a_semana, intervalo_de_semana_completa = [
+            qs.exclude(pk=intervalo.pk) for qs in [
+                self.intervalos_que_nao_viram_a_semana,
+                self.intervalo_que_vira_a_semana,
+                self.intervalo_de_semana_completa,
+            ]
+        ]
+
+        if intervalo_de_semana_completa.exists():
             return True
 
         if intervalo.data_hora_inicio == intervalo.data_hora_fim and self.disponibilidade.exists():
@@ -279,28 +287,28 @@ class Psicologo(BasePacienteOuPsicologo):
         
         intervalo_vira_a_semana = intervalo.data_hora_fim <= intervalo.data_hora_inicio
 
-        if not intervalo_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
+        if not intervalo_vira_a_semana and (qs := intervalos_que_nao_viram_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
-        ).exists():
-            return True
+        )).exists():
+            return qs.get()
 
-        if not intervalo_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
+        if not intervalo_vira_a_semana and (qs := intervalo_que_vira_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) |
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
-        ).exists():
-            return True
-        
-        if intervalo_vira_a_semana and self.intervalo_que_vira_a_semana.exists():
-            return True
+        )).exists():
+            return qs.get()
 
-        if intervalo_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
+        if intervalo_vira_a_semana and (qs := intervalo_que_vira_a_semana).exists():
+            return qs.get()
+
+        if intervalo_vira_a_semana and (qs := intervalos_que_nao_viram_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) |
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
-        ).exists():
-            return True
+        )).exists():
+            return qs.get()
         
-        return False
+        return None
 
     def esta_agendavel_em(self, data_hora):
         """
@@ -324,18 +332,6 @@ class Psicologo(BasePacienteOuPsicologo):
     
     def get_matriz_disponibilidade_booleanos_em_json(self):
         return get_matriz_disponibilidade_booleanos_em_json(self.disponibilidade)
-
-
-INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (
-    "A data deste campo é apenas utilizada para obter o dia da semana do intervalo,"
-    " o que significa que a data em si não importa desde que o dia da semana esteja correto."
-    " Por conveniência, usa-se a semana de 01/07/2024 até 07/07/2024, isto é,"
-    " datetime(2024, 7, 1, 0, 0) até datetime(2024, 7, 7, 23, 59). A razão para isso é que nessa semana,"
-    " o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja:"
-    " 01/07/2024 é segunda (1),"
-    " 02/07/2024 é terça (2) ..."
-    " e 07/07/2024 é domingo (7)."
-)
 
 
 class IntervaloDisponibilidadeManager(models.Manager):
@@ -373,16 +369,32 @@ class IntervaloDisponibilidadeManager(models.Manager):
         intervalo.save()
         return intervalo
 
+INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (
+    "A data deste campo é apenas utilizada para obter o dia da semana do intervalo,"
+    " o que significa que a data em si não importa desde que o dia da semana esteja correto."
+    " Por conveniência, usa-se a semana de 01/07/2024 até 07/07/2024, isto é,"
+    " datetime(2024, 7, 1, 0, 0) até datetime(2024, 7, 7, 23, 59). A razão para isso é que nessa semana,"
+    " o número do dia do mês é o mesmo do dia da semana no formato ISO, ou seja:"
+    " 01/07/2024 é segunda (1),"
+    " 02/07/2024 é terça (2) ..."
+    " e 07/07/2024 é domingo (7)."
+)
+
+INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDADORES = [
+    validate_intervalo_disponibilidade_data_hora_range,
+    validate_divisivel_por_duracao_consulta,
+]
+
 class IntervaloDisponibilidade(models.Model):
     data_hora_inicio = models.DateTimeField(
         "Dia da semana e hora do início do intervalo",
         help_text=INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT,
-        validators=[validate_intervalo_disponibilidade_data_hora_range],
+        validators=INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDADORES,
     )
     data_hora_fim = models.DateTimeField(
         "Dia da semana e hora do fim do intervalo",
         help_text=INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT,
-        validators=[validate_intervalo_disponibilidade_data_hora_range],
+        validators=INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDADORES,
     )
     psicologo = models.ForeignKey(
         Psicologo,
@@ -458,7 +470,7 @@ class IntervaloDisponibilidade(models.Model):
 
         return not (self.data_hora_fim < data_hora < self.data_hora_inicio)
     
-    def _get_datas_hora(self):
+    def get_datas_hora(self):
         """
         Retorna a lista de datas e horas que estão dentro do intervalo,
         dando passos correspondentes à duração de uma consulta.
@@ -482,24 +494,6 @@ class IntervaloDisponibilidade(models.Model):
                 break
 
         return datas_hora
-    
-    def get_datas_hora_locais(self):
-        """
-        Retorna, no fuso-horário local, a lista de datas e horas que estão dentro do intervalo,
-        dando passos correspondentes à duração de uma consulta.
-        """
-        datas_hora_locais = []
-
-        for data_hora in self._get_datas_hora():
-            data_hora_local = timezone.localtime(data_hora)
-            data_hora_local_convertido = converter_dia_semana_iso_com_hora_para_data_hora(
-                data_hora_local.isoweekday(),
-                data_hora_local.time(),
-                data_hora_local.tzinfo,
-            )
-            datas_hora_locais.append(data_hora_local_convertido)
-
-        return datas_hora_locais
 
     def clean(self):
         super().clean()
@@ -509,10 +503,10 @@ class IntervaloDisponibilidade(models.Model):
             self.data_hora_fim = desprezar_segundos_e_microssegundos(self.data_hora_fim)
             
             if hasattr(self, "psicologo") and self.psicologo:
-                if self.psicologo.tem_intervalo_que_sobrepoe(self):
+                if intervalo_sobreposto := self.psicologo.get_intervalo_que_sobrepoe(self):
                     raise ValidationError(
                         "Este intervalo sobrepõe outro intervalo que já existe: %(intervalo)s",
-                        params={"intervalo": self},
+                        params={"intervalo": intervalo_sobreposto},
                         code="sobreposicao_intervalos",
                     )
                         

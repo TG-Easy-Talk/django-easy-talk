@@ -38,10 +38,10 @@
                 let atual = 0
 
                 for (let i = 0; i < dia.length; i++) {
-                    if (dia[i] === true) {
+                    if (dia[i]) {
                         atual++
                         i++
-                        while (dia[i] === true && i < dia.length)
+                        while (dia[i] && i < dia.length)
                             i++
                     } 
                 }
@@ -54,6 +54,21 @@
         }
 
         static getTabelaDisponibilidadeComoMatriz() {
+            const consultaDuracaoMinutos = {{ CONSULTA_DURACAO_MINUTOS }}
+            const quantidadePassos = 60 / consultaDuracaoMinutos
+
+            console.log(this.matriz_disponibilidade_booleanos)
+
+            function getHora(i) {
+                const hora = Math.floor(i * consultaDuracaoMinutos / 60)
+                return hora.toString().padStart(2, '0')
+            }
+
+            function getMinuto(i) {
+                const minuto = (i % quantidadePassos * consultaDuracaoMinutos) % 60
+                return minuto.toString().padStart(2, '0')
+            }
+
             const numeroMaximoIntervalos = this.getNumeroMaximoIntervalos()
             const matriz = []
 
@@ -61,13 +76,14 @@
                 const intervalos = []
 
                 for (let i = 0; i < dia.length; i++) {
-                    if (dia[i] === true) {
-                        const horarioInicio = `${i.toString().padStart(2, '0')}:{{ utc_minute_offset }}`
+                    if (dia[i]) {
+                        const horarioInicio = `${getHora(i)}:${getMinuto(i)}`
                         i++
-                        while (dia[i] === true && i < dia.length)
+
+                        while (dia[i] && i < dia.length)
                             i++
 
-                        const horarioFim = `${i.toString().padStart(2, '0')}:{{ utc_minute_offset }}`
+                        const horarioFim = `${getHora(i)}:${getMinuto(i)}`
                         intervalos.push(`${horarioInicio} - ${horarioFim}`)
                     } 
                 } 

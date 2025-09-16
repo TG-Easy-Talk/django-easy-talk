@@ -185,11 +185,12 @@ def popular_pacientes(sender, **kwargs):
 
 
 def popular_tudo(sender, **kwargs):
-        funcoes_de_popular = [
-            popular_usuarios,
-            popular_especializacoes,
-            popular_psicologos,
-            popular_pacientes,
-        ]
-        for funcao in funcoes_de_popular:
-            funcao(sender, **kwargs)
+    pass
+    # funcoes_de_popular = [
+    #     popular_usuarios,
+    #     popular_especializacoes,
+    #     popular_psicologos,
+    #     popular_pacientes,
+    # ]
+    # for funcao in funcoes_de_popular:
+    #     funcao(sender, **kwargs)

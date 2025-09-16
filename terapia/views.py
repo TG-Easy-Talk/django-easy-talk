@@ -18,6 +18,7 @@ from django.http import HttpResponseForbidden
 from datetime import timedelta
 from django.shortcuts import redirect
 from django.utils import timezone
+from .constantes import CONSULTA_DURACAO_MINUTOS
 
 
 class DeveTerCargoMixin(LoginRequiredMixin):
@@ -61,10 +62,10 @@ class FluxoAlternativoLoginContextMixin(ContextMixin):
         return context
     
 
-class LocalUtcMinuteOffsetContextMixin(ContextMixin):
+class TabelaDisponibilidadeContextMixin(ContextMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["utc_minute_offset"] = timezone.localtime().utcoffset().seconds // 60 % 60
+        context["CONSULTA_DURACAO_MINUTOS"] = CONSULTA_DURACAO_MINUTOS
         return context
     
     
@@ -180,7 +181,7 @@ class ConsultaView(DeveTerCargoMixin, TemplateView):
     template_name = "consulta/consulta.html"
 
 
-class PerfilView(FormView, SingleObjectMixin, LocalUtcMinuteOffsetContextMixin):
+class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin):
     model = Psicologo
     context_object_name = "psicologo"
     template_name = "perfil/perfil.html"
@@ -308,7 +309,7 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
         return context
 
 
-class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView, LocalUtcMinuteOffsetContextMixin):
+class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView, TabelaDisponibilidadeContextMixin):
     template_name = "meu_perfil/meu_perfil.html"
     form_class = PsicologoChangeForm
     context_object_name = "psicologo"

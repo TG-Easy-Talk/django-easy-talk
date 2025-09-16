@@ -8,11 +8,3 @@ class TerapiaConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'terapia'
     verbose_name = 'Terapia'
-
-    def ready(self):
-        import terapia.signals
-
-        if settings.DATABASES['default']['NAME'] != 'db.sqlite3':  # Substitua pelo nome do banco padrão
-            return
-
-        post_migrate.connect(popular_tudo, sender=self)
