@@ -12,60 +12,73 @@ from datetime import UTC, datetime, timedelta, time
 from django.utils import timezone
 import json
 from zoneinfo import ZoneInfo
-from terapia.constantes import CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MAXIMA
-from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora, get_matriz_disponibilidade_booleanos_em_json
+from terapia.constantes import (
+    CONSULTA_ANTECEDENCIA_MINIMA,
+    CONSULTA_DURACAO,
+    CONSULTA_ANTECEDENCIA_MAXIMA,
+    NUMERO_PERIODOS_POR_DIA,
+)
+from terapia.utilidades.geral import (
+    converter_dia_semana_iso_com_hora_para_data_hora,
+    get_matriz_disponibilidade_booleanos_em_json,
+    regra_de_3_numero_periodos_por_dia,
+)
 from freezegun import freeze_time
 from .base_test_case import BaseTestCase
+from unittest.mock import patch
 
 
 Usuario = get_user_model()
 
 
+n = NUMERO_PERIODOS_POR_DIA
+_ = regra_de_3_numero_periodos_por_dia
+
 MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS = {
     UTC: [
-        [True] * 12 + [False] * 10 + [True] * 2,
-        [True] * 2 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-        [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-        [False] * 8 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 6,
-        [False] * 22 + [True] * 1 + [False] * 1,
-        [False] * 1 + [True] * 2 + [False] * 21,
-        [False] * 23 + [True] * 1,
+        [True] * _(12) + [False] * _(10) + [True] * _(2),
+        [True] * _(2) + [False] * _(6) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(6),
+        [False] * _(8) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(6),
+        [False] * _(8) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(6),
+        [False] * _(22) + [True] * _(1) + [False] * _(1),
+        [False] * _(1) + [True] * _(2) + [False] * _(21),
+        [False] * _(23) + [True] * _(1),
     ],
     ZoneInfo("Etc/GMT+1"): [
-        [True] * 11 + [False] * 10 + [True] * 3,
-        [True] * 1 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
-        [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
-        [False] * 7 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 7,
-        [False] * 21 + [True] * 1 + [False] * 2,
-        [True] * 2 + [False] * 22,
-        [False] * 22 + [True] * 2,
+        [True] * _(11) + [False] * _(10) + [True] * _(3),
+        [True] * _(1) + [False] * _(6) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(7),
+        [False] * _(7) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(7),
+        [False] * _(7) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(7),
+        [False] * _(21) + [True] * _(1) + [False] * _(2),
+        [True] * _(2) + [False] * _(22),
+        [False] * _(22) + [True] * _(2),
     ],
     ZoneInfo("Etc/GMT+2"): [
-        [True] * 10 + [False] * 10 + [True] * 4,
-        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
-        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
-        [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 8,
-        [False] * 20 + [True] * 1 + [False] * 2 + [True] * 1,
-        [True] * 1 + [False] * 23,
-        [False] * 21 + [True] * 3,
+        [True] * _(10) + [False] * _(10) + [True] * _(4),
+        [False] * _(6) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(8),
+        [False] * _(6) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(8),
+        [False] * _(6) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(8),
+        [False] * _(20) + [True] * _(1) + [False] * _(2) + [True] * _(1),
+        [True] * _(1) + [False] * _(23),
+        [False] * _(21) + [True] * _(3),
     ],
     ZoneInfo("Etc/GMT-1"): [
-        [True] * 13 + [False] * 10 + [True] * 1,
-        [True] * 3 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
-        [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
-        [False] * 9 + [True] * 4 + [False] * 2 + [True] * 4 + [False] * 5,
-        [False] * 23 + [True] * 1,
-        [False] * 2 + [True] * 2 + [False] * 20,
-        [False] * 24,
+        [True] * _(13) + [False] * _(10) + [True] * _(1),
+        [True] * _(3) + [False] * _(6) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(5),
+        [False] * _(9) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(5),
+        [False] * _(9) + [True] * _(4) + [False] * _(2) + [True] * _(4) + [False] * _(5),
+        [False] * _(23) + [True] * _(1),
+        [False] * _(2) + [True] * _(2) + [False] * _(20),
+        [False] * _(24),
     ],
     ZoneInfo("Etc/GMT-7"): [
-        [False] * 6 + [True] * 13 + [False] * 5,
-        [False] * 5 + [True] * 4 + [False] * 6 + [True] * 4 + [False] * 2 + [True] * 3,
-        [True] * 1 + [False] * 14 + [True] * 4 + [False] * 2 + [True] * 3,
-        [True] * 1 + [False] * 14 + [True] * 4 + [False] * 2 + [True] * 3,
-        [True] * 1 + [False] * 23,
-        [False] * 5 + [True] * 1 + [False] * 2 + [True] * 2 + [False] * 14,
-        [False] * 24,
+        [False] * _(6) + [True] * _(13) + [False] * _(5),
+        [False] * _(5) + [True] * _(4) + [False] * _(6) + [True] * _(4) + [False] * _(2) + [True] * _(3),
+        [True] * _(1) + [False] * _(14) + [True] * _(4) + [False] * _(2) + [True] * _(3),
+        [True] * _(1) + [False] * _(14) + [True] * _(4) + [False] * _(2) + [True] * _(3),
+        [True] * _(1) + [False] * _(23),
+        [False] * _(5) + [True] * _(1) + [False] * _(2) + [True] * _(2) + [False] * _(14),
+        [False] * _(24),
     ],
 }
 
@@ -75,94 +88,94 @@ MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON = {
 
 OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS = (
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(23, 0), 1, time(0, 0), UTC), [
-        [False] * 23 + [True] * 1,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
+        [False] * _(23) + [True] * _(1),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(23, 0), 1, time(1, 0), UTC), [
-        [False] * 23 + [True] * 1,
-        [True] * 1 + [False] * 23,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
+        [False] * _(23) + [True] * _(1),
+        [True] * _(1) + [False] * _(23),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(7, time(22, 0), 2, time(2, 0), UTC), [
-        [False] * 22 + [True] * 2,
-        [True] * 24,
-        [True] * 2 + [False] * 22,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
+        [False] * _(22) + [True] * _(2),
+        [True] * _(24),
+        [True] * _(2) + [False] * _(22),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(6, time(22, 0), 2, time(23, 0), UTC), [
-        [True] * 24,
-        [True] * 24,
-        [True] * 23 + [False] * 1,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
-        [False] * 22 + [True] * 2,
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(23) + [False] * _(1),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(22) + [True] * _(2),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(5, time(22, 0), 2, time(3, 0), UTC), [
-        [True] * 24,
-        [True] * 24,
-        [True] * 3 + [False] * 21,
-        [False] * 24,
-        [False] * 24,
-        [False] * 22 + [True] * 2,
-        [True] * 24,
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(3) + [False] * _(21),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(22) + [True] * _(2),
+        [True] * _(24),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(4, time(22, 0), 3, time(0, 0), UTC), [
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [False] * 24,
-        [False] * 22 + [True] * 2,
-        [True] * 24,
-        [True] * 24,
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [False] * _(24),
+        [False] * _(22) + [True] * _(2),
+        [True] * _(24),
+        [True] * _(24),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(6, time(13, 0), 5, time(13, 0), UTC), [
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [True] * 13 + [False] * 11,
-        [False] * 13 + [True] * 11,
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(13) + [False] * _(11),
+        [False] * _(13) + [True] * _(11),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(4, time(0, 0), 4, time(0, 0), UTC), [
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(3, time(10, 0), 3, time(12, 0), UTC), [
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
-        [False] * 10 + [True] * 2 + [False] * 12,
-        [False] * 24,
-        [False] * 24,
-        [False] * 24,
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(10) + [True] * _(2) + [False] * _(12),
+        [False] * _(24),
+        [False] * _(24),
+        [False] * _(24),
     ]),
     (IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(2, time(12, 0), 2, time(10, 0), UTC), [
-        [True] * 24,
-        [True] * 24,
-        [True] * 10 + [False] * 2 + [True] * 12,
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
-        [True] * 24,
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(10) + [False] * _(2) + [True] * _(12),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
+        [True] * _(24),
     ]),
 )
 
@@ -174,64 +187,8 @@ OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON = (
 class PsicologoModelTest(BaseTestCase):
     @classmethod
     def setUpTestData(cls):
-        # Especializacao.objects.create(titulo='Depressão', descricao='Tratamento de depressão e transtornos relacionados.')
-        # Especializacao.objects.create(titulo='Ansiedade', descricao='Tratamento de transtornos de ansiedade e fobias.')
-
-        # cls.especializacoes = [
-        #     Especializacao.objects.create(titulo='Psicologia Clínica', descricao='Tratamento de distúrbios emocionais e comportamentais.'),
-        #     Especializacao.objects.create(titulo='Psicologia Escolar', descricao='Apoio psicológico em ambientes educacionais.'),
-        #     Especializacao.objects.create(titulo='Psicologia Organizacional', descricao='Consultoria e desenvolvimento organizacional.'),
-        # ]
-        # cls.paciente = Paciente.objects.create(
-        #     usuario=Usuario.objects.create_user(email="paciente@example.com", password="senha123"),
-        #     nome="Paciente Dummy",
-        #     cpf="342.738.610-46",
-        # )
-        # cls.usuario_com_psicologo = Usuario.objects.create_user(
-        #     email='psicologo@example.com',
-        #     password='senha456',
-        # )
-        
-        # cls.psicologo_comum = Psicologo.objects.create(
-        #     usuario=cls.usuario_com_psicologo,
-        #     nome_completo='Psicólogo Comum',
-        #     crp='06/12345',
-        #     sobre_mim='Psicóloga clínica com 10 anos de experiência.',
-        #     valor_consulta=100.00,
-        # )
-        # cls.psicologo_comum.especializacoes.set(cls.especializacoes)
-        # cls.set_disponibilidade_generica(cls.psicologo_comum)
-
-        # cls.consultas = [
-        #     Consulta.objects.create(
-        #         paciente=cls.paciente,
-        #         psicologo=cls.psicologo_comum,
-        #         data_hora_agendada=timezone.now(),
-        #     ),
-        #     Consulta.objects.create(
-        #         paciente=cls.paciente,
-        #         psicologo=cls.psicologo_comum,
-        #         data_hora_agendada=timezone.now() + CONSULTA_DURACAO,
-        #     ),
-        # ]
-
-        # cls.psicologo_sempre_disponivel = Psicologo.objects.create(
-        #     usuario=Usuario.objects.create_user(email="psicologo.hiperativo@example.com", password="senha123"),
-        #     nome_completo='Psicólogo Sempre Disponível',
-        #     crp='06/22223',
-        #     sobre_mim='Disponível 24 horas por dia.',
-        #     valor_consulta=100.00,
-        # )
-        # cls.psicologo_sempre_disponivel.especializacoes.set(cls.especializacoes)
-        # IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
-        #     dia_semana_inicio_iso=1,
-        #     hora_inicio=time(0, 0),
-        #     dia_semana_fim_iso=1,
-        #     hora_fim=time(0, 0),
-        #     fuso=UTC,
-        #     psicologo=cls.psicologo_sempre_disponivel,
-        # ),
         super().setUpTestData()
+
         cls.psicologo_com_agenda_lotada = Psicologo.objects.create(
             usuario=Usuario.objects.create_user(email="psicologo.com.agenda.lotada@example.com", password="senha123"),
             nome_completo='Psicólogo Com Agenda Lotada',
@@ -258,7 +215,7 @@ class PsicologoModelTest(BaseTestCase):
             fuso=data_hora_inicio.tzinfo,
             psicologo=cls.psicologo_com_agenda_lotada,
         ),
-        
+
         with freeze_time(cls.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
             tempo_decorrido = CONSULTA_ANTECEDENCIA_MINIMA
 
@@ -271,7 +228,7 @@ class PsicologoModelTest(BaseTestCase):
                 tempo_decorrido += timedelta(weeks=1)
 
     def test_str_representation(self):
-        self.assertEqual(str(self.psicologo_dummy), 'Psicólogo Dummy')
+        self.assertEqual(str(self.psicologo_dummy), self.psicologo_dummy.nome_completo)
 
     def test_get_absolute_url(self):
         url = self.psicologo_dummy.get_absolute_url()
@@ -441,6 +398,7 @@ class PsicologoModelTest(BaseTestCase):
             with self.subTest(motivo=motivo, psicologo=psicologo.nome_completo):
                 self.assertFalse(psicologo.esta_com_perfil_completo)
 
+    @patch("terapia.models.CONSULTA_DURACAO", timedelta(hours=1))
     def test_tem_intervalo_onde_cabe_uma_consulta_em(self):
         datas_hora_para_teste = {
             "tem_intervalo": [
@@ -685,6 +643,12 @@ class PsicologoModelTest(BaseTestCase):
                             
                             self.assertLess(data_hora_atual, data_hora_posterior)
 
+    @patch("terapia.tests.test_psicologo_model.CONSULTA_DURACAO", timedelta(hours=1))
+    @patch("terapia.tests.test_psicologo_model.CONSULTA_ANTECEDENCIA_MINIMA", timedelta(hours=1))
+    @patch("terapia.tests.test_psicologo_model.CONSULTA_ANTECEDENCIA_MAXIMA", timedelta(days=60))
+    @patch("terapia.models.CONSULTA_DURACAO", timedelta(hours=1))
+    @patch("terapia.models.CONSULTA_ANTECEDENCIA_MINIMA", timedelta(hours=1))
+    @patch("terapia.models.CONSULTA_ANTECEDENCIA_MAXIMA", timedelta(days=60))
     def test_proxima_data_hora_agendavel(self):
         with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
             for fuso in self.fusos_para_teste:

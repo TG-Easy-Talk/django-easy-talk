@@ -1,6 +1,7 @@
-from datetime import date, datetime, time, UTC
+from datetime import date, datetime, time, UTC, timedelta
 from django.utils import timezone
 import json
+from terapia.constantes import NUMERO_PERIODOS_POR_DIA
 
 
 def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
@@ -10,21 +11,23 @@ def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
     ela é retornada como uma string de JSON que pode ser decodificada
     pelo JavaScript no template.
     """
-    matriz = [[False] * 24 for _ in range(7)]
+    matriz = [[False] * NUMERO_PERIODOS_POR_DIA for _ in range(7)]
 
     if disponibilidade.exists():
         for intervalo in disponibilidade.all():
             dia_semana_inicio = intervalo.dia_semana_inicio_local - 1
             dia_semana_fim = intervalo.dia_semana_fim_local - 1
-            hora_inicio = intervalo.hora_inicio_local.hour
-            hora_fim = intervalo.hora_fim_local.hour
+            hil = intervalo.hora_inicio_local
+            hfl = intervalo.hora_fim_local
+            hora_inicio_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hil.hour, minutes=hil.minute).total_seconds() // 3600)
+            hora_fim_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hfl.hour, minutes=hfl.minute).total_seconds() // 3600)
 
             ranges = []
 
-            if dia_semana_inicio == dia_semana_fim and hora_inicio < hora_fim:
-                ranges = [range(hora_inicio, hora_fim)]
+            if dia_semana_inicio == dia_semana_fim and hora_inicio_matriz < hora_fim_matriz:
+                ranges = [range(hora_inicio_matriz, hora_fim_matriz)]
             else:
-                ranges.append(range(hora_inicio, 24))
+                ranges.append(range(hora_inicio_matriz, NUMERO_PERIODOS_POR_DIA))
                 
                 dia_semana_atual = dia_semana_inicio + 1
                     
@@ -33,9 +36,9 @@ def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
 
                 while dia_semana_atual <= dia_semana_fim:
                     if dia_semana_atual != dia_semana_fim:
-                        ranges.append(range(0, 24))
+                        ranges.append(range(0, NUMERO_PERIODOS_POR_DIA))
                     else:
-                        ranges.append(range(0, hora_fim))
+                        ranges.append(range(0, hora_fim_matriz))
                     dia_semana_atual += 1
 
             for i, _range in enumerate(ranges):
@@ -142,3 +145,13 @@ def converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_iso, hora, fuso)
         data_hora_convertida.time(),
         data_hora_convertida.tzinfo,
     )
+
+
+def regra_de_3_numero_periodos_por_dia(n):
+    """
+    Recebe um número "n" que representa um horário num dia de 24 horas e retorna
+    o seu correspondente num dia de NUMERO_PERIODOS_POR_DIA horas.
+
+    Exemplo: se n=6 e NUMERO_PERIODOS_POR_DIA=12, então a função retorna 3.
+    """
+    return int(n * NUMERO_PERIODOS_POR_DIA // 24)

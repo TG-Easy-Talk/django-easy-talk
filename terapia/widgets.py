@@ -1,5 +1,4 @@
 from django import forms
-from .constantes import CONSULTA_DURACAO_MINUTOS
 from .utilidades.geral import get_matriz_disponibilidade_booleanos_em_json
 
 
