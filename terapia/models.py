@@ -263,7 +263,7 @@ class Psicologo(BasePacienteOuPsicologo):
 
         return False
     
-    def get_intervalo_que_sobrepoe(self, intervalo):
+    def get_intervalos_sobrepostos(self, intervalo):
         """
         Verifica se o psicólogo tem um intervalo de disponibilidade que sobrepõe
         o intervalo enviado como parâmetro.
@@ -280,10 +280,10 @@ class Psicologo(BasePacienteOuPsicologo):
         ]
 
         if intervalo_de_semana_completa.exists():
-            return True
+            return intervalo_de_semana_completa
 
         if intervalo.data_hora_inicio == intervalo.data_hora_fim and self.disponibilidade.exists():
-            return True
+            return self.disponibilidade.all()
         
         intervalo_vira_a_semana = intervalo.data_hora_fim <= intervalo.data_hora_inicio
 
@@ -291,22 +291,22 @@ class Psicologo(BasePacienteOuPsicologo):
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         )).exists():
-            return qs.get()
+            return qs
 
         if not intervalo_vira_a_semana and (qs := intervalo_que_vira_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) |
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         )).exists():
-            return qs.get()
+            return qs
 
         if intervalo_vira_a_semana and (qs := intervalo_que_vira_a_semana).exists():
-            return qs.get()
+            return qs
 
         if intervalo_vira_a_semana and (qs := intervalos_que_nao_viram_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) |
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         )).exists():
-            return qs.get()
+            return qs
         
         return None
 
@@ -503,10 +503,24 @@ class IntervaloDisponibilidade(models.Model):
             self.data_hora_fim = desprezar_segundos_e_microssegundos(self.data_hora_fim)
             
             if hasattr(self, "psicologo") and self.psicologo:
-                if intervalo_sobreposto := self.psicologo.get_intervalo_que_sobrepoe(self):
+                if intervalos_sobrepostos := self.psicologo.get_intervalos_sobrepostos(self):
+                    intervalos_str = ""
+                    quantidade_intervalos = intervalos_sobrepostos.count()
+                    plural = quantidade_intervalos > 1
+                    plural_s = "s" if plural else ""
+                    plural_m = "m" if plural else ""
+
+                    for i, intervalo in enumerate(intervalos_sobrepostos.iterator()):
+                        intervalos_str += f"{str(intervalo)}"
+
+                        if i < quantidade_intervalos - 2:
+                            intervalos_str += ", "
+                        elif i == quantidade_intervalos - 2:
+                            intervalos_str += " e "
+
                     raise ValidationError(
-                        "Este intervalo sobrepõe outro intervalo que já existe: %(intervalo)s",
-                        params={"intervalo": intervalo_sobreposto},
+                        f"Este intervalo sobrepõe outro{plural_s} intervalo{plural_s} que já existe{plural_m}: %(intervalos)s",
+                        params={"intervalos": intervalos_str},
                         code="sobreposicao_intervalos",
                     )
                         

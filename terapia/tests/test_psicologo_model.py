@@ -436,14 +436,14 @@ class PsicologoModelTest(BaseTestCase):
                     with self.subTest(data_hora=data_hora):
                         self.assertTrue(self.psicologo_sempre_disponivel._tem_intervalo_onde_cabe_uma_consulta_em(data_hora))
 
-    def test_get_intervalo_que_sobrepoe(self):
+    def test_get_intervalos_sobrepostos(self):
         psicologo = Psicologo.objects.create(
             usuario=Usuario.objects.create_user(email="psicologo@gmail.com", password="senha123"),
             nome_completo='Psicólogo Teste Sobreposição',
             crp='06/11413',
         )
 
-        IntervaloDisponibilidade.objects.bulk_create([
+        intervalos_do_psicologo = IntervaloDisponibilidade.objects.bulk_create([
             IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
                 7, time(20, 0), 1, time(4, 0), UTC, psicologo,
             ),
@@ -461,45 +461,84 @@ class PsicologoModelTest(BaseTestCase):
         conjuntos_de_intervalos_para_teste = {
             "com_intervalo_que_vira_a_semana": {
                 "tem_sobreposicao": [
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        4, time(21, 59), 5, time(2, 1), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        2, time(10, 1), 2, time(13, 59), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        4, time(20, 0), 4, time(22, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        6, time(14, 0), 6, time(15, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        4, time(20, 0), 4, time(23, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        5, time(1, 59), 5, time(3, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        4, time(22, 0), 5, time(2, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        3, time(17, 0), 3, time(17, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        1, time(4, 0), 1, time(5, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        7, time(1, 0), 7, time(20, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        7, time(23, 0), 1, time(0, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        1, time(1, 0), 1, time(2, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        7, time(22, 0), 7, time(23, 0), UTC,
-                    ),
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            4, time(21, 59), 5, time(2, 1), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [2]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            2, time(10, 1), 2, time(13, 59), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [1]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            4, time(20, 0), 4, time(22, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [2]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            6, time(14, 0), 6, time(15, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [3]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            4, time(20, 0), 4, time(23, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [2]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            5, time(1, 59), 5, time(3, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [2]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            4, time(22, 0), 5, time(2, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [2]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            3, time(17, 0), 3, time(17, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in range(len(intervalos_do_psicologo))]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            1, time(4, 0), 1, time(5, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [0]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            7, time(1, 0), 7, time(20, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [0]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            7, time(23, 0), 1, time(0, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [0]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            1, time(1, 0), 1, time(2, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [0]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            7, time(22, 0), 7, time(23, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [0]]
+                    },
                 ],
                 "nao_tem_sobreposicao": [
                     IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
@@ -519,27 +558,48 @@ class PsicologoModelTest(BaseTestCase):
 
             "sem_intervalo_que_vira_a_semana": {
                 "tem_sobreposicao": [
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        7, time(23, 0), 2, time(10, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        5, time(2, 0), 4, time(22, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        5, time(1, 0), 4, time(23, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        6, time(14, 0), 1, time(0, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        6, time(14, 0), 2, time(10, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        6, time(20, 0), 2, time(11, 0), UTC,
-                    ),
-                    IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                        6, time(13, 59), 2, time(9, 59), UTC,
-                    ),
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            7, time(23, 0), 2, time(10, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [1]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            5, time(2, 0), 4, time(22, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [1, 2, 3]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            5, time(1, 0), 4, time(23, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [1, 2, 3]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            6, time(14, 0), 1, time(0, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [3]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            6, time(14, 0), 2, time(10, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [1, 3]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            6, time(20, 0), 2, time(11, 0), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [1]]
+                    },
+                    {
+                        "intervalo_que_sobrepoe": IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                            6, time(13, 59), 2, time(9, 59), UTC,
+                        ),
+                        "intervalos_sobrepostos": [intervalos_do_psicologo[i] for i in [3]]
+                    },
                 ],
                 "nao_tem_sobreposicao": [
                     IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
@@ -586,18 +646,31 @@ class PsicologoModelTest(BaseTestCase):
 
             for expectativa, intervalos in conjunto.items():
                 for intervalo in intervalos:
-                    with self.subTest(intervalo=intervalo.descrever(), psicologo=psicologo.nome_completo):
-                        if expectativa == "tem_sobreposicao":
-                            self.assertIsNotNone(psicologo.get_intervalo_que_sobrepoe(intervalo))
-                        elif expectativa == "nao_tem_sobreposicao":
-                            self.assertIsNone(psicologo.get_intervalo_que_sobrepoe(intervalo))
+                    if expectativa == "tem_sobreposicao":
+                        with self.subTest(
+                            intervalo_que_sobrepoe=intervalo["intervalo_que_sobrepoe"].descrever(),
+                            intervalos_sobrepostos=intervalo["intervalos_sobrepostos"],
+                            psicologo=psicologo.nome_completo
+                        ):
+                            self.assertQuerySetEqual(
+                                psicologo.get_intervalos_sobrepostos(intervalo["intervalo_que_sobrepoe"]),
+                                intervalo["intervalos_sobrepostos"],
+                                ordered=False,
+                            )
+                    elif expectativa == "nao_tem_sobreposicao":
+                        with self.subTest(intervalo_que_sobrepoe=intervalo.descrever(), psicologo=psicologo.nome_completo):
+                            self.assertIsNone(psicologo.get_intervalos_sobrepostos(intervalo))
 
         intervalo_qualquer = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
             3, time(10, 0), 3, time(11, 0), UTC,
         )
 
-        with self.subTest(intervalo = intervalo_qualquer.descrever(), psicologo=self.psicologo_sempre_disponivel.nome_completo):
-            self.assertTrue(self.psicologo_sempre_disponivel.get_intervalo_que_sobrepoe(intervalo_qualquer))
+        with self.subTest(intervalo=intervalo_qualquer.descrever(), psicologo=self.psicologo_sempre_disponivel.nome_completo):
+            self.assertQuerySetEqual(
+                self.psicologo_sempre_disponivel.get_intervalos_sobrepostos(intervalo_qualquer),
+                self.psicologo_sempre_disponivel.disponibilidade.all(),
+                ordered=False
+            )
 
     def test_get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self):
         datas_hora_para_teste = [dt - CONSULTA_ANTECEDENCIA_MINIMA - CONSULTA_DURACAO for dt in [
@@ -776,7 +849,7 @@ class PsicologoModelTest(BaseTestCase):
                 intervalo.psicologo = self.psicologo_dummy
                 intervalo.save()
                 
-                with self.subTest(fuso=fuso, intervalo=intervalo.__dict__):
+                with self.subTest(fuso=fuso, intervalo=intervalo.descrever()):
                     self.assertEqual(
                         self.psicologo_dummy.get_matriz_disponibilidade_booleanos_em_json(),
                         matriz,

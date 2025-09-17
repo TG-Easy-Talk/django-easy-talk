@@ -57,8 +57,6 @@
             const consultaDuracaoMinutos = {{ CONSULTA_DURACAO_MINUTOS }}
             const quantidadePassos = 60 / consultaDuracaoMinutos
 
-            console.log(this.matriz_disponibilidade_booleanos)
-
             function getHora(i) {
                 const hora = Math.floor(i * consultaDuracaoMinutos / 60)
                 return hora.toString().padStart(2, '0')
