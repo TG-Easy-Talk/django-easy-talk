@@ -234,6 +234,13 @@ class PsicologoModelTest(BaseTestCase):
         self.assertEqual(url, reverse('perfil', kwargs={'pk': self.psicologo_dummy.pk}))
 
     def test_dados_corretos(self):
+        self.assertIsNone(self.psicologo_incompleto.sobre_mim)
+        self.assertIsNone(self.psicologo_incompleto.valor_consulta)
+        self.assertIsNone(self.psicologo_incompleto.foto.name)
+        self.assertQuerySetEqual(self.psicologo_incompleto.especializacoes.all(), [], ordered=False)
+        self.assertQuerySetEqual(self.psicologo_incompleto.disponibilidade.all(), [], ordered=False)
+        self.assertQuerySetEqual(self.psicologo_incompleto.consultas.all(), [], ordered=False)
+
         usuario = Usuario.objects.create_user(email="psicologo@example.com", password="senha123")
         nome_completo = 'Gabriela Silva'
         crp = '01/99998'

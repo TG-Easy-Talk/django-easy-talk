@@ -19,13 +19,16 @@ class PacienteModelTest(BaseTestCase):
             nome='Carlos Alberto',
             cpf='987.654.321-11',
         )
-        consultas = self.criar_consultas_genericas(paciente=paciente, psicologo=self.psicologo_dummy)
 
         self.assertEqual(paciente.nome, 'Carlos Alberto')
         self.assertEqual(paciente.cpf, '987.654.321-11')
         self.assertEqual(paciente.usuario, usuario)
-        self.assertQuerySetEqual(paciente.consultas.all(), consultas, ordered=False)
+        self.assertQuerySetEqual(paciente.consultas.all(), [], ordered=False)
         self.assertIsNone(paciente.foto.name)
+
+        consultas = self.criar_consultas_genericas(paciente=paciente, psicologo=self.psicologo_dummy)
+
+        self.assertQuerySetEqual(paciente.consultas.all(), consultas, ordered=False)
 
     def test_fk_usuario_obrigatoria(self):
         with self.assertRaisesMessage(IntegrityError, "NOT NULL"):
