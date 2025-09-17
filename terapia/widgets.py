@@ -1,5 +1,4 @@
 from django import forms
-from .utilidades.geral import get_matriz_disponibilidade_booleanos_em_json
 from .constantes import NUMERO_PERIODOS_POR_DIA
 
 
@@ -14,9 +13,9 @@ class CustomDateTimeInput(forms.DateTimeInput):
 class DisponibilidadeInput(forms.HiddenInput):
     template_name = 'meu_perfil/componentes/disponibilidade_widget.html'
 
-    def __init__(self, disponibilidade=None, attrs=None):
+    def __init__(self, psicologo=None, attrs=None):
         super().__init__(attrs)
-        self.disponibilidade = disponibilidade
+        self.psicologo = psicologo
 
     def get_context(self, name, value, attrs):
         from .views import TabelaDisponibilidadeContextMixin
@@ -29,4 +28,4 @@ class DisponibilidadeInput(forms.HiddenInput):
 
 
     def format_value(self, value):
-        return get_matriz_disponibilidade_booleanos_em_json(self.disponibilidade)
+        return self.psicologo.get_matriz_disponibilidade_booleanos_em_json()

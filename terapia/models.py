@@ -2,14 +2,13 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q, F
-from django.db.models.expressions import Value
 from django.urls import reverse
 from django.contrib import admin
 from django.utils import timezone
 from .utilidades.geral import (
-    get_matriz_disponibilidade_booleanos_em_json,
     converter_dia_semana_iso_com_hora_para_data_hora,
     desprezar_segundos_e_microssegundos,
+    regra_de_3_numero_periodos_por_dia,
 )
 from .validadores.crp import validate_crp
 from .validadores.cpf import validate_cpf
@@ -21,8 +20,9 @@ from .validadores.geral import (
     validate_usuario_nao_paciente,
     validate_divisivel_por_duracao_consulta,
 )
-from .constantes import CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA
+from .constantes import CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA, NUMERO_PERIODOS_POR_DIA
 from datetime import UTC, timedelta, time
+import json
 
 
 class BasePacienteOuPsicologo(models.Model):
@@ -330,8 +330,56 @@ class Psicologo(BasePacienteOuPsicologo):
             not self.ja_tem_consulta_em(data_hora)
         )
     
+    def _domingo_a_sabado(self, matriz_disponibilidade_booleanos):
+        """
+        Converte uma matriz de segunda a domingo para uma matriz de domingo a sábado.
+        """
+        matriz_disponibilidade_booleanos.insert(0, matriz_disponibilidade_booleanos.pop())
+    
     def get_matriz_disponibilidade_booleanos_em_json(self):
-        return get_matriz_disponibilidade_booleanos_em_json(self.disponibilidade)
+        """
+        Cria uma matriz de booleanos que representa a disponibilidade do psicólogo.
+        A ideia é que a matriz seja interpretável nos templates, então
+        ela é retornada como uma string de JSON que pode ser decodificada
+        pelo JavaScript no template.
+        """
+        matriz = [[False] * NUMERO_PERIODOS_POR_DIA for _ in range(7)]
+
+        if self.disponibilidade.exists():
+            for intervalo in self.disponibilidade.all():
+                dia_semana_inicio = intervalo.dia_semana_inicio_local - 1
+                dia_semana_fim = intervalo.dia_semana_fim_local - 1
+                hil = intervalo.hora_inicio_local
+                hfl = intervalo.hora_fim_local
+                hora_inicio_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hil.hour, minutes=hil.minute).total_seconds() / 3600)
+                hora_fim_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hfl.hour, minutes=hfl.minute).total_seconds() / 3600)
+
+                ranges = []
+
+                if dia_semana_inicio == dia_semana_fim and hora_inicio_matriz < hora_fim_matriz:
+                    ranges = [range(hora_inicio_matriz, hora_fim_matriz)]
+                else:
+                    ranges.append(range(hora_inicio_matriz, NUMERO_PERIODOS_POR_DIA))
+                    
+                    dia_semana_atual = dia_semana_inicio + 1
+                        
+                    if dia_semana_inicio >= dia_semana_fim:
+                        dia_semana_atual -= 7
+
+                    while dia_semana_atual <= dia_semana_fim:
+                        if dia_semana_atual != dia_semana_fim:
+                            ranges.append(range(0, NUMERO_PERIODOS_POR_DIA))
+                        else:
+                            ranges.append(range(0, hora_fim_matriz))
+                        dia_semana_atual += 1
+
+                for i, _range in enumerate(ranges):
+                    for hora in _range:
+                        matriz[(dia_semana_inicio + i) % 7][hora] = True
+
+        self._domingo_a_sabado(matriz)
+        matriz_em_json = json.dumps(matriz)
+        return matriz_em_json
 
 
 class IntervaloDisponibilidadeManager(models.Manager):

@@ -20,7 +20,6 @@ from terapia.constantes import (
 )
 from terapia.utilidades.geral import (
     converter_dia_semana_iso_com_hora_para_data_hora,
-    get_matriz_disponibilidade_booleanos_em_json,
     regra_de_3_numero_periodos_por_dia,
 )
 from freezegun import freeze_time
@@ -836,10 +835,6 @@ class PsicologoModelTest(BaseTestCase):
                     self.psicologo_completo.get_matriz_disponibilidade_booleanos_em_json(),
                     matriz_em_json,
                 )
-                self.assertEqual(
-                    get_matriz_disponibilidade_booleanos_em_json(self.psicologo_completo.disponibilidade),
-                    matriz_em_json,
-                )
 
         fuso = UTC
 
@@ -852,10 +847,6 @@ class PsicologoModelTest(BaseTestCase):
                 with self.subTest(fuso=fuso, intervalo=intervalo.descrever()):
                     self.assertEqual(
                         self.psicologo_dummy.get_matriz_disponibilidade_booleanos_em_json(),
-                        matriz,
-                    )
-                    self.assertEqual(
-                        get_matriz_disponibilidade_booleanos_em_json(self.psicologo_dummy.disponibilidade),
                         matriz,
                     )
 
