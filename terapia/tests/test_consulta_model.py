@@ -5,13 +5,13 @@ from django.contrib.auth import get_user_model
 from freezegun import freeze_time
 from terapia.constantes import CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO
 from terapia.models import Consulta, EstadoConsulta
-from .base_test_case import BaseTestCase
+from .base_test_case import ModelTestCase
 
 
 Usuario = get_user_model()
 
 
-class ConsultaModelTest(BaseTestCase):
+class ConsultaModelTest(ModelTestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()

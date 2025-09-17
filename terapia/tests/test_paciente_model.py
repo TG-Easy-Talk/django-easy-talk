@@ -2,13 +2,13 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from terapia.models import Paciente
 from django.db import IntegrityError
-from .base_test_case import BaseTestCase
+from .base_test_case import ModelTestCase
 
 
 Usuario = get_user_model()
 
 
-class PacienteModelTest(BaseTestCase):
+class PacienteModelTest(ModelTestCase):
     def test_str_representation(self):
         self.assertEqual(str(self.paciente_dummy), self.paciente_dummy.nome)
 

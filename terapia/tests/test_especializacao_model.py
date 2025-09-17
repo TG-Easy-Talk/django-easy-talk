@@ -2,13 +2,13 @@ from django.db import IntegrityError
 from django.forms import ValidationError
 from django.contrib.auth import get_user_model
 from terapia.models import Especializacao
-from .base_test_case import BaseTestCase
+from .base_test_case import ModelTestCase
 
 
 Usuario = get_user_model()
 
 
-class EspecializacaoModelTest(BaseTestCase):
+class EspecializacaoModelTest(ModelTestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()

@@ -10,7 +10,7 @@ from django.utils import timezone
 Usuario = get_user_model()
 
 
-class BaseTestCase(TestCase):
+class ModelTestCase(TestCase):
     fusos_para_teste = [
         UTC,
         timezone.get_default_timezone(),

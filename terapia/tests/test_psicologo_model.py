@@ -23,7 +23,7 @@ from terapia.utilidades.geral import (
     regra_de_3_numero_periodos_por_dia,
 )
 from freezegun import freeze_time
-from .base_test_case import BaseTestCase
+from .base_test_case import ModelTestCase
 from unittest.mock import patch
 
 
@@ -183,7 +183,7 @@ OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON = (
 )
 
 
-class PsicologoModelTest(BaseTestCase):
+class PsicologoModelTest(ModelTestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()

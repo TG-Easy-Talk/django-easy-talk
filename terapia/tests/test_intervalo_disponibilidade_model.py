@@ -5,13 +5,13 @@ from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data
 from datetime import UTC, datetime, time
 from terapia.constantes import CONSULTA_DURACAO
 from django.utils import timezone
-from .base_test_case import BaseTestCase
+from .base_test_case import ModelTestCase
 
 
 Usuario = get_user_model()
 
 
-class IntervaloDisponibilidadeModelTest(BaseTestCase):
+class IntervaloDisponibilidadeModelTest(ModelTestCase):
     def test_str_representation(self):
         with timezone.override(UTC):    
             self.assertEqual(str(self.intervalo_de_semana_completa), "Segunda às 00:00:00 até Segunda às 00:00:00 (UTC)")
