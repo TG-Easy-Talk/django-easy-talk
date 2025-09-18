@@ -92,6 +92,60 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
         self.assertEqual(intervalo.data_hora_inicio, data_hora_inicio.replace(second=0, microsecond=0))
         self.assertEqual(intervalo.data_hora_fim, data_hora_fim.replace(second=0, microsecond=0))
 
+    def test_get_datas_hora(self):
+        intervalos_para_teste = [
+            IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                1, time(0, 0), 1, time(1, 0), UTC,
+            ),
+            IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                1, time(1, 0), 1, time(0, 0), UTC,
+            ),
+            IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                1, time(0, 0), 7, time(23, 0), UTC,
+            ),
+            IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                7, time(23, 0), 1, time(0, 0), UTC,
+            ),
+            IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                7, time(23, 0), 1, time(1, 0), UTC,
+            ),
+        ] + list(self.psicologo_completo.disponibilidade.all()) + list(self.psicologo_sempre_disponivel.disponibilidade.all())
+
+        for intervalo in intervalos_para_teste:
+            datas_hora = list(intervalo.get_datas_hora())
+
+            self.assertGreater(len(datas_hora), 0)
+            self.assertEqual(datas_hora[0], intervalo.data_hora_inicio)
+
+            uma_consulta_antes_do_fim = intervalo.data_hora_fim - CONSULTA_DURACAO
+            uma_consulta_antes_do_fim = converter_dia_semana_iso_com_hora_para_data_hora(
+                uma_consulta_antes_do_fim.isoweekday(),
+                uma_consulta_antes_do_fim.time(),
+                uma_consulta_antes_do_fim.tzinfo,
+            )
+
+            self.assertEqual(datas_hora[-1], uma_consulta_antes_do_fim)
+
+            diferenca = intervalo.data_hora_fim - intervalo.data_hora_inicio
+
+            if intervalo.data_hora_fim <= intervalo.data_hora_inicio:
+                diferenca += timezone.timedelta(weeks=1)
+
+            total_datas_hora_esperado = diferenca / CONSULTA_DURACAO
+
+            self.assertEqual(len(datas_hora), total_datas_hora_esperado)
+
+            for i in range(len(datas_hora) - 1):
+                diferenca = datas_hora[i + 1] - datas_hora[i]
+
+                if datas_hora[i + 1] <= datas_hora[i]:
+                    diferenca += timezone.timedelta(weeks=1)
+
+                self.assertEqual(
+                    diferenca,
+                    CONSULTA_DURACAO,
+                )
+
     def test_contains(self):
         datas_hora_iguais = [
             converter_dia_semana_iso_com_hora_para_data_hora(3, time(12, 0), UTC),
