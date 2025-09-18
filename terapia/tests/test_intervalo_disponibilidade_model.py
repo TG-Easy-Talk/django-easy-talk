@@ -66,6 +66,17 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
             ctx.exception.error_dict["data_hora_fim"][0].code,
         )
 
+    def test_datas_hora_divisiveis_por_duracao_consulta(self):
+        with self.assertRaises(ValidationError) as ctx:
+            IntervaloDisponibilidade(
+                data_hora_inicio=self.data_hora_nao_divisivel_por_duracao_consulta,
+                data_hora_fim=self.data_hora_nao_divisivel_por_duracao_consulta + CONSULTA_DURACAO,
+                psicologo=self.psicologo_dummy,
+            ).clean_fields()
+
+        self.assertEqual("data_hora_nao_divisivel_por_duracao_consulta", ctx.exception.error_dict["data_hora_inicio"][0].code)
+        self.assertEqual("data_hora_nao_divisivel_por_duracao_consulta", ctx.exception.error_dict["data_hora_fim"][0].code)
+
     def test_segundos_e_microssegundos_sao_desprezados(self):
         data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0, 30, 59), UTC)
         data_hora_fim = data_hora_inicio + CONSULTA_DURACAO

@@ -153,13 +153,13 @@ class ConsultaModelTest(ModelTestCase):
 
             self.assertEqual("antecedencia_maxima_nao_atendida", ctx.exception.error_dict["data_hora_agendada"][0].code)
 
-    def test_divisivel_por_duracao_consulta(self):
-        with freeze_time(self.agora_fake):
+    def test_data_hora_agendada_divisivel_por_duracao_consulta(self):
+        with freeze_time(self.data_hora_nao_divisivel_por_duracao_consulta - CONSULTA_ANTECEDENCIA_MINIMA):
             with self.assertRaises(ValidationError) as ctx:
                 Consulta(
                     paciente=self.paciente_dummy,
                     psicologo=self.psicologo_completo,
-                    data_hora_agendada=(self.agora_fake + CONSULTA_ANTECEDENCIA_MINIMA).replace(minute=1),
+                    data_hora_agendada=self.data_hora_nao_divisivel_por_duracao_consulta,
                 ).clean_fields()
 
             self.assertEqual("data_hora_nao_divisivel_por_duracao_consulta", ctx.exception.error_dict["data_hora_agendada"][0].code)

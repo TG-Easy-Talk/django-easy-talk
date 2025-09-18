@@ -6,6 +6,8 @@ from terapia.models import Especializacao, Paciente, Psicologo, IntervaloDisponi
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora
+
 
 Usuario = get_user_model()
 
@@ -24,6 +26,8 @@ class ModelTestCase(TestCase):
         ZoneInfo("Iran"),
         ZoneInfo("Australia/Eucla"),
     ] + [ZoneInfo(f"Etc/GMT{offset:+}") for offset in range(-14, 13)]
+
+    data_hora_nao_divisivel_por_duracao_consulta = converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC) + (CONSULTA_DURACAO / 2)
     
     @classmethod
     def setUpTestData(cls):
