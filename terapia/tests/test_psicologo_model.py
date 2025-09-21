@@ -23,7 +23,7 @@ from terapia.utilidades.geral import (
     regra_de_3_numero_periodos_por_dia,
 )
 from freezegun import freeze_time
-from .base_test_case import ModelTestCase
+from .model_test_case import ModelTestCase
 from unittest.mock import patch
 
 

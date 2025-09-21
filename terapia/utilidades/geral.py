@@ -1,6 +1,6 @@
 from datetime import date, datetime, time, UTC
 from django.utils import timezone
-from terapia.constantes import NUMERO_PERIODOS_POR_DIA
+from terapia.constantes import CONSULTA_DURACAO, NUMERO_PERIODOS_POR_DIA
 
 
 def regra_de_3_numero_periodos_por_dia(n):
@@ -24,6 +24,10 @@ def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
     """
     Converte a matriz de booleanos JSON em objetos de IntervaloDisponibilidade.
     """
+    def get_hora_por_indice(indice):
+        timedelta_hora = indice * CONSULTA_DURACAO
+        return time(timedelta_hora.seconds // 3600, (timedelta_hora.seconds // 60) % 60)
+    
     from terapia.models import IntervaloDisponibilidade
     
     segunda_a_domingo(matriz_disponibilidade_booleanos)
@@ -35,7 +39,7 @@ def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
     while i < len(m):
         while j < len(m[i]):
             if m[i][j]:
-                hora_inicio = time(j, 0)
+                hora_inicio = get_hora_por_indice(j)
                 dia_semana_inicio_iso = i + 1
 
                 while m[i][j]:
@@ -47,8 +51,8 @@ def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
                             break
                         j = 0
 
-                j = j if j < 23 else 0
-                hora_fim = time(j, 0)
+                j = j if j < NUMERO_PERIODOS_POR_DIA - 1 else 0
+                hora_fim = get_hora_por_indice(j)
                 dia_semana_fim_iso = i + 1
                 fuso_atual = timezone.get_current_timezone()
 

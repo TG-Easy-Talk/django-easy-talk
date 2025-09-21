@@ -5,7 +5,7 @@ from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data
 from datetime import UTC, datetime, time
 from terapia.constantes import CONSULTA_DURACAO
 from django.utils import timezone
-from .base_test_case import ModelTestCase
+from .model_test_case import ModelTestCase
 
 
 Usuario = get_user_model()
