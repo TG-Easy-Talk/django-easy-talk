@@ -126,12 +126,7 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
 
             self.assertEqual(datas_hora[-1], uma_consulta_antes_do_fim)
 
-            diferenca = intervalo.data_hora_fim - intervalo.data_hora_inicio
-
-            if intervalo.data_hora_fim <= intervalo.data_hora_inicio:
-                diferenca += timezone.timedelta(weeks=1)
-
-            total_datas_hora_esperado = diferenca / CONSULTA_DURACAO
+            total_datas_hora_esperado = intervalo.duracao / CONSULTA_DURACAO
 
             self.assertEqual(len(datas_hora), total_datas_hora_esperado)
 

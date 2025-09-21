@@ -188,7 +188,7 @@ class Psicologo(BasePacienteOuPsicologo):
 
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
-
+    
     def _get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self, instante):
         """
         Retorna as datas e horas dos intervalos de disponibilidade do psicólogo na ordem do mais
@@ -285,24 +285,22 @@ class Psicologo(BasePacienteOuPsicologo):
         if intervalo.data_hora_inicio == intervalo.data_hora_fim and self.disponibilidade.exists():
             return self.disponibilidade.all()
         
-        intervalo_vira_a_semana = intervalo.data_hora_fim <= intervalo.data_hora_inicio
-
-        if not intervalo_vira_a_semana and (qs := intervalos_que_nao_viram_a_semana.filter(
+        if not intervalo.vira_a_semana() and (qs := intervalos_que_nao_viram_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         )).exists():
             return qs
 
-        if not intervalo_vira_a_semana and (qs := intervalo_que_vira_a_semana.filter(
+        if not intervalo.vira_a_semana() and (qs := intervalo_que_vira_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) |
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         )).exists():
             return qs
 
-        if intervalo_vira_a_semana and (qs := intervalo_que_vira_a_semana).exists():
+        if intervalo.vira_a_semana() and (qs := intervalo_que_vira_a_semana).exists():
             return qs
 
-        if intervalo_vira_a_semana and (qs := intervalos_que_nao_viram_a_semana.filter(
+        if intervalo.vira_a_semana() and (qs := intervalos_que_nao_viram_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) |
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         )).exists():
@@ -493,6 +491,15 @@ class IntervaloDisponibilidade(models.Model):
     @property
     def nome_dia_semana_fim_local(self):
         return self.dias_semana_iso[self.dia_semana_fim_local]
+    
+    @property
+    def duracao(self):
+        duracao = self.data_hora_fim - self.data_hora_inicio
+
+        if self.vira_a_semana():
+            duracao += timedelta(weeks=1)
+
+        return duracao
 
     class Meta:
         verbose_name = "Intervalo de Disponibilidade"
@@ -505,6 +512,12 @@ class IntervaloDisponibilidade(models.Model):
 
     def __str__(self):
         return self.descrever(timezone.get_current_timezone())
+
+    def vira_a_semana(self):
+        """
+        Verifica se o intervalo começa em uma semana e termina em outra.
+        """
+        return self.data_hora_fim <= self.data_hora_inicio
 
     def __contains__(self, data_hora):
         """
