@@ -328,12 +328,6 @@ class Psicologo(BasePacienteOuPsicologo):
             not self.ja_tem_consulta_em(data_hora)
         )
     
-    def _domingo_a_sabado(self, matriz_disponibilidade_booleanos):
-        """
-        Converte uma matriz de segunda a domingo para uma matriz de domingo a sábado.
-        """
-        matriz_disponibilidade_booleanos.insert(0, matriz_disponibilidade_booleanos.pop())
-    
     def get_matriz_disponibilidade_booleanos_em_json(self):
         """
         Cria uma matriz de booleanos que representa a disponibilidade do psicólogo.
@@ -341,6 +335,9 @@ class Psicologo(BasePacienteOuPsicologo):
         ela é retornada como uma string de JSON que pode ser decodificada
         pelo JavaScript no template.
         """
+        def domingo_a_sabado(matriz_disponibilidade_booleanos):
+            matriz_disponibilidade_booleanos.insert(0, matriz_disponibilidade_booleanos.pop())
+
         matriz = [[False] * NUMERO_PERIODOS_POR_DIA for _ in range(7)]
 
         if self.disponibilidade.exists():
@@ -375,7 +372,7 @@ class Psicologo(BasePacienteOuPsicologo):
                     for hora in _range:
                         matriz[(dia_semana_inicio + i) % 7][hora] = True
 
-        self._domingo_a_sabado(matriz)
+        domingo_a_sabado(matriz)
         matriz_em_json = json.dumps(matriz)
         return matriz_em_json
 
@@ -584,6 +581,64 @@ class IntervaloDisponibilidade(models.Model):
                         params={"intervalos": intervalos_str},
                         code="sobreposicao_intervalos",
                     )
+                
+    @staticmethod
+    def from_matriz(matriz_disponibilidade_booleanos):
+        """
+        Converte a matriz de booleanos JSON em objetos de IntervaloDisponibilidade.
+        """
+        def get_hora_por_indice(indice):
+            timedelta_hora = indice * CONSULTA_DURACAO
+            return time(timedelta_hora.seconds // 3600, (timedelta_hora.seconds // 60) % 60)
+
+        def segunda_a_domingo(matriz_disponibilidade_booleanos):
+            matriz_disponibilidade_booleanos.append(matriz_disponibilidade_booleanos.pop(0))
+
+        segunda_a_domingo(matriz_disponibilidade_booleanos)
+
+        disponibilidade = []
+        m = matriz_disponibilidade_booleanos
+
+        i = j = 0
+        while i < len(m):
+            while j < len(m[i]):
+                if m[i][j]:
+                    hora_inicio = get_hora_por_indice(j)
+                    dia_semana_inicio_iso = i + 1
+
+                    while m[i][j]:
+                        if j < len(m[i]) - 1:
+                            j += 1
+                        else:
+                            i += 1
+                            if i >= len(m):
+                                break
+                            j = 0
+
+                    j = j if j < NUMERO_PERIODOS_POR_DIA - 1 else 0
+                    hora_fim = get_hora_por_indice(j)
+                    dia_semana_fim_iso = i + 1
+                    fuso_atual = timezone.get_current_timezone()
+
+                    intervalo = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                        dia_semana_inicio_iso=dia_semana_inicio_iso,
+                        hora_inicio=hora_inicio,
+                        dia_semana_fim_iso=dia_semana_fim_iso,
+                        hora_fim=hora_fim,
+                        fuso=fuso_atual,
+                    )
+
+                    disponibilidade.append(intervalo)
+
+                j += 1
+
+                if i >= len(m):
+                    break
+
+            i += 1
+            j = 0
+
+        return disponibilidade
                         
 
 class EstadoConsulta(models.TextChoices):

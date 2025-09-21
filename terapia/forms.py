@@ -17,7 +17,6 @@ from .models import (
     EstadoConsulta,
     IntervaloDisponibilidade,
 )
-from .utilidades.geral import get_disponibilidade_pela_matriz
 
 
 Usuario = get_user_model()
@@ -123,7 +122,7 @@ class PsicologoChangeForm(forms.ModelForm):
         self.fields["sobre_mim"].widget.attrs.update({"rows": "8"})
 
     def clean_disponibilidade(self):
-        return get_disponibilidade_pela_matriz(self.cleaned_data.get("disponibilidade"))
+        return IntervaloDisponibilidade.from_matriz(self.cleaned_data.get("disponibilidade"))
 
     def save(self, commit=True):
         psicologo = super().save(commit=False)

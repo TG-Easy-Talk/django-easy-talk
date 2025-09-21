@@ -95,8 +95,9 @@ class ModelTestCase(TestCase, BaseTestCase):
 
         cls.consultas = cls.criar_consultas_genericas(cls.paciente_dummy, cls.psicologo_sempre_disponivel)
 
-    @classmethod
-    def set_disponibilidade_generica(cls, psicologo):
+    
+    @staticmethod
+    def get_disponibilidade_generica():
         intervalos = [
             (7, time(22, 0), 1, time(2, 0)),
             (1, time(8, 0), 1, time(12, 0)),
@@ -110,18 +111,29 @@ class ModelTestCase(TestCase, BaseTestCase):
             (6, time(23, 0), 7, time(12, 0)),
         ]
 
+        disponibilidade = []
+
         for intervalo in intervalos:
-            IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
-                dia_semana_inicio_iso=intervalo[0],
-                hora_inicio=intervalo[1],
-                dia_semana_fim_iso=intervalo[2],
-                hora_fim=intervalo[3],
-                fuso=UTC,
-                psicologo=psicologo,
+            disponibilidade.append(
+                IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+                    dia_semana_inicio_iso=intervalo[0],
+                    hora_inicio=intervalo[1],
+                    dia_semana_fim_iso=intervalo[2],
+                    hora_fim=intervalo[3],
+                    fuso=UTC,
+                )
             )
 
+        return disponibilidade
+
     @classmethod
-    def criar_consultas_genericas(cls, paciente, psicologo):
+    def set_disponibilidade_generica(cls, psicologo):
+        for intervalo in cls.get_disponibilidade_generica():
+            intervalo.psicologo = psicologo
+            intervalo.save()
+
+    @staticmethod
+    def criar_consultas_genericas(paciente, psicologo):
         data_hora = datetime(2024, 1, 1, 10, 0, tzinfo=UTC)
 
         consultas = [

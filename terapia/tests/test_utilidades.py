@@ -39,3 +39,4 @@ class UtilidadesTest(BaseTestCase):
                         resultado,
                         datetime(2024, 7, dia_semana_iso, hora.hour, hora.minute, tzinfo=UTC)
                     )
+                    
