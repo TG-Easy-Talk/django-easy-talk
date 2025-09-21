@@ -1,7 +1,9 @@
 from datetime import UTC, datetime, time
+from unittest.mock import patch
 from terapia.utilidades.geral import (
     desprezar_segundos_e_microssegundos,
     converter_dia_semana_iso_com_hora_para_data_hora,
+    regra_de_3_numero_periodos_por_dia,
 )
 from django.utils import timezone
 from .base_test_case import BaseTestCase
@@ -39,4 +41,17 @@ class UtilidadesTest(BaseTestCase):
                         resultado,
                         datetime(2024, 7, dia_semana_iso, hora.hour, hora.minute, tzinfo=UTC)
                     )
-                    
+    
+    def test_regra_de_3_numero_periodos_por_dia(self):
+        valores_n = [i for i in range(25)]
+        lista_numero_periodos_por_dia = [24, 48, 96]
+
+        for numero_periodos_por_dia in lista_numero_periodos_por_dia:
+            with patch(
+                "terapia.utilidades.geral.NUMERO_PERIODOS_POR_DIA",
+                numero_periodos_por_dia,
+            ):
+                for n in valores_n:
+                    with self.subTest(numero_periodos_por_dia=numero_periodos_por_dia, n=n):
+                        resultado = regra_de_3_numero_periodos_por_dia(n)
+                        self.assertEqual(resultado, n * numero_periodos_por_dia // 24)
