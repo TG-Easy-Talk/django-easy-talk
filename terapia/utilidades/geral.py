@@ -1,117 +1,17 @@
-from datetime import date, datetime, time, UTC
+from datetime import date, datetime, UTC
 from django.utils import timezone
-import json
+from terapia.constantes import NUMERO_PERIODOS_POR_DIA
 
 
-def get_matriz_disponibilidade_booleanos_em_json(disponibilidade):
-    """
-    Cria uma matriz de booleanos que representa a disponibilidade.
-    A ideia é que a matriz seja interpretável nos templates, então
-    ela é retornada como uma string de JSON que pode ser decodificada
-    pelo JavaScript no template.
-    """
-    matriz = [[False] * 24 for _ in range(7)]
+def regra_de_3_numero_periodos_por_dia(n):
+        """
+        Recebe um número "n" que representa um horário num dia de 24 horas e retorna
+        o seu correspondente num dia de NUMERO_PERIODOS_POR_DIA horas.
 
-    if disponibilidade.exists():
-        for intervalo in disponibilidade.all():
-            dia_semana_inicio = intervalo.dia_semana_inicio_local - 1
-            dia_semana_fim = intervalo.dia_semana_fim_local - 1
-            hora_inicio = intervalo.hora_inicio_local.hour
-            hora_fim = intervalo.hora_fim_local.hour
-
-            ranges = []
-
-            if dia_semana_inicio == dia_semana_fim and hora_inicio < hora_fim:
-                ranges = [range(hora_inicio, hora_fim)]
-            else:
-                ranges.append(range(hora_inicio, 24))
-                
-                dia_semana_atual = dia_semana_inicio + 1
-                    
-                if dia_semana_inicio >= dia_semana_fim:
-                    dia_semana_atual -= 7
-
-                while dia_semana_atual <= dia_semana_fim:
-                    if dia_semana_atual != dia_semana_fim:
-                        ranges.append(range(0, 24))
-                    else:
-                        ranges.append(range(0, hora_fim))
-                    dia_semana_atual += 1
-
-            for i, _range in enumerate(ranges):
-                for hora in _range:
-                    matriz[(dia_semana_inicio + i) % 7][hora] = True
-
-    domingo_a_sabado(matriz)
-    matriz_em_json = json.dumps(matriz)
-    return matriz_em_json
-
-
-def segunda_a_domingo(matriz_disponibilidade_booleanos):
-    """
-    Converte uma matriz de domingo a sábado para uma matriz de segunda a domingo.
-    """
-    matriz_disponibilidade_booleanos.append(matriz_disponibilidade_booleanos.pop(0))
-
-
-def domingo_a_sabado(matriz_disponibilidade_booleanos):
-    """
-    Converte uma matriz de segunda a domingo para uma matriz de domingo a sábado.
-    """
-    matriz_disponibilidade_booleanos.insert(0, matriz_disponibilidade_booleanos.pop())
-
-
-def get_disponibilidade_pela_matriz(matriz_disponibilidade_booleanos):
-    """
-    Converte a matriz de booleanos JSON em objetos de IntervaloDisponibilidade.
-    """
-    from terapia.models import IntervaloDisponibilidade
-    
-    segunda_a_domingo(matriz_disponibilidade_booleanos)
-
-    disponibilidade = []
-    m = matriz_disponibilidade_booleanos
-
-    i = j = 0
-    while i < len(m):
-        while j < len(m[i]):
-            if m[i][j]:
-                hora_inicio = time(j, 0)
-                dia_semana_inicio_iso = i + 1
-
-                while m[i][j]:
-                    if j < len(m[i]) - 1:
-                        j += 1
-                    else:
-                        i += 1
-                        if i >= len(m):
-                            break
-                        j = 0
-
-                j = j if j < 23 else 0
-                hora_fim = time(j, 0)
-                dia_semana_fim_iso = i + 1
-                fuso_atual = timezone.get_current_timezone()
-
-                intervalo = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
-                    dia_semana_inicio_iso=dia_semana_inicio_iso,
-                    hora_inicio=hora_inicio,
-                    dia_semana_fim_iso=dia_semana_fim_iso,
-                    hora_fim=hora_fim,
-                    fuso=fuso_atual,
-                )
-
-                disponibilidade.append(intervalo)
-
-            j += 1
-
-            if i >= len(m):
-                break
-
-        i += 1
-        j = 0
-
-    return disponibilidade
+        Exemplo: se n=6 e NUMERO_PERIODOS_POR_DIA=24, então a função retorna 6,
+        mas se NUMERO_PERIODOS_POR_DIA=48, então a função retorna 12.
+        """
+        return int(n * NUMERO_PERIODOS_POR_DIA // 24)
 
 
 def desprezar_segundos_e_microssegundos(data_hora):

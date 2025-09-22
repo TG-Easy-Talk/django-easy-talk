@@ -1,12 +1,12 @@
 <style>
     .grade-intervalos {
         display: grid;
-        grid-template-columns: repeat(25, 1fr);
+        grid-template-columns: repeat({{ NUMERO_PERIODOS_POR_DIA|add:"1" }}, 1fr);
     }
 
     .grade-intervalos > *[data-grade] {
-        min-height: 1rem;
         cursor: pointer;
+        min-height: 1rem;
     }
 
     .prevent-select {
@@ -36,7 +36,7 @@
             {% endif %}
         </div>
 
-        {% for _ in "123456789012345678901234" %}
+        {% for _ in numero_periodos_por_dia_range %}
             <div
                 data-grade
                 data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
@@ -77,7 +77,7 @@
 {% include "django/forms/widgets/input.html" with widget=widget %}
 
 <div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
-{% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos_em_json=widget.value %}
+{% include "geral/tabela_disponibilidade.html" with matriz_disponibilidade_booleanos_em_json=widget.value %}
 
 <script>
     class DisponibilidadeWidget {
@@ -133,7 +133,7 @@
         }
 
         static limparGrade() {
-            this.celulas.forEach((item) => {
+            this.celulas.forEach(item => {
                 this.tirar(item)
                 this.atualizarMatrizPeloItem(item)
             })
@@ -142,8 +142,8 @@
         }
 
         static redefinir() {
-            this.matriz_disponibilidade_booleanos_atual = this.matriz_disponibilidade_booleanos_original.map((linha) => [...linha])
-            this.celulas.forEach((item) => this.atualizarItemPelaMatriz(item))
+            this.matriz_disponibilidade_booleanos_atual = this.matriz_disponibilidade_booleanos_original.map(linha => [...linha])
+            this.celulas.forEach(item => this.atualizarItemPelaMatriz(item))
             this.atualizarInputETabela()
         }
 
@@ -153,17 +153,17 @@
         }
 
         static preparar() {
-            document.querySelectorAll('[draggable="false"]').forEach((item) => {
+            document.querySelectorAll('[draggable="false"]').forEach(item => {
                 item.classList.add('prevent-select')
 
                 // Prevenir que elementos sejam arrastados quando o usuário estiver arrastando o mouse na grade
-                item.addEventListener('dragstart', (e) => e.preventDefault())
+                item.addEventListener('dragstart', e => e.preventDefault())
             })
 
-            this.celulas.forEach((item) => {
+            this.celulas.forEach(item => {
                 this.atualizarItemPelaMatriz(item)
-                item.addEventListener('mouseover', (e) => this.lidarComEvento(e, item))
-                item.addEventListener('mousedown', (e) => this.lidarComEvento(e, item))
+                item.addEventListener('mouseover', e => this.lidarComEvento(e, item))
+                item.addEventListener('mousedown', e => this.lidarComEvento(e, item))
             })
 
             this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_original)
