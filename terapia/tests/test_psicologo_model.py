@@ -185,26 +185,21 @@ OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON = (
 
 class PsicologoModelTest(ModelTestCase):
     @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-
-        cls.psicologo_com_agenda_lotada = Psicologo.objects.create(
+    def criar_psicologo_com_agenda_lotada(cls):
+        psicologo_com_agenda_lotada = Psicologo.objects.create(
             usuario=Usuario.objects.create_user(email="psicologo.com.agenda.lotada@example.com", password="senha123"),
             nome_completo='Psicólogo Com Agenda Lotada',
             crp='06/33333',
             valor_consulta=100.00,
         )
-        cls.psicologo_com_agenda_lotada.especializacoes.set(cls.especializacoes)
-        cls.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada = converter_dia_semana_iso_com_hora_para_data_hora(
+        psicologo_com_agenda_lotada.especializacoes.set(cls.especializacoes)
+        uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada = converter_dia_semana_iso_com_hora_para_data_hora(
             dia_semana_iso=1,
             hora=time(0, 0),
             fuso=UTC,
         ) - CONSULTA_ANTECEDENCIA_MINIMA
-        cls.criar_disponibilidade_e_ocupar_psicologo_com_agenda_lotada()
 
-    @classmethod
-    def criar_disponibilidade_e_ocupar_psicologo_com_agenda_lotada(cls):
-        data_hora_inicio = cls.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada + CONSULTA_ANTECEDENCIA_MINIMA
+        data_hora_inicio = uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada + CONSULTA_ANTECEDENCIA_MINIMA
         data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
         IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
             dia_semana_inicio_iso=data_hora_inicio.isoweekday(),
@@ -212,19 +207,21 @@ class PsicologoModelTest(ModelTestCase):
             dia_semana_fim_iso=data_hora_fim.isoweekday(),
             hora_fim=data_hora_fim.time(),
             fuso=data_hora_inicio.tzinfo,
-            psicologo=cls.psicologo_com_agenda_lotada,
+            psicologo=psicologo_com_agenda_lotada,
         ),
 
-        with freeze_time(cls.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
+        with freeze_time(uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
             tempo_decorrido = CONSULTA_ANTECEDENCIA_MINIMA
 
             while tempo_decorrido <= CONSULTA_ANTECEDENCIA_MAXIMA:
                 Consulta.objects.create(
                     data_hora_agendada=data_hora_inicio + tempo_decorrido - CONSULTA_ANTECEDENCIA_MINIMA,
                     paciente=cls.paciente_dummy,
-                    psicologo=cls.psicologo_com_agenda_lotada,
+                    psicologo=psicologo_com_agenda_lotada,
                 )
                 tempo_decorrido += timedelta(weeks=1)
+
+        return psicologo_com_agenda_lotada, uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada
 
     def test_str_representation(self):
         self.assertEqual(str(self.psicologo_dummy), self.psicologo_dummy.nome_completo)
@@ -729,16 +726,18 @@ class PsicologoModelTest(ModelTestCase):
     @patch("terapia.models.CONSULTA_ANTECEDENCIA_MINIMA", timedelta(hours=1))
     @patch("terapia.models.CONSULTA_ANTECEDENCIA_MAXIMA", timedelta(days=60))
     def test_proxima_data_hora_agendavel(self):
-        with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
+        psicologo_com_agenda_lotada, uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada = self.criar_psicologo_com_agenda_lotada()
+        
+        with freeze_time(uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
             for fuso in self.fusos_para_teste:
-                with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_com_agenda_lotada.nome_completo):    
-                    self.assertIsNone(self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel, "A agenda está lotada")
+                with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=psicologo_com_agenda_lotada.nome_completo):    
+                    self.assertIsNone(psicologo_com_agenda_lotada.proxima_data_hora_agendavel, "A agenda está lotada")
                     
-                    consultas = Consulta.objects.filter(psicologo=self.psicologo_com_agenda_lotada).order_by('data_hora_agendada')
+                    consultas = Consulta.objects.filter(psicologo=psicologo_com_agenda_lotada).order_by('data_hora_agendada')
                     consultas.update(estado=EstadoConsulta.CANCELADA)
                     
                     self.assertEqual(
-                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas[0].data_hora_agendada,
                         "Todas as consultas foram canceladas, então a próxima data-hora agendável deve ser a da primeira consulta que estava agendada",
                     )
@@ -747,7 +746,7 @@ class PsicologoModelTest(ModelTestCase):
                     consultas.filter(pk=consultas[2].pk).update(estado=EstadoConsulta.SOLICITADA)
                     
                     self.assertEqual(
-                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas[1].data_hora_agendada,
                         "A primeira e terceira consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da segunda consulta que estava agendada",
                     )
@@ -755,7 +754,7 @@ class PsicologoModelTest(ModelTestCase):
                     consultas.filter(pk=consultas[1].pk).update(estado=EstadoConsulta.SOLICITADA)
                     
                     self.assertEqual(
-                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas[3].data_hora_agendada,
                         "As primeiras três consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da quarta consulta que estava agendada",
                     )
@@ -764,7 +763,7 @@ class PsicologoModelTest(ModelTestCase):
                         consultas.filter(pk=consultas[i].pk).update(estado=EstadoConsulta.SOLICITADA)
                     
                     self.assertEqual(
-                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas[6].data_hora_agendada,
                         "As primeiras seis consultas foram solicitadas de novo, então a próxima data-hora agendável deve ser a da sétima consulta que estava agendada",
                     )
@@ -773,7 +772,7 @@ class PsicologoModelTest(ModelTestCase):
                     consultas.filter(pk=consultas.last().pk).update(estado=EstadoConsulta.CANCELADA)
 
                     self.assertEqual(
-                        self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                        psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
                         consultas.last().data_hora_agendada,
                         "Todas as consultas exceto a última foram solicitadas de novo, então a próxima data-hora agendável deve ser a da última consulta que estava agendada",
                     )
@@ -1114,19 +1113,21 @@ class PsicologoModelTest(ModelTestCase):
                 descricao="Um pouco depois da próxima data-hora agendável",
             )
 
-            with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
+            psicologo_com_agenda_lotada, uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada = self.criar_psicologo_com_agenda_lotada()
+
+            with freeze_time(uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
                 fazer_assertions_para_cada_fuso(
                     metodo_assertion=self.assertFalse,
-                    data_hora=self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
-                    psicologo=self.psicologo_com_agenda_lotada,
+                    data_hora=psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                    psicologo=psicologo_com_agenda_lotada,
                     descricao="O psicólogo está com agenda lotada até a antecedência máxima, não havendo espaço para novas consultas",
                     motivo_para_nao_estar_agendavel=MotivosParaNaoEstarAgendavel.AGENDA_LOTADA,
                 )
 
-            with freeze_time(self.uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada + timedelta(weeks=1)):
+            with freeze_time(uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada + timedelta(weeks=1)):
                 fazer_assertions_para_cada_fuso(
                     metodo_assertion=self.assertTrue,
-                    data_hora=self.psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
-                    psicologo=self.psicologo_com_agenda_lotada,
+                    data_hora=psicologo_com_agenda_lotada.proxima_data_hora_agendavel,
+                    psicologo=psicologo_com_agenda_lotada,
                     descricao="Se passou uma semana desde que o psicólogo estava com a agenda lotada, então a antecedência máxima avançou e agora há espaço para um novo agendamento",
                 )
