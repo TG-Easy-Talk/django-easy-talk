@@ -2,10 +2,14 @@ from django.forms import ValidationError
 from django.contrib.auth import get_user_model
 from terapia.models import IntervaloDisponibilidade
 from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta
 from terapia.constantes import CONSULTA_DURACAO
 from django.utils import timezone
 from .model_test_case import ModelTestCase
+from .test_psicologo_model import (
+    MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON,
+    OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON,
+)
 
 
 Usuario = get_user_model()
@@ -141,6 +145,58 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                     CONSULTA_DURACAO,
                 )
 
+    def test_eq(self):
+        self.assertEqual(self.intervalo_de_semana_completa, IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+            7, time(23, 59), 7, time(23, 59), UTC,
+        ))
+
+        data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC)
+        data_hora_fim = converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC)
+
+        intervalo = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            data_hora_inicio.isoweekday(),
+            data_hora_inicio.time(),
+            data_hora_fim.isoweekday(),
+            data_hora_fim.time(),
+            data_hora_inicio.tzinfo,
+            self.psicologo_dummy,
+        )
+
+        for fuso in self.fusos_para_teste:
+            data_hora_inicio_convertida = timezone.localtime(data_hora_inicio, fuso)
+            data_hora_fim_convertida = timezone.localtime(data_hora_fim, fuso)
+            intervalo_igual = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+                data_hora_inicio_convertida.isoweekday(),
+                data_hora_inicio_convertida.time(),
+                data_hora_fim_convertida.isoweekday(),
+                data_hora_fim_convertida.time(),
+                fuso,
+                self.psicologos_dummies[1],
+            )
+            self.assertEqual(intervalo, intervalo_igual)
+
+            data_hora_inicio_convertida_diferente = data_hora_inicio_convertida - timedelta(minutes=1)
+            intervalo_com_data_hora_inicio_diferente = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+                data_hora_inicio_convertida_diferente.isoweekday(),
+                data_hora_inicio_convertida_diferente.time(),
+                data_hora_fim_convertida.isoweekday(),
+                data_hora_fim_convertida.time(),
+                fuso,
+                self.psicologos_dummies[1],
+            )
+            self.assertNotEqual(intervalo, intervalo_com_data_hora_inicio_diferente)
+
+            data_hora_fim_convertida_diferente = data_hora_fim_convertida + timedelta(minutes=1)
+            intervalo_com_data_hora_fim_diferente = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+                data_hora_inicio_convertida.isoweekday(),
+                data_hora_inicio_convertida.time(),
+                data_hora_fim_convertida_diferente.isoweekday(),
+                data_hora_fim_convertida_diferente.time(),
+                fuso,
+                self.psicologos_dummies[1],
+            )
+            self.assertNotEqual(intervalo, intervalo_com_data_hora_fim_diferente)
+
     def test_contains(self):
         datas_hora_iguais = [
             converter_dia_semana_iso_com_hora_para_data_hora(3, time(12, 0), UTC),
@@ -212,3 +268,21 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                                     self.assertTrue(data_hora in intervalo)
                                 elif expectativa == "nao_contem":
                                     self.assertFalse(data_hora in intervalo)
+
+    def test_from_matriz(self):
+        for fuso, matriz in MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON.items():
+            with timezone.override(fuso):    
+                intervalos = IntervaloDisponibilidade.from_matriz(matriz)
+
+            with self.subTest(fuso=fuso, matriz=matriz):
+                self.assertEqual(len(intervalos), len(self.get_disponibilidade_generica()))
+
+                for intervalo in intervalos:
+                    self.assertIn(intervalo, self.get_disponibilidade_generica())
+
+        for intervalo, matriz in OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON:
+            intervalos = IntervaloDisponibilidade.from_matriz(matriz)
+
+            with self.subTest(intervalo=intervalo, matriz=matriz):
+                self.assertEqual(len(intervalos), 1)
+                self.assertEqual(intervalos[0], intervalo)

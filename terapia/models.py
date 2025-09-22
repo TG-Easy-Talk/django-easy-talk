@@ -20,7 +20,12 @@ from .validadores.geral import (
     validate_usuario_nao_paciente,
     validate_divisivel_por_duracao_consulta,
 )
-from .constantes import CONSULTA_DURACAO, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_ANTECEDENCIA_MAXIMA, NUMERO_PERIODOS_POR_DIA
+from .constantes import (
+    CONSULTA_DURACAO,
+    CONSULTA_ANTECEDENCIA_MINIMA,
+    CONSULTA_ANTECEDENCIA_MAXIMA,
+    NUMERO_PERIODOS_POR_DIA,
+)
 from datetime import UTC, timedelta, time
 import json
 
@@ -446,7 +451,7 @@ class IntervaloDisponibilidade(models.Model):
         related_name="disponibilidade",
     )
     objects = IntervaloDisponibilidadeManager()
-    
+
     @property
     def data_hora_inicio_local(self):
         return timezone.localtime(self.data_hora_inicio)
@@ -515,6 +520,12 @@ class IntervaloDisponibilidade(models.Model):
         Verifica se o intervalo começa em uma semana e termina em outra.
         """
         return self.data_hora_fim <= self.data_hora_inicio
+    
+    def dura_uma_semana_completa(self):
+        """
+        Verifica se o intervalo dura exatamente uma semana completa.
+        """
+        return self.data_hora_inicio == self.data_hora_fim
 
     def __contains__(self, data_hora):
         """
@@ -527,7 +538,16 @@ class IntervaloDisponibilidade(models.Model):
             return self.data_hora_inicio <= data_hora <= self.data_hora_fim
 
         return not (self.data_hora_fim < data_hora < self.data_hora_inicio)
-    
+
+    def __eq__(self, outro):
+        if self.dura_uma_semana_completa():
+            return outro.dura_uma_semana_completa()
+
+        return (
+            self.data_hora_inicio == outro.data_hora_inicio and
+            self.data_hora_fim == outro.data_hora_fim
+        )
+
     def get_datas_hora(self):
         """
         Retorna a lista de datas e horas que estão dentro do intervalo,
@@ -594,31 +614,44 @@ class IntervaloDisponibilidade(models.Model):
         def segunda_a_domingo(matriz_disponibilidade_booleanos):
             matriz_disponibilidade_booleanos.append(matriz_disponibilidade_booleanos.pop(0))
 
-        segunda_a_domingo(matriz_disponibilidade_booleanos)
+        def to_dia_semana_iso(indice):
+            return indice % 7 + 1
 
         disponibilidade = []
-        m = matriz_disponibilidade_booleanos
+        m = json.loads(matriz_disponibilidade_booleanos)
+        segunda_a_domingo(m)
+
+        intervalo_no_comeco = None
 
         i = j = 0
         while i < len(m):
-            while j < len(m[i]):
+            while j < len(m[0]):
                 if m[i][j]:
+                    comeca_no_inicio_da_semana = i == 0 and j == 0
+                    vira_a_semana = False
+
                     hora_inicio = get_hora_por_indice(j)
-                    dia_semana_inicio_iso = i + 1
+                    dia_semana_inicio_iso = to_dia_semana_iso(i)
 
                     while m[i][j]:
-                        if j < len(m[i]) - 1:
+                        if j < len(m[0]) - 1:
                             j += 1
                         else:
+                            j = 0
                             i += 1
                             if i >= len(m):
+                                vira_a_semana = True
                                 break
-                            j = 0
 
-                    j = j if j < NUMERO_PERIODOS_POR_DIA - 1 else 0
-                    hora_fim = get_hora_por_indice(j)
-                    dia_semana_fim_iso = i + 1
                     fuso_atual = timezone.get_current_timezone()
+
+                    if vira_a_semana and intervalo_no_comeco:
+                        hora_fim = intervalo_no_comeco.hora_fim_local
+                        dia_semana_fim_iso = intervalo_no_comeco.dia_semana_fim_local
+                        disponibilidade.remove(intervalo_no_comeco)
+                    else:
+                        hora_fim = get_hora_por_indice(j)
+                        dia_semana_fim_iso = to_dia_semana_iso(i)
 
                     intervalo = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
                         dia_semana_inicio_iso=dia_semana_inicio_iso,
@@ -628,15 +661,18 @@ class IntervaloDisponibilidade(models.Model):
                         fuso=fuso_atual,
                     )
 
-                    disponibilidade.append(intervalo)
+                    if comeca_no_inicio_da_semana:
+                        intervalo_no_comeco = intervalo
 
-                j += 1
+                    disponibilidade.append(intervalo)
 
                 if i >= len(m):
                     break
-
-            i += 1
+                
+                j += 1
+      
             j = 0
+            i += 1
 
         return disponibilidade
                         

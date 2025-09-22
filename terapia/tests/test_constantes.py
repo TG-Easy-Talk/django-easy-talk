@@ -1,5 +1,11 @@
 from django.test import SimpleTestCase
-from terapia.constantes import CONSULTA_DURACAO, CONSULTA_DURACAO_MINUTOS, NUMERO_PERIODOS_POR_DIA, get_consulta_duracao_minutos, get_numero_periodos_por_dia
+from terapia.constantes import (
+    CONSULTA_DURACAO,
+    CONSULTA_DURACAO_MINUTOS,
+    NUMERO_PERIODOS_POR_DIA,
+    get_consulta_duracao_minutos,
+    get_numero_periodos_por_dia,
+)
 from datetime import timedelta
 from unittest.mock import patch
 from math import floor

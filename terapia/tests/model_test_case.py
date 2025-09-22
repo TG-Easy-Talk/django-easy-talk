@@ -1,7 +1,13 @@
 from datetime import datetime, time, UTC
 from django.test import TestCase
 from terapia.constantes import CONSULTA_DURACAO
-from terapia.models import Especializacao, Paciente, Psicologo, IntervaloDisponibilidade, Consulta
+from terapia.models import (
+    Especializacao,
+    Paciente,
+    Psicologo,
+    IntervaloDisponibilidade,
+    Consulta,
+)
 from django.contrib.auth import get_user_model
 from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora
 from .base_test_case import BaseTestCase
