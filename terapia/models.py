@@ -539,13 +539,13 @@ class IntervaloDisponibilidade(models.Model):
 
         return not (self.data_hora_fim < data_hora < self.data_hora_inicio)
 
-    def __eq__(self, outro):
+    def tem_as_mesmas_datas_hora_que(self, outro_intervalo):
         if self.dura_uma_semana_completa():
-            return outro.dura_uma_semana_completa()
+            return outro_intervalo.dura_uma_semana_completa()
 
         return (
-            self.data_hora_inicio == outro.data_hora_inicio and
-            self.data_hora_fim == outro.data_hora_fim
+            self.data_hora_inicio == outro_intervalo.data_hora_inicio and
+            self.data_hora_fim == outro_intervalo.data_hora_fim
         )
 
     def get_datas_hora(self):

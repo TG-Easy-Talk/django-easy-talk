@@ -145,10 +145,16 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                     CONSULTA_DURACAO,
                 )
 
-    def test_eq(self):
-        self.assertEqual(self.intervalo_de_semana_completa, IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
+    def test_tem_as_mesmas_datas_hora_que(self):
+        outro_intervalo_de_semana_completa = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
             7, time(23, 59), 7, time(23, 59), UTC,
-        ))
+        )
+
+        with self.subTest(
+            intervalo_1=str(self.intervalo_de_semana_completa),
+            intervalo_2=str(outro_intervalo_de_semana_completa),
+        ):
+            self.assertTrue(self.intervalo_de_semana_completa.tem_as_mesmas_datas_hora_que(outro_intervalo_de_semana_completa))
 
         data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC)
         data_hora_fim = converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), UTC)
@@ -173,7 +179,12 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                 fuso,
                 self.psicologos_dummies[1],
             )
-            self.assertEqual(intervalo, intervalo_igual)
+
+            with self.subTest(
+                intervalo_1=str(intervalo),
+                intervalo_2=str(intervalo_igual),
+            ):
+                self.assertTrue(intervalo.tem_as_mesmas_datas_hora_que(intervalo_igual))
 
             data_hora_inicio_convertida_diferente = data_hora_inicio_convertida - timedelta(minutes=1)
             intervalo_com_data_hora_inicio_diferente = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
@@ -184,7 +195,12 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                 fuso,
                 self.psicologos_dummies[1],
             )
-            self.assertNotEqual(intervalo, intervalo_com_data_hora_inicio_diferente)
+
+            with self.subTest(
+                intervalo_1=str(intervalo),
+                intervalo_2=str(intervalo_com_data_hora_inicio_diferente),
+            ):
+                self.assertFalse(intervalo.tem_as_mesmas_datas_hora_que(intervalo_com_data_hora_inicio_diferente))
 
             data_hora_fim_convertida_diferente = data_hora_fim_convertida + timedelta(minutes=1)
             intervalo_com_data_hora_fim_diferente = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
@@ -195,7 +211,12 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                 fuso,
                 self.psicologos_dummies[1],
             )
-            self.assertNotEqual(intervalo, intervalo_com_data_hora_fim_diferente)
+
+            with self.subTest(
+                intervalo_1=str(intervalo),
+                intervalo_2=str(intervalo_com_data_hora_fim_diferente),
+            ):
+                self.assertFalse(intervalo.tem_as_mesmas_datas_hora_que(intervalo_com_data_hora_fim_diferente))
 
     def test_contains(self):
         datas_hora_iguais = [
@@ -263,7 +284,7 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                         for data_hora in datas_hora:
                             data_hora = timezone.localtime(data_hora)
 
-                            with self.subTest(data_hora=data_hora, intervalo=intervalo):
+                            with self.subTest(data_hora=data_hora, intervalo=str(intervalo)):
                                 if expectativa == "contem":
                                     self.assertTrue(data_hora in intervalo)
                                 elif expectativa == "nao_contem":
@@ -277,12 +298,20 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
             with self.subTest(fuso=fuso, matriz=matriz):
                 self.assertEqual(len(intervalos), len(self.get_disponibilidade_generica()))
 
+                tem_algum_intervalo_com_as_mesmas_datas_hora = False
+
                 for intervalo in intervalos:
-                    self.assertIn(intervalo, self.get_disponibilidade_generica())
+                    for outro_intervalo in self.get_disponibilidade_generica():
+                        if intervalo.tem_as_mesmas_datas_hora_que(outro_intervalo):
+                            tem_algum_intervalo_com_as_mesmas_datas_hora = True
+                            break
+                
+                with self.subTest(intervalo=str(intervalo)):
+                    self.assertTrue(tem_algum_intervalo_com_as_mesmas_datas_hora)
 
         for intervalo, matriz in OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON:
             intervalos = IntervaloDisponibilidade.from_matriz(matriz)
 
-            with self.subTest(intervalo=intervalo, matriz=matriz):
+            with self.subTest(intervalo=str(intervalo), matriz=matriz):
                 self.assertEqual(len(intervalos), 1)
                 self.assertEqual(intervalos[0], intervalo)
