@@ -310,4 +310,4 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
 
             with self.subTest(intervalo=str(intervalo), matriz=matriz):
                 self.assertEqual(len(intervalos), 1)
-                self.assertEqual(intervalos[0], intervalo)
+                self.assertTrue(intervalo.tem_as_mesmas_datas_hora_que(intervalos[0]))
