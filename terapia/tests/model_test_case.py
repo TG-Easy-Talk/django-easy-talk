@@ -139,21 +139,25 @@ class ModelTestCase(TestCase, BaseTestCase):
             intervalo.save()
 
     @staticmethod
-    def criar_consultas_genericas(paciente, psicologo):
+    def get_consultas_genericas():
         data_hora = datetime(2024, 1, 1, 10, 0, tzinfo=UTC)
 
         consultas = [
-            Consulta.objects.create(
-                paciente=paciente,
-                psicologo=psicologo,
-                data_hora_agendada=data_hora,
-            ),
-            Consulta.objects.create(
-                paciente=paciente,
-                psicologo=psicologo,
-                data_hora_agendada=data_hora + CONSULTA_DURACAO,
-            ),
+            Consulta(data_hora_agendada=data_hora),
+            Consulta(data_hora_agendada=data_hora + CONSULTA_DURACAO),
         ]
+        
+        return consultas
+
+    @classmethod
+    def criar_consultas_genericas(cls, paciente, psicologo):
+        consultas = []
+
+        for consulta in cls.get_consultas_genericas():
+            consulta.paciente = paciente
+            consulta.psicologo = psicologo
+            consulta.save()
+            consultas.append(consulta)
         
         return consultas
     

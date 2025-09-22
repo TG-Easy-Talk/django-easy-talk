@@ -1,5 +1,4 @@
 from django.forms import ValidationError
-from django.contrib.auth import get_user_model
 from terapia.models import IntervaloDisponibilidade
 from terapia.utilidades.geral import converter_dia_semana_iso_com_hora_para_data_hora
 from datetime import UTC, datetime, time, timedelta
@@ -10,9 +9,6 @@ from .test_psicologo_model import (
     MATRIZES_DISPONIBILIDADE_GENERICA_BOOLEANOS_EM_JSON,
     OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON,
 )
-
-
-Usuario = get_user_model()
 
 
 class IntervaloDisponibilidadeModelTest(ModelTestCase):

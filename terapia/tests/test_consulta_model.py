@@ -1,14 +1,10 @@
 from datetime import datetime, UTC, timedelta
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 from freezegun import freeze_time
 from terapia.constantes import CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
 from terapia.models import Consulta, EstadoConsulta
 from .model_test_case import ModelTestCase
-
-
-Usuario = get_user_model()
 
 
 class ConsultaModelTest(ModelTestCase):
