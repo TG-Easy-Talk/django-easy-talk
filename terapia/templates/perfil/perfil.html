@@ -4,102 +4,423 @@
 {% load static %}
 
 {% block conteudo %}
-<div class="row gap-4 flex-nowrap">
-    <main class="col vstack gap-5">
-        <div class="hstack gap-4">
-            <img class="rounded-circle mx-auto"
-            style="width: 7.5rem; height: 7.5rem;"
-            src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
-            alt="Foto de perfil">
+    <div class="row gap-4 flex-nowrap">
+        <main class="col vstack gap-5">
+            <div class="hstack gap-4">
+                <img
+                        class="rounded-circle mx-auto"
+                        style="width: 7.5rem; height: 7.5rem;"
+                        src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
+                        alt="Foto de perfil"
+                />
 
-            <div class="flex-grow-1">
-                <h4 class="fw-bold">{{ psicologo.nome_completo }}</h4>
-                <hr class="border border-primary opacity-100">
+                <div class="flex-grow-1">
+                    <h4 class="fw-bold">{{ psicologo.nome_completo }}</h4>
+                    <hr class="border border-primary opacity-100"/>
 
-                <div class="hstack gap-5">
-                    <div>
-                        <h6 class="text-body-secondary">Valor da consulta</h6>
-                        <h6 class="fw-semibold">R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}</h6>
-                    </div>
-                    <div>
-                        <h6 class="text-body-secondary">CRP</h6>
-                        <h6 class="fw-semibold">{{ psicologo.crp }}</h6>
+                    <div class="hstack gap-5">
+                        <div>
+                            <h6 class="text-body-secondary">Valor da consulta</h6>
+                            <h6 class="fw-semibold">R${{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}</h6>
+                        </div>
+                        <div>
+                            <h6 class="text-body-secondary">CRP</h6>
+                            <h6 class="fw-semibold">{{ psicologo.crp }}</h6>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="vstack gap-2">
-            <h6>Especializações</h6>
-            <div class="hstack gap-2 flex-wrap">
-                {% include "geral/especializacoes.html" %}
+            <div class="vstack gap-2">
+                <h6>Especializações</h6>
+                <div class="hstack gap-2 flex-wrap">
+                    {% include "geral/especializacoes.html" %}
+                </div>
             </div>
-        </div>
 
-        <div class="vstack gap-2">
-            <h6>Sobre mim</h6>
-            <div class="text-body-secondary">
-                {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre Mim.</i>" }}
+            <div class="vstack gap-2">
+                <h6>Sobre mim</h6>
+                <div class="text-body-secondary">
+                    {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre Mim.</i>" }}
+                </div>
             </div>
-        </div>
 
-        <div class="vstack gap-2">
-            <h6>Disponibilidade</h6>
-            {% if psicologo.disponibilidade %}
-                {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos_em_json=psicologo.get_matriz_disponibilidade_booleanos_em_json %}
-            {% else %}
-                <div class="text-body-secondary"><i>Este psicólogo ainda não definiu sua disponibilidade.</i></div>
-            {% endif %}
-        </div>
+            <div class="vstack gap-2">
+                <h6>Disponibilidade</h6>
+                {% if psicologo.disponibilidade %}
+                    {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos_em_json=psicologo.get_matriz_disponibilidade_booleanos_em_json %}
+                {% else %}
+                    <div class="text-body-secondary"><i>Este psicólogo ainda não definiu sua disponibilidade.</i></div>
+                {% endif %}
+            </div>
+        </main>
 
-        {% comment %}
-        Essa parte do código é um acordeão que mostra as especializações do psicólogo em mais detalhes,
-        mas como o sistema ainda não permite que o psicólogo detalhe sua experiência com cada uma das
-        suas especializações, essa parte ficará comentada por enquanto.
+        <aside class="col-auto rounded-3" style="width: 340px;">
+            <div class="vstack gap-3 sticky-top" id="agendamentoConsulta">
+                <form method="post">
+                    {% csrf_token %}
+                    <fieldset class="vstack gap-3" {% if not request.user.is_paciente %} disabled {% endif %}>
+                        {{ form.non_field_errors }}
 
-        <div class="vstack gap-2">
-            <h6>Sobre minhas especializações</h6>
-            {% include 'perfil/componentes/sobre_minhas_especializacoes.html' %}
-        </div>
-
-        {% endcomment %}
-
-
-    </main>
-
-    <aside class="col-auto rounded-3" style="width: 250px;">
-        <div class="vstack gap-2 sticky-top" id="agendamentoConsulta">
-            <form method="post">
-                {% csrf_token %}
-                <fieldset class="vstack gap-3" {% if not request.user.is_paciente %} disabled {% endif %}>
-
-                    {{ form }}
-
-                    {% if request.user.is_anonymous %}
-                        <div class="text-body-secondary">
-                            Você precisa estar logado para agendar uma consulta.
+                        <h6 class="text-center">Agende sua consulta</h6>
+                        <input id="calendario" type="text" class="d-none"/>
+                        <div id="lista-slots" class="vstack gap-2"></div>
+                        <div class="d-flex justify-content-between align-items-center small">
+                            <span id="total-descricao">Total</span>
+                            <span id="total-valor" class="fw-semibold">R$0,00</span>
                         </div>
-                    {% elif not request.user.is_paciente %}
-                        <div class="text-body-secondary">
-                            Sua conta não é de paciente para poder agendar uma consulta.
-                        </div>
-                    {% endif %}
+                        <input type="hidden" name="agendamentos" id="id_agendamentos" value="[]"/>
 
-                </fieldset>
-            </form>
-        </div>
-    </aside>
-</div>
+                        <button id="btn-confirmar" class="btn btn-success btn-lg w-100" type="submit" disabled>
+                            Confirmar consultas
+                        </button>
 
-<script>
-    const conteudoContainer = document.getElementById('conteudoContainer');
-    const agendamentoConsulta = document.getElementById('agendamentoConsulta');
+                        {% if request.user.is_anonymous %}
+                            <div class="text-body-secondary">
+                                Você precisa estar logado para agendar uma consulta.
+                            </div>
+                        {% elif not request.user.is_paciente %}
+                            <div class="text-body-secondary">
+                                Sua conta não é de paciente para poder agendar uma consulta.
+                            </div>
+                        {% endif %}
+                    </fieldset>
+                </form>
+            </div>
+        </aside>
+    </div>
 
-    function setTopAgendamentoConsulta() {
-        agendamentoConsulta.style.top = `${cabecalhoEspaco.offsetHeight + 30}px`;
-    }
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
 
-    setTopAgendamentoConsulta();
-    window.addEventListener('resize', setTopAgendamentoConsulta);
-</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;600;700&family=Livvic:wght@400;600;700&display=swap"
+          rel="stylesheet">
+
+    <style>
+        :root {
+            --brand-green: #2E8D47;
+            --brand-black: #000000;
+            --brand-white: #FFFFFF;
+            --bs-primary: var(--brand-green);
+            --bs-success: var(--brand-green);
+
+            --slot-date-font-size: 1rem;
+        }
+
+        #agendamentoConsulta h6.text-center {
+            font-family: "Livvic", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+            color: var(--brand-black);
+            font-weight: 400 !important;
+            font-size: 20px;
+        }
+
+        .flatpickr-calendar, .flatpickr-day, .flatpickr-weekday,
+        .flatpickr-current-month, .flatpickr-current-month .cur-month,
+        .flatpickr-current-month .numInputWrapper input,
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            font-family: "Karla", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+        }
+
+        .flatpickr-calendar.inline {
+            width: 100%;
+            min-width: 320px;
+            border-radius: .9rem;
+            border: 1px solid var(--brand-green);
+            box-shadow: none;
+        }
+
+        .flatpickr-months {
+            background: var(--brand-green);
+            color: var(--brand-white);
+            border-radius: .9rem .9rem 0 0;
+            padding: .25rem .25rem;
+        }
+
+        .flatpickr-current-month,
+        .flatpickr-current-month .cur-month,
+        .flatpickr-current-month .numInputWrapper input,
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            color: var(--brand-white) !important;
+            font-weight: 400 !important;
+            font-size: 20px;
+            text-transform: capitalize !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month,
+        .flatpickr-months .flatpickr-next-month {
+            color: var(--brand-white);
+        }
+
+        .flatpickr-months .flatpickr-prev-month svg,
+        .flatpickr-months .flatpickr-next-month svg {
+            fill: var(--brand-white);
+        }
+
+        .flatpickr-weekday {
+            color: var(--brand-green);
+            font-weight: 600;
+        }
+
+        .flatpickr-weekdays {
+            margin: 0;
+            padding: .25rem .25rem 0;
+        }
+
+        .flatpickr-days {
+            padding: 0 0 .25rem;
+        }
+
+        .dayContainer {
+            padding: 0;
+            font-size: 0;
+        }
+
+
+        .flatpickr-day {
+            display: inline-block;
+            width: calc(100% / 7);
+            max-width: none;
+            margin: 0;
+            height: 32px;
+            line-height: 32px;
+            border-radius: .5rem;
+            font-size: .95rem;
+            box-sizing: border-box;
+            color: var(--brand-black);
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.startRange,
+        .flatpickr-day.endRange {
+            background: var(--brand-green);
+            border-color: var(--brand-green);
+            color: var(--brand-white);
+        }
+
+        .flatpickr-day.today:not(.selected) {
+            border-color: var(--brand-green);
+        }
+
+        .flatpickr-day.disabled,
+        .flatpickr-day.notAllowed,
+        .flatpickr-day.prevMonthDay,
+        .flatpickr-day.nextMonthDay {
+            color: #D0D5DD;
+        }
+
+        #lista-slots .linha-slot {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: .5rem;
+            align-items: center;
+            border: 0;
+            padding: .25rem 0;
+            background: transparent;
+        }
+
+        #lista-slots .data {
+            font-weight: 600;
+            font-size: var(--slot-date-font-size);
+        }
+
+        #lista-slots select.form-select {
+            border: 1px solid var(--brand-green);
+            border-radius: .75rem;
+            background-color: #FFFFFF;
+            color: var(--brand-black);
+            box-shadow: none;
+            outline: 0;
+
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='%232E8D47' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right .75rem center;
+            background-size: 16px 12px;
+
+            padding: .5rem 2.25rem .5rem .75rem;
+        }
+
+        #lista-slots select.form-select:focus {
+            border-color: var(--brand-green);
+            box-shadow: 0 0 0 .2rem rgba(46, 141, 71, .15);
+        }
+
+        #btn-confirmar {
+            background-color: var(--brand-green);
+            border: 1px solid var(--brand-green);
+            color: var(--brand-white);
+            border-radius: .75rem;
+        }
+
+        #btn-confirmar:hover:not(:disabled) {
+            filter: brightness(.95);
+        }
+
+        #btn-confirmar:disabled {
+            background-color: var(--brand-green);
+            border-color: var(--brand-green);
+            color: var(--brand-white);
+            opacity: .65;
+        }
+
+        #total-descricao,
+        #total-valor {
+            color: var(--brand-black) !important;
+            font-weight: 700;
+            font-size: var(--slot-date-font-size) !important;
+        }
+
+        .flatpickr-current-month .numInputWrapper input {
+            pointer-events: none;
+            background: transparent;
+            border: 0;
+        }
+
+        .flatpickr-current-month .numInputWrapper span {
+            display: none;
+        }
+    </style>
+
+    <script>
+        (function () {
+            const MATRIZ = JSON.parse(`{{ psicologo.get_matriz_disponibilidade_booleanos_em_json|safe }}`); // 0..6 = Dom..Sáb
+            const DURACAO = {{ CONSULTA_DURACAO_MINUTOS|default:50 }};
+            const MIN_ANT = {{ CONSULTA_ANTECEDENCIA_MINIMA_MINUTOS|default:0 }};
+            const MAX_ANT = {{ CONSULTA_ANTECEDENCIA_MAXIMA_MINUTOS|default:0 }};
+            const VALOR = Number(`{{ psicologo.valor_consulta|default:"0"|floatformat:"2" }}`.replace(',', '.')) || 0;
+
+            const pad = n => String(n).padStart(2, '0');
+            const brl = v => v.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+
+            function idxToHora(i) {
+                const mins = i * DURACAO;
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return `${pad(h)}:${pad(m)}`;
+            }
+
+            function horariosParaData(date) {
+                const dow = date.getDay();
+                const linha = MATRIZ[dow] || [];
+                const agora = new Date();
+                const minOK = new Date(agora.getTime() + MIN_ANT * 60 * 1000);
+                const maxOK = MAX_ANT ? new Date(agora.getTime() + MAX_ANT * 60 * 1000) : null;
+
+                const y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
+                const opcoes = [];
+
+                for (let i = 0; i < linha.length; i++) {
+                    if (!linha[i]) continue;
+
+                    const [hh, mm] = idxToHora(i).split(':').map(Number);
+                    const dt = new Date(y, m, d, hh, mm, 0, 0);
+
+                    if (MIN_ANT && dt < minOK) continue;
+                    if (maxOK && dt > maxOK) continue;
+
+                    const value = `${y}-${pad(m + 1)}-${pad(d)}T${pad(hh)}:${pad(mm)}`;
+                    opcoes.push({label: `${pad(hh)}:${pad(mm)}`, value});
+                }
+                return opcoes;
+            }
+
+            let escolhas = {};
+
+            function renderLista(selectedDates) {
+                const lista = document.getElementById('lista-slots');
+                lista.innerHTML = '';
+
+                const datasOrdenadas = [...selectedDates].sort((a, b) => a - b);
+
+                datasOrdenadas.forEach(date => {
+                    const dataKey = date.toISOString().slice(0, 10);
+                    const opcoes = horariosParaData(date);
+
+                    const linha = document.createElement('div');
+                    linha.className = 'linha-slot';
+
+                    const spanData = document.createElement('div');
+                    spanData.className = 'data';
+                    spanData.textContent = new Intl.DateTimeFormat('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit'
+                    }).format(date);
+
+                    const select = document.createElement('select');
+                    select.className = 'form-select form-select-sm';
+
+                    if (opcoes.length === 0) {
+                        select.innerHTML = `<option value="">Sem horários</option>`;
+                        select.disabled = true;
+                    } else {
+                        if (!escolhas[dataKey]) escolhas[dataKey] = opcoes[0].value;
+                        const opts = [`<option value="">Hora</option>`].concat(opcoes.map(o => `<option value="${o.value}">${o.label}</option>`));
+                        select.innerHTML = opts.join('');
+                        select.value = escolhas[dataKey];
+                    }
+
+                    select.addEventListener('change', () => {
+                        if (select.value) escolhas[dataKey] = select.value; else delete escolhas[dataKey];
+                        syncHiddenAndTotal();
+                    });
+
+                    linha.appendChild(spanData);
+                    linha.appendChild(select);
+                    lista.appendChild(linha);
+                });
+
+                syncHiddenAndTotal();
+            }
+
+            function syncHiddenAndTotal() {
+                const valores = Object.values(escolhas).filter(Boolean);
+                document.getElementById('id_agendamentos').value = JSON.stringify(valores);
+
+                const qtd = valores.length;
+                const total = VALOR * qtd;
+
+                let texto = brl(total);
+                if (VALOR > 0 && qtd > 0) {
+                    texto = `${brl(VALOR)} × ${qtd} = ${brl(total)}`;
+                }
+
+                document.getElementById('total-valor').textContent = texto;
+                document.getElementById('btn-confirmar').disabled = (qtd === 0);
+            }
+
+            const now = new Date();
+            const minY = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            const ptOneLetter = Object.assign({}, flatpickr.l10ns.pt, {
+                weekdays: {
+                    shorthand: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+                    longhand: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+                }
+            });
+
+            const fp = flatpickr('#calendario', {
+                locale: ptOneLetter,
+                inline: true,
+                mode: 'multiple',
+                dateFormat: 'Y-m-d',
+                monthSelectorType: 'static',
+                minDate: minY,
+                onChange: (selectedDates) => renderLista(selectedDates),
+            });
+
+            const agendamentoConsulta = document.getElementById('agendamentoConsulta');
+
+            function setTopAgendamentoConsulta() {
+                const top = ((window.cabecalhoEspaco && window.cabecalhoEspaco.offsetHeight) ? window.cabecalhoEspaco.offsetHeight : 0) + 30;
+                agendamentoConsulta.style.top = `${top}px`;
+            }
+
+            setTopAgendamentoConsulta();
+            window.addEventListener('resize', setTopAgendamentoConsulta);
+        })();
+    </script>
 {% endblock %}
