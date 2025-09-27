@@ -51,12 +51,25 @@
                         </span>
                     </td>
                     <td>{{ consulta.data_hora_agendada|date:"d/m/Y" }} às {{ consulta.data_hora_agendada|time }}</td>
-                    <td>
+                    <td class="text-end align-middle">
                         {% if usuario.is_psicologo and consulta.get_estado_display == "Solicitada" %}
                             <button class="btn btn-success btn-sm text-white" onclick="naoImplementado()">Aceitar</button>
                             <button class="btn btn-danger btn-sm text-white" onclick="naoImplementado()">Recusar</button>
+
+                        {% elif usuario.is_paciente and consulta.estado != 'CANCELADA' %}
+                            <form method="post"
+                                  action="{% url 'consulta_cancelar' consulta.pk %}"
+                                  class="d-inline-flex align-items-center m-0"
+                                  onsubmit="return confirm('Confirma cancelar esta consulta?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-sm btn-danger">Cancelar</button>
+                            </form>
+
+                        {% elif usuario.is_paciente and consulta.estado == 'CANCELADA' %}
+                            <span class="visually-hidden">Consulta cancelada</span>
                         {% else %}
-                            <small>(Em construção)</small>
+                            <span class="invisible">.</span>
                         {% endif %}
                     </td>
                 </tr>

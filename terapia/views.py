@@ -1,13 +1,20 @@
-from django.contrib.auth import login
-from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView, FormView, ListView, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
-from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
-from django.core.exceptions import ValidationError
+
 from django.contrib import messages
+from django.contrib.auth import login
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.utils import timezone
+from django.views import View
+from django.views.generic import FormView, ListView, TemplateView, UpdateView
+from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
+
 from terapia.constantes import (
     CONSULTA_ANTECEDENCIA_MAXIMA,
     CONSULTA_ANTECEDENCIA_MINIMA,
@@ -23,15 +30,8 @@ from .forms import (
     ConsultaCreationForm,
     ConsultaFiltrosForm,
 )
-from django.urls import reverse_lazy
+from .models import Consulta, EstadoConsulta, Psicologo
 from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
-from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
-from .models import Psicologo, Consulta, EstadoConsulta
-from django.http import HttpResponseForbidden
-from datetime import timedelta
-from django.shortcuts import redirect
-from django.views import View
-
 
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
@@ -185,56 +185,22 @@ class CustomLoginView(LoginView):
         return context
 
 
-class CancelarConsultaView(DeveTerCargoMixin, View):
+class CancelarConsultaPacienteView(DeveTerCargoMixin, View):
     def post(self, request, pk):
-        consulta = get_object_or_404(
-            Consulta.objects.select_related("paciente__usuario", "psicologo__usuario"),
-            pk=pk,
-        )
+        if not request.user.is_paciente:
+            return HttpResponseForbidden("Sua conta precisa ser do tipo paciente.")
 
-        eh_psicologo = getattr(request.user, "is_psicologo", False) and hasattr(request.user, "psicologo")
-        eh_paciente = getattr(request.user, "is_paciente", False) and hasattr(request.user, "paciente")
+        consulta = get_object_or_404(Consulta, pk=pk, paciente=request.user.paciente)
 
-        autorizado = (
-                (eh_psicologo and consulta.psicologo_id == request.user.psicologo.id) or
-                (eh_paciente and consulta.paciente_id == request.user.paciente.id)
-        )
-        if not autorizado:
-            return HttpResponseForbidden("Sem permissão para cancelar esta consulta.")
+        if consulta.estado == EstadoConsulta.CANCELADA:
+            messages.info(request, "Esta consulta já estava cancelada.")
+        else:
+            consulta.estado = EstadoConsulta.CANCELADA
+            consulta.save(update_fields=["estado"])
+            messages.success(request, "Consulta cancelada com sucesso.")
 
-        with transaction.atomic():
-            if consulta.estado != EstadoConsulta.CANCELADA:
-                consulta.estado = EstadoConsulta.CANCELADA
-                consulta.save(update_fields=["estado"])
-
-        messages.success(request, "Consulta cancelada.")
-
-        try:
-            if eh_psicologo:
-                destinatarios = [getattr(consulta.paciente.usuario, "email", None)] if getattr(consulta.paciente,
-                                                                                               "usuario", None) else []
-                quem = "psicólogo"
-            else:
-                destinatarios = [getattr(consulta.psicologo.usuario, "email", None)] if getattr(consulta.psicologo,
-                                                                                                "usuario", None) else []
-                quem = "paciente"
-
-            destinatarios = [e for e in destinatarios if e]
-            if destinatarios:
-                send_mail(
-                    subject="Consulta cancelada",
-                    message=(
-                        f"A consulta de {timezone.localtime(consulta.data_hora_agendada):%d/%m/%Y %H:%M} "
-                        f"foi cancelada pelo {quem}."
-                    ),
-                    from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@easytalk.local"),
-                    recipient_list=destinatarios,
-                    fail_silently=True,
-                )
-        except Exception:
-            pass
-
-        return redirect("minhas_consultas")
+        next_url = request.POST.get("next") or reverse_lazy("minhas_consultas")
+        return redirect(next_url)
 
 
 class HomeView(TemplateView):
