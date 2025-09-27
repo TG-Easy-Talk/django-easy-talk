@@ -651,16 +651,26 @@ class IntervaloDisponibilidade(models.Model):
             timedelta_hora = indice * CONSULTA_DURACAO
             return time(timedelta_hora.seconds // 3600, (timedelta_hora.seconds // 60) % 60)
 
-        def segunda_a_domingo(matriz_disponibilidade_booleanos):
-            matriz_disponibilidade_booleanos.append(matriz_disponibilidade_booleanos.pop(0))
+        def segunda_a_domingo(matriz):
+            matriz.append(matriz.pop(0))
 
         def to_dia_semana_iso(indice):
             return indice % 7 + 1
 
-        disponibilidade = []
-        m = json.loads(matriz_disponibilidade_booleanos)
+        if isinstance(matriz_disponibilidade_booleanos, (str, bytes, bytearray)):
+            m = json.loads(matriz_disponibilidade_booleanos)
+        else:
+            m = matriz_disponibilidade_booleanos
+
+        if not isinstance(m, list) or not m or any(not isinstance(row, list) for row in m):
+            raise ValueError("Disponibilidade inválida: esperado lista de listas.")
+        largura = len(m[0])
+        if any(len(row) != largura for row in m) or any(not isinstance(v, bool) for row in m for v in row):
+            raise ValueError("Disponibilidade inválida: matriz irregular ou com valores não booleanos.")
+
         segunda_a_domingo(m)
 
+        disponibilidade = []
         intervalo_no_comeco = None
 
         i = j = 0
