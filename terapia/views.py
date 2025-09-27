@@ -2,7 +2,12 @@ from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
 from django.views.generic import TemplateView, FormView, ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.db import transaction
+from django.utils import timezone
+from datetime import datetime
+import json
+from django.core.exceptions import ValidationError
+from django.contrib import messages
 from terapia.constantes import (
     CONSULTA_ANTECEDENCIA_MAXIMA,
     CONSULTA_ANTECEDENCIA_MINIMA,
@@ -25,6 +30,7 @@ from .models import Psicologo, Consulta, EstadoConsulta
 from django.http import HttpResponseForbidden
 from datetime import timedelta
 from django.shortcuts import redirect
+from django.views import View
 
 
 class DeveTerCargoMixin(LoginRequiredMixin):
@@ -179,6 +185,58 @@ class CustomLoginView(LoginView):
         return context
 
 
+class CancelarConsultaView(DeveTerCargoMixin, View):
+    def post(self, request, pk):
+        consulta = get_object_or_404(
+            Consulta.objects.select_related("paciente__usuario", "psicologo__usuario"),
+            pk=pk,
+        )
+
+        eh_psicologo = getattr(request.user, "is_psicologo", False) and hasattr(request.user, "psicologo")
+        eh_paciente = getattr(request.user, "is_paciente", False) and hasattr(request.user, "paciente")
+
+        autorizado = (
+                (eh_psicologo and consulta.psicologo_id == request.user.psicologo.id) or
+                (eh_paciente and consulta.paciente_id == request.user.paciente.id)
+        )
+        if not autorizado:
+            return HttpResponseForbidden("Sem permissão para cancelar esta consulta.")
+
+        with transaction.atomic():
+            if consulta.estado != EstadoConsulta.CANCELADA:
+                consulta.estado = EstadoConsulta.CANCELADA
+                consulta.save(update_fields=["estado"])
+
+        messages.success(request, "Consulta cancelada.")
+
+        try:
+            if eh_psicologo:
+                destinatarios = [getattr(consulta.paciente.usuario, "email", None)] if getattr(consulta.paciente,
+                                                                                               "usuario", None) else []
+                quem = "psicólogo"
+            else:
+                destinatarios = [getattr(consulta.psicologo.usuario, "email", None)] if getattr(consulta.psicologo,
+                                                                                                "usuario", None) else []
+                quem = "paciente"
+
+            destinatarios = [e for e in destinatarios if e]
+            if destinatarios:
+                send_mail(
+                    subject="Consulta cancelada",
+                    message=(
+                        f"A consulta de {timezone.localtime(consulta.data_hora_agendada):%d/%m/%Y %H:%M} "
+                        f"foi cancelada pelo {quem}."
+                    ),
+                    from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@easytalk.local"),
+                    recipient_list=destinatarios,
+                    fail_silently=True,
+                )
+        except Exception:
+            pass
+
+        return redirect("minhas_consultas")
+
+
 class HomeView(TemplateView):
     template_name = "home.html"
 
@@ -202,13 +260,54 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
     
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
-        context = super().get_context_data(**kwargs)
-        context[self.context_object_name] = self.object
-        return context
-    
+        ctx = super().get_context_data(**kwargs)
+        ocupados = [
+            timezone.localtime(c.data_hora_agendada).strftime("%Y-%m-%dT%H:%M")
+            for c in self.object.consultas.exclude(estado=EstadoConsulta.CANCELADA)
+        ]
+        ctx["SLOTS_OCUPADOS_JSON"] = json.dumps(ocupados)
+        return ctx
+
     def post(self, request, *args, **kwargs):
         if not request.user.is_paciente:
             return HttpResponseForbidden("Sua conta precisa ser do tipo paciente para agendar uma consulta.")
+
+        agends_raw = request.POST.get("agendamentos")
+        if agends_raw:
+            try:
+                slots = json.loads(agends_raw)
+                assert isinstance(slots, list)
+            except Exception:
+                messages.error(request, "Formato inválido dos horários selecionados.")
+                return self.get(request, *args, **kwargs)
+
+            psicologo = self.get_object()
+            paciente = request.user.paciente
+            tz = timezone.get_current_timezone()
+
+            criadas, falhas = 0, []
+            with transaction.atomic():
+                for s in slots:
+                    try:
+                        dt_naive = datetime.fromisoformat(s)
+                        dt = timezone.make_aware(dt_naive, tz)
+                        c = Consulta(paciente=paciente, psicologo=psicologo, data_hora_agendada=dt)
+                        c.full_clean()
+                        c.save()
+                        criadas += 1
+                    except ValidationError as ve:
+                        falhas.append((s, "; ".join(sum(ve.message_dict.values(), []))))
+                    except Exception as e:
+                        falhas.append((s, str(e)))
+
+            if criadas:
+                messages.success(request, f"{criadas} consulta(s) solicitada(s).")
+            if falhas:
+                for s, msg in falhas:
+                    messages.warning(request, f"Não foi possível agendar {s}: {msg}")
+
+            return redirect(self.get_success_url())
+
         return super().post(request, *args, **kwargs)
     
     def form_valid(self, form):

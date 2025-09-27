@@ -330,8 +330,7 @@ class Psicologo(BasePacienteOuPsicologo):
         return bool(
             self.disponibilidade.exists() and
             proxima_data_hora_agendavel is not None and
-            data_hora >= proxima_data_hora_agendavel and
-            data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
+            proxima_data_hora_agendavel <= data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
             self._tem_intervalo_onde_cabe_uma_consulta_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
         )
@@ -767,6 +766,18 @@ class Consulta(models.Model):
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
         ordering = ["-data_hora_solicitada", "-data_hora_agendada"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["psicologo", "data_hora_agendada"],
+                condition=~Q(estado=EstadoConsulta.CANCELADA),
+                name="uniq_psicologo_horario_consulta_ativa",
+            ),
+            models.UniqueConstraint(
+                fields=["paciente", "data_hora_agendada"],
+                condition=~Q(estado=EstadoConsulta.CANCELADA),
+                name="uniq_paciente_horario_consulta_ativa",
+            ),
+        ]
 
     def clean(self):
         super().clean()

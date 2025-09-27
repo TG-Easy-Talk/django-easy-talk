@@ -332,6 +332,7 @@
     <script defer>
         (() => {
             "use strict";
+            const OCUPADOS = new Set(JSON.parse(`{{ SLOTS_OCUPADOS_JSON|safe }}`));
 
             const CFG = {
                 MATRIZ: JSON.parse(`{{ psicologo.get_matriz_disponibilidade_booleanos_em_json|safe }}`),
@@ -377,6 +378,7 @@
                     if (maxOK && dt > maxOK) continue;
 
                     const value = `${y}-${pad(m + 1)}-${pad(d)}T${pad(hh)}:${pad(mm)}`;
+                    if (OCUPADOS.has(value)) continue;
                     opcoes.push({label: `${pad(hh)}:${pad(mm)}`, value});
                 }
                 return opcoes;
