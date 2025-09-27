@@ -15,4 +15,6 @@ urlpatterns = [
     path('minhas_consultas/', views.MinhasConsultasView.as_view(), name='minhas_consultas'),
     path("consultas/<int:pk>/cancelar/", views.CancelarConsultaPacienteView.as_view(), name="consulta_cancelar"),
     path('meu_perfil/', views.PsicologoMeuPerfilView.as_view(), name='meu_perfil'),
+    path("consultas/<int:pk>/aceitar/", views.AceitarConsultaPsicologoView.as_view(), name="consulta_aceitar"),
+    path("consultas/<int:pk>/cancelar/", views.CancelarConsultaPacienteView.as_view(), name="consulta_cancelar"),
 ]

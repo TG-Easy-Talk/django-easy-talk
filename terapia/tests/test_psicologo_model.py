@@ -253,7 +253,7 @@ class PsicologoModelTest(ModelTestCase):
         )
         psicologo.especializacoes.set(self.especializacoes)
         self.set_disponibilidade_generica(psicologo)
-        consultas = self.criar_consultas_genericas(self.paciente_dummy, psicologo)
+        consultas = self.criar_consultas_genericas(self.pacientes_dummies[1], psicologo)
 
         self.assertEqual(psicologo.nome_completo, nome_completo)
         self.assertEqual(psicologo.crp, crp)
@@ -709,7 +709,7 @@ class PsicologoModelTest(ModelTestCase):
                 for fuso in self.fusos_para_teste:
                     data_hora = timezone.localtime(data_hora, fuso)
                     datas_hora_ordenadas = self.psicologo_sempre_disponivel._get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(data_hora)
-                    
+
                     with self.subTest(data_hora=data_hora, psicologo=psicologo.nome_completo, datas_hora_ordenadas=datas_hora_ordenadas):
                         self.assertEqual(len(datas_hora_ordenadas), len(set(datas_hora_ordenadas)))
 
@@ -782,7 +782,7 @@ class PsicologoModelTest(ModelTestCase):
         for fuso in self.fusos_para_teste:
             with timezone.override(fuso), self.subTest(fuso=fuso, psicologo=self.psicologo_completo.nome_completo):
                 Consulta.objects.filter(psicologo=self.psicologo_completo).delete()
-                
+
                 with freeze_time(timezone.localtime(converter_dia_semana_iso_com_hora_para_data_hora(7, time(21, 0), UTC))):
                     self.assertEqual(
                         self.psicologo_completo.proxima_data_hora_agendavel,
@@ -792,7 +792,7 @@ class PsicologoModelTest(ModelTestCase):
 
                 Consulta.objects.create(
                     data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 0), UTC),
-                    paciente=self.paciente_dummy,
+                    paciente=self.pacientes_dummies[1],
                     psicologo=self.psicologo_completo,
                 )
 
@@ -805,7 +805,7 @@ class PsicologoModelTest(ModelTestCase):
 
                     Consulta.objects.create(
                         data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(0, 0), UTC) + timedelta(weeks=1),
-                        paciente=self.paciente_dummy,
+                        paciente=self.pacientes_dummies[1],
                         psicologo=self.psicologo_completo,
                     )
 
@@ -816,14 +816,17 @@ class PsicologoModelTest(ModelTestCase):
                     )
 
                     Consulta.objects.create(
-                        data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0), UTC) + timedelta(weeks=1),
+                        data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(1, 0),
+                                                                                            UTC) + timedelta(weeks=1),
                         paciente=self.paciente_dummy,
                         psicologo=self.psicologo_completo,
                     )
 
                     for hora in [8, 9, 10, 11, 14, 15, 17]:
                         Consulta.objects.create(
-                            data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(hora, 0), UTC) + timedelta(weeks=1),
+                            data_hora_agendada=converter_dia_semana_iso_com_hora_para_data_hora(1, time(hora, 0),
+                                                                                                UTC) + timedelta(
+                                weeks=1),
                             paciente=self.paciente_dummy,
                             psicologo=self.psicologo_completo,
                         )
@@ -1042,7 +1045,7 @@ class PsicologoModelTest(ModelTestCase):
             )
             
             consulta.estado = EstadoConsulta.CANCELADA
-            consulta.save()
+            consulta.save(update_fields=["estado"])
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertTrue,

@@ -187,10 +187,13 @@ class CustomLoginView(LoginView):
 
 class CancelarConsultaPacienteView(DeveTerCargoMixin, View):
     def post(self, request, pk):
-        if not request.user.is_paciente:
-            return HttpResponseForbidden("Sua conta precisa ser do tipo paciente.")
+        if not (getattr(request.user, "is_paciente", False) or getattr(request.user, "is_psicologo", False)):
+            return HttpResponseForbidden("Sua conta precisa ser do tipo paciente ou psicólogo.")
 
-        consulta = get_object_or_404(Consulta, pk=pk, paciente=request.user.paciente)
+        if getattr(request.user, "is_paciente", False):
+            consulta = get_object_or_404(Consulta, pk=pk, paciente=request.user.paciente)
+        else:
+            consulta = get_object_or_404(Consulta, pk=pk, psicologo=request.user.psicologo)
 
         if consulta.estado == EstadoConsulta.CANCELADA:
             messages.info(request, "Esta consulta já estava cancelada.")
@@ -198,6 +201,29 @@ class CancelarConsultaPacienteView(DeveTerCargoMixin, View):
             consulta.estado = EstadoConsulta.CANCELADA
             consulta.save(update_fields=["estado"])
             messages.success(request, "Consulta cancelada com sucesso.")
+
+        next_url = request.POST.get("next") or reverse_lazy("minhas_consultas")
+        return redirect(next_url)
+
+class AceitarConsultaPsicologoView(View):
+    def post(self, request, pk):
+        if not request.user.is_psicologo:
+            return HttpResponseForbidden("Sua conta precisa ser do tipo psicólogo.")
+
+        consulta = get_object_or_404(
+            Consulta,
+            pk=pk,
+            psicologo=request.user.psicologo
+        )
+
+        if consulta.estado == EstadoConsulta.CONFIRMADA:
+            messages.info(request, "Esta consulta já estava confirmada.")
+        elif consulta.estado == EstadoConsulta.CANCELADA:
+            messages.warning(request, "Não é possível confirmar uma consulta já cancelada.")
+        else:
+            consulta.estado = EstadoConsulta.CONFIRMADA
+            consulta.save(update_fields=["estado"])
+            messages.success(request, "Consulta confirmada com sucesso.")
 
         next_url = request.POST.get("next") or reverse_lazy("minhas_consultas")
         return redirect(next_url)

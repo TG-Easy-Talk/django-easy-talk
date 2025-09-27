@@ -2,7 +2,7 @@ from datetime import datetime, UTC, timedelta
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from freezegun import freeze_time
-from terapia.constantes import CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA
+from terapia.constantes import (CONSULTA_ANTECEDENCIA_MAXIMA, CONSULTA_ANTECEDENCIA_MINIMA, CONSULTA_DURACAO)
 from terapia.models import Consulta, EstadoConsulta
 from .model_test_case import ModelTestCase
 
@@ -47,12 +47,13 @@ class ConsultaModelTest(ModelTestCase):
         checklist_tarefas = "1. Fazer exercícios de respiração, 2. Praticar exercício"
         duracao = timedelta(minutes=45)
         estado = EstadoConsulta.EM_ANDAMENTO
+        data_hora_agendada_2 = data_hora_agendada + CONSULTA_DURACAO
 
         with freeze_time(self.agora_fake):
             consulta = Consulta.objects.create(
-                paciente=self.paciente_dummy,
+                paciente=self.pacientes_dummies[1],
                 psicologo=self.psicologo_sempre_disponivel,
-                data_hora_agendada=data_hora_agendada,
+                data_hora_agendada=data_hora_agendada_2,
                 anotacoes=anotacoes,
                 checklist_tarefas=checklist_tarefas,
                 estado=estado,
@@ -60,9 +61,9 @@ class ConsultaModelTest(ModelTestCase):
             )
         
         self.assertEqual(consulta.data_hora_solicitada, self.agora_fake)
-        self.assertEqual(consulta.paciente, self.paciente_dummy)
+        self.assertEqual(consulta.paciente, self.pacientes_dummies[1])
         self.assertEqual(consulta.psicologo, self.psicologo_sempre_disponivel)
-        self.assertEqual(consulta.data_hora_agendada, data_hora_agendada)
+        self.assertEqual(consulta.data_hora_agendada, data_hora_agendada_2)
         self.assertEqual(consulta.anotacoes, anotacoes)
         self.assertEqual(consulta.checklist_tarefas, checklist_tarefas)
         self.assertEqual(consulta.estado, estado)
