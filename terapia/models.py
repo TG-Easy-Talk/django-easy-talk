@@ -656,10 +656,7 @@ class IntervaloDisponibilidade(models.Model):
         def to_dia_semana_iso(indice):
             return indice % 7 + 1
 
-        if isinstance(matriz_disponibilidade_booleanos, (str, bytes, bytearray)):
-            m = json.loads(matriz_disponibilidade_booleanos)
-        else:
-            m = matriz_disponibilidade_booleanos
+        m = json.loads(matriz_disponibilidade_booleanos)
 
         segunda_a_domingo(m)
 
@@ -760,18 +757,6 @@ class Consulta(models.Model):
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
         ordering = ["-data_hora_solicitada", "-data_hora_agendada"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["psicologo", "data_hora_agendada"],
-                condition=~Q(estado=EstadoConsulta.CANCELADA),
-                name="uniq_psicologo_horario_consulta_ativa",
-            ),
-            models.UniqueConstraint(
-                fields=["paciente", "data_hora_agendada"],
-                condition=~Q(estado=EstadoConsulta.CANCELADA),
-                name="uniq_paciente_horario_consulta_ativa",
-            ),
-        ]
 
     def clean(self):
         super().clean()
