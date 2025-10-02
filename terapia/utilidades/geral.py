@@ -15,8 +15,6 @@ def regra_de_3_numero_periodos_por_dia(n):
 
 
 def desprezar_segundos_e_microssegundos(data_hora):
-    if data_hora is None:
-        return None
     return data_hora.replace(second=0, microsecond=0)
 
 

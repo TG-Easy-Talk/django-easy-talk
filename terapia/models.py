@@ -661,12 +661,6 @@ class IntervaloDisponibilidade(models.Model):
         else:
             m = matriz_disponibilidade_booleanos
 
-        if not isinstance(m, list) or not m or any(not isinstance(row, list) for row in m):
-            raise ValueError("Disponibilidade inválida: esperado lista de listas.")
-        largura = len(m[0])
-        if any(len(row) != largura for row in m) or any(not isinstance(v, bool) for row in m for v in row):
-            raise ValueError("Disponibilidade inválida: matriz irregular ou com valores não booleanos.")
-
         segunda_a_domingo(m)
 
         disponibilidade = []
