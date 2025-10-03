@@ -1,7 +1,19 @@
+from datetime import datetime, timedelta
+import json
+
+from django.contrib import messages
 from django.contrib.auth import login
-from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView, FormView, ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.utils import timezone
+from django.views import View
+from django.views.generic import FormView, ListView, TemplateView, UpdateView
+from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 
 from terapia.constantes import (
     CONSULTA_ANTECEDENCIA_MAXIMA,
@@ -18,14 +30,8 @@ from .forms import (
     ConsultaCreationForm,
     ConsultaFiltrosForm,
 )
-from django.urls import reverse_lazy
+from .models import Consulta, EstadoConsulta, Psicologo
 from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
-from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
-from .models import Psicologo, Consulta, EstadoConsulta
-from django.http import HttpResponseForbidden
-from datetime import timedelta
-from django.shortcuts import redirect
-
 
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
@@ -179,6 +185,50 @@ class CustomLoginView(LoginView):
         return context
 
 
+class CancelarConsultaPacienteView(DeveTerCargoMixin, View):
+    def post(self, request, pk):
+        if not (getattr(request.user, "is_paciente", False) or getattr(request.user, "is_psicologo", False)):
+            return HttpResponseForbidden("Sua conta precisa ser do tipo paciente ou psicólogo.")
+
+        if getattr(request.user, "is_paciente", False):
+            consulta = get_object_or_404(Consulta, pk=pk, paciente=request.user.paciente)
+        else:
+            consulta = get_object_or_404(Consulta, pk=pk, psicologo=request.user.psicologo)
+
+        if consulta.estado == EstadoConsulta.CANCELADA:
+            messages.info(request, "Esta consulta já estava cancelada.")
+        else:
+            consulta.estado = EstadoConsulta.CANCELADA
+            consulta.save(update_fields=["estado"])
+            messages.success(request, "Consulta cancelada com sucesso.")
+
+        next_url = request.POST.get("next") or reverse_lazy("minhas_consultas")
+        return redirect(next_url)
+
+class AceitarConsultaPsicologoView(View):
+    def post(self, request, pk):
+        if not request.user.is_psicologo:
+            return HttpResponseForbidden("Sua conta precisa ser do tipo psicólogo.")
+
+        consulta = get_object_or_404(
+            Consulta,
+            pk=pk,
+            psicologo=request.user.psicologo
+        )
+
+        if consulta.estado == EstadoConsulta.CONFIRMADA:
+            messages.info(request, "Esta consulta já estava confirmada.")
+        elif consulta.estado == EstadoConsulta.CANCELADA:
+            messages.warning(request, "Não é possível confirmar uma consulta já cancelada.")
+        else:
+            consulta.estado = EstadoConsulta.CONFIRMADA
+            consulta.save(update_fields=["estado"])
+            messages.success(request, "Consulta confirmada com sucesso.")
+
+        next_url = request.POST.get("next") or reverse_lazy("minhas_consultas")
+        return redirect(next_url)
+
+
 class HomeView(TemplateView):
     template_name = "home.html"
 
@@ -202,13 +252,54 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
     
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
-        context = super().get_context_data(**kwargs)
-        context[self.context_object_name] = self.object
-        return context
-    
+        ctx = super().get_context_data(**kwargs)
+        ocupados = [
+            timezone.localtime(c.data_hora_agendada).strftime("%Y-%m-%dT%H:%M")
+            for c in self.object.consultas.exclude(estado=EstadoConsulta.CANCELADA)
+        ]
+        ctx["SLOTS_OCUPADOS_JSON"] = json.dumps(ocupados)
+        return ctx
+
     def post(self, request, *args, **kwargs):
         if not request.user.is_paciente:
             return HttpResponseForbidden("Sua conta precisa ser do tipo paciente para agendar uma consulta.")
+
+        agends_raw = request.POST.get("agendamentos")
+        if agends_raw:
+            try:
+                slots = json.loads(agends_raw)
+                assert isinstance(slots, list)
+            except Exception:
+                messages.error(request, "Formato inválido dos horários selecionados.")
+                return self.get(request, *args, **kwargs)
+
+            psicologo = self.get_object()
+            paciente = request.user.paciente
+            tz = timezone.get_current_timezone()
+
+            criadas, falhas = 0, []
+            with transaction.atomic():
+                for s in slots:
+                    try:
+                        dt_naive = datetime.fromisoformat(s)
+                        dt = timezone.make_aware(dt_naive, tz)
+                        c = Consulta(paciente=paciente, psicologo=psicologo, data_hora_agendada=dt)
+                        c.full_clean()
+                        c.save()
+                        criadas += 1
+                    except ValidationError as ve:
+                        falhas.append((s, "; ".join(sum(ve.message_dict.values(), []))))
+                    except Exception as e:
+                        falhas.append((s, str(e)))
+
+            if criadas:
+                messages.success(request, f"{criadas} consulta(s) solicitada(s).")
+            if falhas:
+                for s, msg in falhas:
+                    messages.warning(request, f"Não foi possível agendar {s}: {msg}")
+
+            return redirect(self.get_success_url())
+
         return super().post(request, *args, **kwargs)
     
     def form_valid(self, form):

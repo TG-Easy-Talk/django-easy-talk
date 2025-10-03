@@ -19,9 +19,10 @@ class ConsultaModelTest(ModelTestCase):
             paciente=self.paciente_dummy,
             psicologo=self.psicologo_sempre_disponivel,
         )
-        
+
         with timezone.override(UTC):
-            self.assertEqual(str(consulta), f"Consulta SOLICITADA agendada para 01/12/2023 10:00 (UTC) com Paciente Dummy e Psicólogo Sempre Disponível")
+            self.assertEqual(str(consulta),
+                             f"Consulta SOLICITADA agendada para 01/12/2023 10:00 (UTC) com Paciente Dummy e Psicólogo Sempre Disponível")
 
     def test_dados_corretos(self):
         data_hora_agendada = datetime(2023, 1, 1, 10, 0, tzinfo=UTC)
@@ -58,7 +59,7 @@ class ConsultaModelTest(ModelTestCase):
                 estado=estado,
                 duracao=duracao,
             )
-        
+
         self.assertEqual(consulta.data_hora_solicitada, self.agora_fake)
         self.assertEqual(consulta.paciente, self.paciente_dummy)
         self.assertEqual(consulta.psicologo, self.psicologo_sempre_disponivel)
@@ -85,7 +86,8 @@ class ConsultaModelTest(ModelTestCase):
             consulta = Consulta(
                 paciente=self.paciente_dummy,
                 psicologo=self.psicologo_sempre_disponivel,
-                data_hora_agendada=self.psicologo_sempre_disponivel.proxima_data_hora_agendavel.replace(second=30, microsecond=123456)
+                data_hora_agendada=self.psicologo_sempre_disponivel.proxima_data_hora_agendavel.replace(second=30,
+                                                                                                        microsecond=123456)
             )
             consulta.clean()
             consulta.save()
@@ -158,5 +160,5 @@ class ConsultaModelTest(ModelTestCase):
                     data_hora_agendada=self.data_hora_nao_divisivel_por_duracao_consulta,
                 ).clean_fields()
 
-            self.assertEqual("data_hora_nao_divisivel_por_duracao_consulta", ctx.exception.error_dict["data_hora_agendada"][0].code)
-    
+            self.assertEqual("data_hora_nao_divisivel_por_duracao_consulta",
+                             ctx.exception.error_dict["data_hora_agendada"][0].code)

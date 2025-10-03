@@ -330,8 +330,7 @@ class Psicologo(BasePacienteOuPsicologo):
         return bool(
             self.disponibilidade.exists() and
             proxima_data_hora_agendavel is not None and
-            data_hora >= proxima_data_hora_agendavel and
-            data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
+            proxima_data_hora_agendavel <= data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
             self._tem_intervalo_onde_cabe_uma_consulta_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
         )
@@ -651,16 +650,23 @@ class IntervaloDisponibilidade(models.Model):
             timedelta_hora = indice * CONSULTA_DURACAO
             return time(timedelta_hora.seconds // 3600, (timedelta_hora.seconds // 60) % 60)
 
-        def segunda_a_domingo(matriz_disponibilidade_booleanos):
-            matriz_disponibilidade_booleanos.append(matriz_disponibilidade_booleanos.pop(0))
+        def segunda_a_domingo(matriz):
+            matriz.append(matriz.pop(0))
 
         def to_dia_semana_iso(indice):
             return indice % 7 + 1
 
-        disponibilidade = []
-        m = json.loads(matriz_disponibilidade_booleanos)
+        if isinstance(matriz_disponibilidade_booleanos, (str, bytes, bytearray)):
+            m = json.loads(matriz_disponibilidade_booleanos)
+        else:
+            m = matriz_disponibilidade_booleanos
+
+        if not (isinstance(m,list) and all(isinstance(row, list) for row in m)):
+            raise ValueError("Fromato inválido para matriz de disponibilidade")
+
         segunda_a_domingo(m)
 
+        disponibilidade = []
         intervalo_no_comeco = None
 
         i = j = 0

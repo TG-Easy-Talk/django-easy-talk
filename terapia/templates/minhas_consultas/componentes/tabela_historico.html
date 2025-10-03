@@ -51,22 +51,42 @@
                         </span>
                     </td>
                     <td>{{ consulta.data_hora_agendada|date:"d/m/Y" }} às {{ consulta.data_hora_agendada|time }}</td>
-                    <td>
-                        {% if usuario.is_psicologo and consulta.get_estado_display == "Solicitada" %}
-                            <button class="btn btn-success btn-sm text-white" onclick="naoImplementado()">Aceitar</button>
-                            <button class="btn btn-danger btn-sm text-white" onclick="naoImplementado()">Recusar</button>
-                        {% else %}
-                            <small>(Em construção)</small>
+
+                    <td class="align-middle">
+                      <div class="d-flex justify-content-end align-items-center" style="height:100%">
+                        {% if request.user.is_paciente and consulta.estado != 'CANCELADA' and consulta.estado != 'FINALIZADA' %}
+                            <form method="post"
+                                  action="{% url 'consulta_cancelar' consulta.pk %}"
+                                  class="d-inline m-0"
+                                  onsubmit="return confirm('Confirma cancelar esta consulta?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
+                            </form>
+
+                        {% elif request.user.is_psicologo and consulta.estado == 'SOLICITADA' %}
+                            <form method="post"
+                                  action="{% url 'consulta_aceitar' consulta.pk %}"
+                                  class="d-inline m-0 me-2"
+                                  onsubmit="return confirm('Confirma aceitar esta consulta?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-success btn-sm">Aceitar</button>
+                            </form>
+
+                            <form method="post"
+                                  action="{% url 'consulta_cancelar' consulta.pk %}"
+                                  class="d-inline m-0"
+                                  onsubmit="return confirm('Confirma cancelar esta consulta?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
+                            </form>
                         {% endif %}
+                      </div>
                     </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-
-<script>
-    function naoImplementado() {
-        alert("Essa funcionalidade ainda não foi implementada. Por enquanto, está aqui só para mostrar como será.");
-    }
-</script>
