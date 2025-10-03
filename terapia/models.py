@@ -656,7 +656,13 @@ class IntervaloDisponibilidade(models.Model):
         def to_dia_semana_iso(indice):
             return indice % 7 + 1
 
-        m = json.loads(matriz_disponibilidade_booleanos)
+        if isinstance(matriz_disponibilidade_booleanos, (str, bytes, bytearray)):
+            m = json.loads(matriz_disponibilidade_booleanos)
+        else:
+            m = matriz_disponibilidade_booleanos
+
+        if not (isinstance(m,list) and all(isinstance(row, list) for row in m)):
+            raise ValueError("Fromato inválido para matriz de disponibilidade")
 
         segunda_a_domingo(m)
 
