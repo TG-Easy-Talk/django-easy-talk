@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from django.contrib.auth.views import LogoutView
+from .views import DisponibilidadeSemanalAPI
 
 urlpatterns = [
     path('', views.HomeView.as_view(), name='home'),
@@ -17,4 +18,5 @@ urlpatterns = [
     path('meu_perfil/', views.PsicologoMeuPerfilView.as_view(), name='meu_perfil'),
     path("consultas/<int:pk>/aceitar/", views.AceitarConsultaPsicologoView.as_view(), name="consulta_aceitar"),
     path("consultas/<int:pk>/cancelar/", views.CancelarConsultaPacienteView.as_view(), name="consulta_cancelar"),
+    path("meu_perfil/api/disponibilidade/", DisponibilidadeSemanalAPI.as_view(), name="api_disponibilidade_semanal"),
 ]

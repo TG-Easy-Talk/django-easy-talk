@@ -790,4 +790,39 @@ class Consulta(models.Model):
 
     def __str__(self):
         return f"Consulta {self.estado.upper()} agendada para {timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} ({timezone.get_current_timezone_name()}) com {self.paciente.nome} e {self.psicologo.nome_completo}"
-    
+
+
+class WeekAvailability(models.Model):
+    """
+    Disponibilidade por semana (granular).
+    - week_start: segunda-feira (data) da semana (timezone local do servidor).
+    - kind: 'OVERRIDE' (só esta semana) ou 'ANCHOR' (esta e as seguintes, até outra âncora/override).
+    - matriz: 7 x NUMERO_PERIODOS_POR_DIA (mesmo formato usado no widget).
+    """
+    KIND_OVERRIDE = "OVERRIDE"
+    KIND_ANCHOR = "ANCHOR"
+    KIND_CHOICES = (
+        (KIND_OVERRIDE, "Override"),
+        (KIND_ANCHOR, "Anchor"),
+    )
+
+    psicologo = models.ForeignKey(Psicologo, related_name="week_availability", on_delete=models.CASCADE)
+    week_start = models.DateField()  # Monday
+    kind = models.CharField(max_length=16, choices=KIND_CHOICES)
+    matriz = models.JSONField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["psicologo", "week_start"], name="uniq_psicologo_weekstart")
+        ]
+        indexes = [
+            models.Index(fields=["psicologo", "week_start"]),
+            models.Index(fields=["psicologo", "kind", "week_start"]),
+        ]
+        ordering = ["week_start"]
+
+    def __str__(self):
+        return f"{self.psicologo_id} {self.week_start} {self.kind}"

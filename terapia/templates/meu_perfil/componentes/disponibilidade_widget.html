@@ -1,4 +1,32 @@
 <style>
+    .dispo-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .75rem;
+        margin: .75rem 0 .5rem 0;
+        text-align: center;
+    }
+
+    .dispo-title {
+        font-weight: 600;
+    }
+
+    .nav-btn {
+        border: 1px solid rgba(0, 0, 0, .125);
+        background: #fff;
+        border-radius: .5rem;
+        padding: .25rem .5rem;
+        line-height: 1;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .nav-btn:active {
+        transform: scale(.98);
+    }
+
+
     .grade-intervalos {
         display: grid;
         grid-template-columns: repeat({{ NUMERO_PERIODOS_POR_DIA|add:"1" }}, 1fr);
@@ -16,7 +44,13 @@
     }
 </style>
 
-<div draggable="false" class="grade-intervalos mt-5">
+<div class="dispo-header">
+    <button type="button" class="nav-btn" id="prev-week" aria-label="Semana anterior">&lsaquo;</button>
+    <div class="dispo-title"><span id="week-date">--/--/----</span></div>
+    <button type="button" class="nav-btn" id="next-week" aria-label="Próxima semana">&rsaquo;</button>
+</div>
+
+<div draggable="false" class="grade-intervalos mt-3">
     {% for _ in "1234567" %}
         <div draggable="false" class="text-end font-monospace me-3">
             {% if forloop.counter|divisibleby:"7" %}
@@ -38,29 +72,24 @@
 
         {% for _ in numero_periodos_por_dia_range %}
             <div
-                data-grade
-                data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
-                data-linha="{{ forloop.parentloop.counter0 }}"
-                data-coluna="{{ forloop.counter0 }}"
-                class="position-relative border-bottom border-primary
-                    {% if forloop.parentloop.first %}
-                        border-top
-                    {% endif %}
-
-                    {% if forloop.first %}
-                        border-start
-                    {% endif %}
-
-                    border-end
-                "
+                    data-grade
+                    data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
+                    data-linha="{{ forloop.parentloop.counter0 }}"
+                    data-coluna="{{ forloop.counter0 }}"
+                    class="position-relative border-bottom border-primary
+                    {% if forloop.parentloop.first %} border-top {% endif %}
+                    {% if forloop.first %} border-start {% endif %}
+                    border-end"
             >
                 {% if forloop.parentloop.first %}
-                    <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%; cursor: default;">
+                    <div draggable="false" class="font-monospace position-absolute translate-middle"
+                         style="top: -100%; cursor: default;">
                         {{ forloop.counter0 }}h
                     </div>
 
                     {% if forloop.last %}
-                        <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%; cursor: default;">
+                        <div draggable="false" class="font-monospace position-absolute translate-middle start-100"
+                             style="top: -100%; cursor: default;">
                             {{ forloop.counter }}h
                         </div>
                     {% endif %}
@@ -69,104 +98,200 @@
         {% endfor %}
     {% endfor %}
 </div>
-<div class="d-flex justify-content-end gap-3">
-    <a type="button" class="link-primary" onclick="DisponibilidadeWidget.limparGrade()">Limpar grade</a>
-    <a type="button" class="link-primary" onclick="DisponibilidadeWidget.redefinir()">Redefinir</a>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="d-flex gap-3">
+        <a type="button" class="link-primary" onclick="DisponibilidadeWidget.limparGrade()">Limpar grade</a>
+        <a type="button" class="link-primary" onclick="DisponibilidadeWidget.redefinir()">Redefinir</a>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                onclick="DisponibilidadeWidget.save('OVERRIDE')">
+            Salvar (só esta)
+        </button>
+        <button type="button" class="btn btn-primary btn-sm text-white"
+                onclick="DisponibilidadeWidget.save('ANCHOR')">
+            Salvar e replicar a partir desta
+        </button>
+    </div>
 </div>
 
 {% include "django/forms/widgets/input.html" with widget=widget %}
 
-<div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
+<div class="text-body-secondary mt-2">Sua tabela de disponibilidade ficará assim:</div>
 {% include "geral/tabela_disponibilidade.html" with matriz_disponibilidade_booleanos_em_json=widget.value %}
 
 <script>
     class DisponibilidadeWidget {
-        static widget = document.querySelector('input[name="{{ widget.name }}"]')
-        static celulas = document.querySelectorAll('[data-grade]')
-        static classesNaoSelecionado = ["bg-body-secondary"]
-        static classesSelecionado = ["bg-secondary"]
-        static matriz_disponibilidade_booleanos_atual = JSON.parse("{{ widget.value }}")
-        static matriz_disponibilidade_booleanos_original = JSON.parse("{{ widget.value }}")
+        static widget = document.querySelector('input[name="{{ widget.name }}"]');
+        static celulas = document.querySelectorAll('[data-grade]');
+        static classesNaoSelecionado = ["bg-body-secondary"];
+        static classesSelecionado = ["bg-secondary"];
+
+        static matriz_disponibilidade_booleanos_original = JSON.parse("{{ widget.value }}");
+        static matriz_disponibilidade_booleanos_atual = JSON.parse("{{ widget.value }}");
+
+        static apiUrl = "{% url 'api_disponibilidade_semanal' %}";
+        static currentWeekStart = null;
+
+        static getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        static mondayOf(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const wd = (d.getUTCDay() + 6) % 7;
+            d.setUTCDate(d.getUTCDate() - wd);
+            return d;
+        }
+
+        static formatBR(d) {
+            return d.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        }
+
+        static setHeaderDate(dMonday) {
+            const el = document.getElementById('week-date');
+            if (el) el.textContent = this.formatBR(dMonday);
+        }
 
         static atualizarItemPelaMatriz(item) {
-            const linha = Number(item.dataset.linha)
-            const coluna = Number(item.dataset.coluna)
-
-            if (this.matriz_disponibilidade_booleanos_atual[linha][coluna])
-                this.selecionar(item)
-            else
-                this.tirar(item)
+            const linha = Number(item.dataset.linha);
+            const coluna = Number(item.dataset.coluna);
+            if (this.matriz_disponibilidade_booleanos_atual[linha][coluna]) this.selecionar(item);
+            else this.tirar(item);
         }
 
         static atualizarMatrizPeloItem(item) {
-            const linha = Number(item.dataset.linha)
-            const coluna = Number(item.dataset.coluna)
-            this.matriz_disponibilidade_booleanos_atual[linha][coluna] = item.dataset.selecionado === "true" ? true : false
+            const linha = Number(item.dataset.linha);
+            const coluna = Number(item.dataset.coluna);
+            this.matriz_disponibilidade_booleanos_atual[linha][coluna] = (item.dataset.selecionado === "true");
         }
 
         static selecionar(item) {
-            item.dataset.selecionado = "true"
-            this.classesNaoSelecionado.forEach(classe => item.classList.remove(classe))
-            this.classesSelecionado.forEach(classe => item.classList.add(classe))
+            item.dataset.selecionado = "true";
+            this.classesNaoSelecionado.forEach(c => item.classList.remove(c));
+            this.classesSelecionado.forEach(c => item.classList.add(c));
         }
 
         static tirar(item) {
-            item.dataset.selecionado = "false"
-            this.classesSelecionado.forEach(classe => item.classList.remove(classe))
-            this.classesNaoSelecionado.forEach(classe => item.classList.add(classe))
+            item.dataset.selecionado = "false";
+            this.classesSelecionado.forEach(c => item.classList.remove(c));
+            this.classesNaoSelecionado.forEach(c => item.classList.add(c));
         }
 
         static selecionarOuTirar(item) {
-            if (item.dataset.selecionado === "false")
-                this.selecionar(item)
-            else
-                this.tirar(item)
-
-            this.atualizarMatrizPeloItem(item)
-            this.atualizarInputETabela()
+            if (item.dataset.selecionado === "false") this.selecionar(item);
+            else this.tirar(item);
+            this.atualizarMatrizPeloItem(item);
+            this.atualizarInputETabela();
         }
 
         static atualizarInputETabela() {
-            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_atual)
-            DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_atual
-            DisponibilidadeTabela.atualizar()
+            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_atual);
+            if (window.DisponibilidadeTabela) {
+                DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_atual;
+                DisponibilidadeTabela.atualizar();
+            }
         }
 
         static limparGrade() {
             this.celulas.forEach(item => {
-                this.tirar(item)
-                this.atualizarMatrizPeloItem(item)
-            })
-
-            this.atualizarInputETabela()
+                this.tirar(item);
+                this.atualizarMatrizPeloItem(item);
+            });
+            this.atualizarInputETabela();
         }
 
         static redefinir() {
-            this.matriz_disponibilidade_booleanos_atual = this.matriz_disponibilidade_booleanos_original.map(linha => [...linha])
-            this.celulas.forEach(item => this.atualizarItemPelaMatriz(item))
-            this.atualizarInputETabela()
+            this.matriz_disponibilidade_booleanos_atual =
+                this.matriz_disponibilidade_booleanos_original.map(l => [...l]);
+            this.celulas.forEach(item => this.atualizarItemPelaMatriz(item));
+            this.atualizarInputETabela();
+        }
+
+        static async loadWeek(dMonday) {
+            this.currentWeekStart = dMonday;
+            this.setHeaderDate(dMonday);
+            const qs = `?week=${dMonday.toISOString().slice(0, 10)}`;
+            try {
+                const resp = await fetch(this.apiUrl + qs, {credentials: 'same-origin'});
+                if (!resp.ok) throw new Error(`GET ${resp.status}`);
+                const data = await resp.json();
+                this.matriz_disponibilidade_booleanos_atual = data.matriz;
+                this.celulas.forEach(item => this.atualizarItemPelaMatriz(item));
+                this.atualizarInputETabela();
+            } catch (err) {
+                console.error('Falha ao carregar a semana:', err);
+            }
+        }
+
+        static async save(kind) {
+            if (!this.currentWeekStart) return;
+            const payload = {
+                week: this.currentWeekStart.toISOString().slice(0, 10),
+                kind: kind,
+                matriz: this.matriz_disponibilidade_booleanos_atual
+            };
+            try {
+                const resp = await fetch(this.apiUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCookie('csrftoken') || ''
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!resp.ok) throw new Error(`POST ${resp.status}`);
+                const data = await resp.json();
+                const msg = kind === 'OVERRIDE'
+                    ? 'Disponibilidade salva somente para esta semana.'
+                    : 'Âncora salva: esta disponibilidade se aplica a esta e às próximas semanas até nova âncora.';
+                console.log(msg, data);
+                this.matriz_disponibilidade_booleanos_original =
+                    this.matriz_disponibilidade_booleanos_atual.map(l => [...l]);
+            } catch (err) {
+                console.error('Falha ao salvar:', err);
+                alert('Falha ao salvar a disponibilidade da semana.');
+            }
         }
 
         static lidarComEvento(e, item) {
-            if (e.buttons === 1) // Checar se o botão esquerdo do mouse está clicado
-                this.selecionarOuTirar(item)
+            if (e.buttons === 1) this.selecionarOuTirar(item);
         }
 
         static preparar() {
             document.querySelectorAll('[draggable="false"]').forEach(item => {
-                item.classList.add('prevent-select')
-
-                // Prevenir que elementos sejam arrastados quando o usuário estiver arrastando o mouse na grade
-                item.addEventListener('dragstart', e => e.preventDefault())
-            })
-
+                item.classList.add('prevent-select');
+                item.addEventListener('dragstart', e => e.preventDefault());
+            });
             this.celulas.forEach(item => {
-                this.atualizarItemPelaMatriz(item)
-                item.addEventListener('mouseover', e => this.lidarComEvento(e, item))
-                item.addEventListener('mousedown', e => this.lidarComEvento(e, item))
-            })
+                this.atualizarItemPelaMatriz(item);
+                item.addEventListener('mouseover', e => this.lidarComEvento(e, item));
+                item.addEventListener('mousedown', e => this.lidarComEvento(e, item));
+            });
 
-            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_original)
+            const today = new Date();
+            const monday = this.mondayOf(today);
+
+            const prev = document.getElementById('prev-week');
+            const next = document.getElementById('next-week');
+            if (prev) prev.addEventListener('click', () => {
+                const d = new Date(this.currentWeekStart);
+                d.setUTCDate(d.getUTCDate() - 7);
+                this.loadWeek(d);
+            });
+            if (next) next.addEventListener('click', () => {
+                const d = new Date(this.currentWeekStart);
+                d.setUTCDate(d.getUTCDate() + 7);
+                this.loadWeek(d);
+            });
+
+            this.loadWeek(monday);
+
+            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_original);
         }
     }
 
