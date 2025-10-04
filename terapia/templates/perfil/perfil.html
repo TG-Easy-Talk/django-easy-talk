@@ -371,6 +371,13 @@
                 return new Date(year, month0, 1 + delta);
             }
 
+            function mondayOf(d) {
+                const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const wd = (x.getDay() + 6) % 7;
+                x.setDate(x.getDate() - wd);
+                return x;
+            }
+
             function idxToHora(i) {
                 const mins = i * CFG.DURACAO;
                 const h = Math.floor(mins / 60);
@@ -555,6 +562,8 @@
                     }
                 });
 
+                let prevSelectedKeys = new Set();
+
                 fp = flatpickr("#calendario", {
                     locale: ptOneLetter,
                     inline: true,
@@ -570,6 +579,24 @@
                         }
 
                         BookingUI.renderLista(selectedDates);
+
+                        let clickedDate = null;
+                        if (selectedKeys.size > prevSelectedKeys.size) {
+                            for (const d of selectedDates) {
+                                const k = dateKeyLocal(d);
+                                if (!prevSelectedKeys.has(k)) { clickedDate = d; break; }
+                            }
+                            if (!clickedDate && selectedDates.length) {
+                                clickedDate = selectedDates[selectedDates.length - 1];
+                            }
+                        }
+                        if (clickedDate) {
+                            currentMonday = mondayOf(clickedDate);
+                            setHeaderDate(currentMonday);
+                            loadWeekMatrix(currentMonday);
+                        }
+
+                        prevSelectedKeys = selectedKeys;
                     },
                     onMonthChange: syncFromCalendarMonth,
                     onYearChange:  syncFromCalendarMonth,
