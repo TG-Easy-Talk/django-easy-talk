@@ -75,7 +75,7 @@
                         <div id="lista-slots" class="vstack gap-2" aria-live="polite"></div>
 
                         <div class="d-flex justify-content-between align-items-center total-row">
-                            <span id="total-descricao" class="total-row__label">Total</span>
+                            <span class="total-row__label">Total</span>
                             <span id="total-valor" class="total-row__value fw-semibold">R$0,00</span>
                         </div>
                         <input type="hidden" name="agendamentos" id="id_agendamentos" value="[]"/>
@@ -106,14 +106,16 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;600;700&family=Livvic:wght@400;600;700&display=swap"
-          rel="stylesheet">
+    <link
+            href="https://fonts.googleapis.com/css2?family=Karla:wght@400;600;700&family=Livvic:wght@400;600;700&display=swap"
+            rel="stylesheet"
+    />
 
     <style>
         :root {
             --brand-green: #2E8D47;
-            --brand-black: #000000;
-            --brand-white: #FFFFFF;
+            --brand-black: #000;
+            --brand-white: #fff;
             --bs-primary: var(--brand-green);
             --bs-success: var(--brand-green);
 
@@ -177,11 +179,13 @@
             line-height: 1;
             cursor: pointer;
         }
-        .nav-btn:active{ transform:scale(.98); }
 
-        .flatpickr-calendar, .flatpickr-day, .flatpickr-weekday,
-        .flatpickr-current-month, .flatpickr-current-month .cur-month,
-        .flatpickr-current-month .numInputWrapper input,
+        .nav-btn:active {
+            transform: scale(.98);
+        }
+
+        .flatpickr-calendar, .flatpickr-day, .flatpickr-weekday, .flatpickr-current-month,
+        .flatpickr-current-month .cur-month, .flatpickr-current-month .numInputWrapper input,
         .flatpickr-current-month .flatpickr-monthDropdown-months {
             font-family: var(--font-ui);
         }
@@ -292,7 +296,7 @@
         #lista-slots select.form-select {
             border: 1px solid var(--brand-green);
             border-radius: var(--radius-md);
-            background-color: #FFFFFF;
+            background: #fff;
             color: var(--brand-black);
             box-shadow: none;
             outline: 0;
@@ -330,9 +334,7 @@
             opacity: .65;
         }
 
-
-        .total-row__label,
-        .total-row__value {
+        .total-row__label, .total-row__value {
             color: var(--brand-black);
             font-weight: 700;
             font-size: var(--slot-date-font-size);
@@ -378,11 +380,10 @@
             const $ = (sel) => document.querySelector(sel);
             const pad = (n) => String(n).padStart(2, "0");
             const brl = (v) => v.toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
-            const ymdLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+            const ymdLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
             function dateKeyLocal(d) {
-                const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
-                return `${y}-${pad(m)}-${pad(day)}`;
+                return ymdLocal(d);
             }
 
             function idxToHora(i) {
@@ -398,12 +399,10 @@
                 x.setDate(x.getDate() - wd);
                 return x;
             }
-            function formatBR(d) {
-                return d.toLocaleDateString('pt-BR');
-            }
+
             function setHeaderDate(dMonday) {
                 const el = $('#week-date');
-                if (el) el.textContent = formatBR(dMonday);
+                if (el) el.textContent = dMonday.toLocaleDateString('pt-BR');
             }
 
             function horariosParaData(date) {
@@ -440,7 +439,29 @@
                     hidden: $("#id_agendamentos"),
                 };
 
+                function syncHiddenAndTotal() {
+                    const valores = Object.values(state.escolhas).filter(Boolean);
+                    els.hidden.value = JSON.stringify(valores);
+
+                    const qtd = valores.length;
+                    const total = CFG.VALOR * qtd;
+
+                    if (CFG.VALOR > 0 && qtd > 0) {
+                        els.totalValor.innerHTML =
+                            `<span class="breakdown">${brl(CFG.VALOR)} × ${qtd}</span> <span class="sum">= ${brl(total)}</span>`;
+                    } else {
+                        els.totalValor.textContent = brl(total);
+                    }
+                    els.btnConfirmar.disabled = (qtd === 0);
+                }
+
                 function renderLista(selectedDates) {
+                    const selectedKeys = new Set(selectedDates.map(dateKeyLocal));
+
+                    for (const k of Object.keys(state.escolhas)) {
+                        if (!selectedKeys.has(k)) delete state.escolhas[k];
+                    }
+
                     els.lista.textContent = "";
                     const datas = [...selectedDates].sort((a, b) => a - b);
 
@@ -463,25 +484,28 @@
                         select.setAttribute("aria-label", `Selecione um horário para ${spanData.textContent}`);
                         select.dataset.key = dataKey;
 
-                        if (opcoes.length === 0) {
-                            const o = document.createElement("option");
-                            o.value = "";
-                            o.textContent = "Sem horários";
-                            select.appendChild(o);
-                            select.disabled = true;
-                        } else {
-                            const ph = document.createElement("option");
-                            ph.value = "";
-                            ph.textContent = "Hora";
-                            select.appendChild(ph);
+                        const ph = document.createElement("option");
+                        ph.value = "";
+                        ph.textContent = opcoes.length ? "Hora" : "Sem horários";
+                        select.appendChild(ph);
+
+                        if (opcoes.length) {
                             for (const o of opcoes) {
                                 const opt = document.createElement("option");
                                 opt.value = o.value;
                                 opt.textContent = o.label;
                                 select.appendChild(opt);
                             }
-                            if (!state.escolhas[dataKey]) state.escolhas[dataKey] = opcoes[0].value;
-                            select.value = state.escolhas[dataKey];
+                            const prev = state.escolhas[dataKey];
+                            if (prev && opcoes.some(o => o.value === prev)) {
+                                select.value = prev;
+                            } else {
+                                delete state.escolhas[dataKey];
+                                select.value = "";
+                            }
+                        } else {
+                            delete state.escolhas[dataKey];
+                            select.disabled = true;
                         }
 
                         linha.appendChild(spanData);
@@ -489,21 +513,6 @@
                         els.lista.appendChild(linha);
                     }
                     syncHiddenAndTotal();
-                }
-
-                function syncHiddenAndTotal() {
-                    const valores = Object.values(state.escolhas).filter(Boolean);
-                    els.hidden.value = JSON.stringify(valores);
-
-                    const qtd = valores.length;
-                    const total = CFG.VALOR * qtd;
-
-                    if (CFG.VALOR > 0 && qtd > 0) {
-                        els.totalValor.innerHTML = `<span class="breakdown">${brl(CFG.VALOR)} × ${qtd}</span> <span class="sum">= ${brl(total)}</span>`;
-                    } else {
-                        els.totalValor.textContent = brl(total);
-                    }
-                    els.btnConfirmar.disabled = (qtd === 0);
                 }
 
                 function onSelectChange(ev) {
@@ -520,7 +529,7 @@
                     syncHiddenAndTotal();
                 }
 
-                return {renderLista, onSelectChange};
+                return {renderLista, onSelectChange, state};
             })();
 
             let fp = null;
@@ -558,6 +567,8 @@
                     }
                 });
 
+                let prevSelectedKeys = new Set();
+
                 fp = flatpickr("#calendario", {
                     locale: ptOneLetter,
                     inline: true,
@@ -565,7 +576,16 @@
                     dateFormat: "Y-m-d",
                     monthSelectorType: "static",
                     minDate: minY,
-                    onChange: (selectedDates) => BookingUI.renderLista(selectedDates),
+                    onChange: (selectedDates) => {
+                        const selectedKeys = new Set(selectedDates.map(dateKeyLocal));
+
+                        for (const key of Object.keys(BookingUI.state.escolhas)) {
+                            if (!selectedKeys.has(key)) delete BookingUI.state.escolhas[key];
+                        }
+
+                        BookingUI.renderLista(selectedDates);
+                        prevSelectedKeys = selectedKeys;
+                    },
                 });
 
                 currentMonday = mondayOf(new Date());
@@ -599,6 +619,7 @@
 
                 document.getElementById("lista-slots").addEventListener("change", BookingUI.onSelectChange);
 
+                // sticky top alinhado ao cabeçalho
                 const setStickyTop = () => {
                     const top = ((window.cabecalhoEspaco && window.cabecalhoEspaco.offsetHeight) ? window.cabecalhoEspaco.offsetHeight : 0) + 30;
                     document.getElementById("agendamentoConsulta").style.top = `${top}px`;
