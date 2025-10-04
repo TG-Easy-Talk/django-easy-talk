@@ -63,11 +63,9 @@
                         <h6 class="text-center booking__title">Agende sua consulta</h6>
 
                         <div class="dispo-header">
-                            <button type="button" class="nav-btn" id="prev-week" aria-label="Semana anterior">&lsaquo;
-                            </button>
+                            <button type="button" class="nav-btn" id="prev-week" aria-label="Semana anterior">&lsaquo;</button>
                             <div class="dispo-title"><span id="week-date">--/--/----</span></div>
-                            <button type="button" class="nav-btn" id="next-week" aria-label="Próxima semana">&rsaquo;
-                            </button>
+                            <button type="button" class="nav-btn" id="next-week" aria-label="Próxima semana">&rsaquo;</button>
                         </div>
 
                         <input id="calendario" type="text" class="d-none" aria-label="Calendário de seleção de datas"/>
@@ -179,13 +177,11 @@
             line-height: 1;
             cursor: pointer;
         }
+        .nav-btn:active { transform: scale(.98); }
 
-        .nav-btn:active {
-            transform: scale(.98);
-        }
-
-        .flatpickr-calendar, .flatpickr-day, .flatpickr-weekday, .flatpickr-current-month,
-        .flatpickr-current-month .cur-month, .flatpickr-current-month .numInputWrapper input,
+        .flatpickr-calendar, .flatpickr-day, .flatpickr-weekday,
+        .flatpickr-current-month, .flatpickr-current-month .cur-month,
+        .flatpickr-current-month .numInputWrapper input,
         .flatpickr-current-month .flatpickr-monthDropdown-months {
             font-family: var(--font-ui);
         }
@@ -230,21 +226,9 @@
             font-weight: 600;
             font-size: var(--fs-weekday);
         }
-
-        .flatpickr-weekdays {
-            margin: 0;
-            padding: var(--space-1) var(--space-1) 0;
-        }
-
-        .flatpickr-days {
-            padding: 0 0 var(--space-1);
-        }
-
-        .dayContainer {
-            padding: 0;
-            font-size: 0;
-        }
-
+        .flatpickr-weekdays {margin: 0; padding: var(--space-1) var(--space-1) 0; }
+        .flatpickr-days { padding: 0 0 var(--space-1); }
+        .dayContainer { padding: 0; font-size: 0; }
 
         .flatpickr-day {
             display: inline-block;
@@ -296,16 +280,13 @@
         #lista-slots select.form-select {
             border: 1px solid var(--brand-green);
             border-radius: var(--radius-md);
-            background: #fff;
             color: var(--brand-black);
             box-shadow: none;
             outline: 0;
 
             -webkit-appearance: none;
             appearance: none;
-            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='%232E8D47' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/></svg>");
-            background-repeat: no-repeat;
-            background-position: right .75rem center;
+            background: #fff url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='%232E8D47' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/></svg>") no-repeat right .75rem center;
             background-size: 16px 12px;
 
             padding: .5rem 2.25rem .5rem .75rem;
@@ -380,10 +361,14 @@
             const $ = (sel) => document.querySelector(sel);
             const pad = (n) => String(n).padStart(2, "0");
             const brl = (v) => v.toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
-            const ymdLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            const ymdLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+            const dateKeyLocal = (d) => ymdLocal(d);
 
-            function dateKeyLocal(d) {
-                return ymdLocal(d);
+            function firstMondayInMonth(year, month0) {
+                const first = new Date(year, month0, 1);
+                const day = first.getDay();
+                const delta = (1 - day + 7) % 7;
+                return new Date(year, month0, 1 + delta);
             }
 
             function idxToHora(i) {
@@ -391,13 +376,6 @@
                 const h = Math.floor(mins / 60);
                 const m = mins % 60;
                 return `${pad(h)}:${pad(m)}`;
-            }
-
-            function mondayOf(d) {
-                const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                const wd = (x.getDay() + 6) % 7;
-                x.setDate(x.getDate() - wd);
-                return x;
             }
 
             function setHeaderDate(dMonday) {
@@ -556,6 +534,16 @@
                 }
             }
 
+            function syncFromCalendarMonth() {
+                if (!fp) return;
+                const y = fp.currentYear;
+                const m = fp.currentMonth;
+                const mondayInMonth = firstMondayInMonth(y, m);
+                currentMonday = mondayInMonth;
+                setHeaderDate(currentMonday);
+                loadWeekMatrix(currentMonday);
+            }
+
             function initCalendar() {
                 const now = new Date();
                 const minY = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -566,8 +554,6 @@
                         longhand: ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"]
                     }
                 });
-
-                let prevSelectedKeys = new Set();
 
                 fp = flatpickr("#calendario", {
                     locale: ptOneLetter,
@@ -584,11 +570,12 @@
                         }
 
                         BookingUI.renderLista(selectedDates);
-                        prevSelectedKeys = selectedKeys;
                     },
+                    onMonthChange: syncFromCalendarMonth,
+                    onYearChange:  syncFromCalendarMonth,
                 });
 
-                currentMonday = mondayOf(new Date());
+                currentMonday = firstMondayInMonth(now.getFullYear(), now.getMonth());
                 setHeaderDate(currentMonday);
                 if (fp) fp.jumpToDate(currentMonday, true);
                 loadWeekMatrix(currentMonday);
@@ -619,7 +606,6 @@
 
                 document.getElementById("lista-slots").addEventListener("change", BookingUI.onSelectChange);
 
-                // sticky top alinhado ao cabeçalho
                 const setStickyTop = () => {
                     const top = ((window.cabecalhoEspaco && window.cabecalhoEspaco.offsetHeight) ? window.cabecalhoEspaco.offsetHeight : 0) + 30;
                     document.getElementById("agendamentoConsulta").style.top = `${top}px`;
