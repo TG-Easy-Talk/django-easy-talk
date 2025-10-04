@@ -62,12 +62,18 @@
 
                         <h6 class="text-center booking__title">Agende sua consulta</h6>
 
+                        <div class="dispo-header">
+                            <button type="button" class="nav-btn" id="prev-week" aria-label="Semana anterior">&lsaquo;</button>
+                            <div class="dispo-title"><span id="week-date">--/--/----</span></div>
+                            <button type="button" class="nav-btn" id="next-week" aria-label="Próxima semana">&rsaquo;</button>
+                        </div>
+
                         <input id="calendario" type="text" class="d-none" aria-label="Calendário de seleção de datas"/>
 
                         <div id="lista-slots" class="vstack gap-2" aria-live="polite"></div>
 
                         <div class="d-flex justify-content-between align-items-center total-row">
-                            <span id="total-descricao" class="total-row__label">Total</span>
+                            <span class="total-row__label">Total</span>
                             <span id="total-valor" class="total-row__value fw-semibold">R$0,00</span>
                         </div>
                         <input type="hidden" name="agendamentos" id="id_agendamentos" value="[]"/>
@@ -98,14 +104,16 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;600;700&family=Livvic:wght@400;600;700&display=swap"
-          rel="stylesheet">
+    <link
+            href="https://fonts.googleapis.com/css2?family=Karla:wght@400;600;700&family=Livvic:wght@400;600;700&display=swap"
+            rel="stylesheet"
+    />
 
     <style>
         :root {
             --brand-green: #2E8D47;
-            --brand-black: #000000;
-            --brand-white: #FFFFFF;
+            --brand-black: #000;
+            --brand-white: #fff;
             --bs-primary: var(--brand-green);
             --bs-success: var(--brand-green);
 
@@ -147,6 +155,29 @@
             font-weight: 400;
             font-size: var(--fs-title);
         }
+
+        .dispo-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .75rem;
+            margin: .5rem 0 .25rem;
+            text-align: center;
+        }
+
+        .dispo-title {
+            font-weight: 600;
+        }
+
+        .nav-btn {
+            border: 1px solid rgba(0, 0, 0, .125);
+            background: #fff;
+            border-radius: .5rem;
+            padding: .25rem .5rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .nav-btn:active { transform: scale(.98); }
 
         .flatpickr-calendar, .flatpickr-day, .flatpickr-weekday,
         .flatpickr-current-month, .flatpickr-current-month .cur-month,
@@ -195,21 +226,9 @@
             font-weight: 600;
             font-size: var(--fs-weekday);
         }
-
-        .flatpickr-weekdays {
-            margin: 0;
-            padding: var(--space-1) var(--space-1) 0;
-        }
-
-        .flatpickr-days {
-            padding: 0 0 var(--space-1);
-        }
-
-        .dayContainer {
-            padding: 0;
-            font-size: 0;
-        }
-
+        .flatpickr-weekdays {margin: 0; padding: var(--space-1) var(--space-1) 0; }
+        .flatpickr-days { padding: 0 0 var(--space-1); }
+        .dayContainer { padding: 0; font-size: 0; }
 
         .flatpickr-day {
             display: inline-block;
@@ -261,16 +280,13 @@
         #lista-slots select.form-select {
             border: 1px solid var(--brand-green);
             border-radius: var(--radius-md);
-            background-color: #FFFFFF;
             color: var(--brand-black);
             box-shadow: none;
             outline: 0;
 
             -webkit-appearance: none;
             appearance: none;
-            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='%232E8D47' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/></svg>");
-            background-repeat: no-repeat;
-            background-position: right .75rem center;
+            background: #fff url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='%232E8D47' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/></svg>") no-repeat right .75rem center;
             background-size: 16px 12px;
 
             padding: .5rem 2.25rem .5rem .75rem;
@@ -299,9 +315,7 @@
             opacity: .65;
         }
 
-
-        .total-row__label,
-        .total-row__value {
+        .total-row__label, .total-row__value {
             color: var(--brand-black);
             font-weight: 700;
             font-size: var(--slot-date-font-size);
@@ -334,8 +348,10 @@
             "use strict";
             const OCUPADOS = new Set(JSON.parse(`{{ SLOTS_OCUPADOS_JSON|safe }}`));
 
+            const API_PUBLICA = "{% url 'api_disponibilidade_publica' pk=psicologo.pk %}";
+
             const CFG = {
-                MATRIZ: JSON.parse(`{{ psicologo.get_matriz_disponibilidade_booleanos_em_json|safe }}`),
+                MATRIZ: JSON.parse('{{ psicologo.get_matriz_disponibilidade_booleanos_em_json|escapejs }}'),
                 DURACAO: {{ CONSULTA_DURACAO_MINUTOS|default:50 }},
                 MIN_ANT: {{ CONSULTA_ANTECEDENCIA_MINIMA_MINUTOS|default:0 }},
                 MAX_ANT: {{ CONSULTA_ANTECEDENCIA_MAXIMA_MINUTOS|default:0 }},
@@ -345,11 +361,21 @@
             const $ = (sel) => document.querySelector(sel);
             const pad = (n) => String(n).padStart(2, "0");
             const brl = (v) => v.toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
+            const ymdLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+            const dateKeyLocal = (d) => ymdLocal(d);
 
+            function firstMondayInMonth(year, month0) {
+                const first = new Date(year, month0, 1);
+                const day = first.getDay();
+                const delta = (1 - day + 7) % 7;
+                return new Date(year, month0, 1 + delta);
+            }
 
-            function dateKeyLocal(d) {
-                const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
-                return `${y}-${pad(m)}-${pad(day)}`;
+            function mondayOf(d) {
+                const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const wd = (x.getDay() + 6) % 7;
+                x.setDate(x.getDate() - wd);
+                return x;
             }
 
             function idxToHora(i) {
@@ -357,6 +383,11 @@
                 const h = Math.floor(mins / 60);
                 const m = mins % 60;
                 return `${pad(h)}:${pad(m)}`;
+            }
+
+            function setHeaderDate(dMonday) {
+                const el = $('#week-date');
+                if (el) el.textContent = dMonday.toLocaleDateString('pt-BR');
             }
 
             function horariosParaData(date) {
@@ -389,13 +420,33 @@
                 const els = {
                     lista: $("#lista-slots"),
                     totalValor: $("#total-valor"),
-                    totalDesc: $("#total-descricao"),
                     btnConfirmar: $("#btn-confirmar"),
                     hidden: $("#id_agendamentos"),
-                    sidebar: $("#agendamentoConsulta"),
                 };
 
+                function syncHiddenAndTotal() {
+                    const valores = Object.values(state.escolhas).filter(Boolean);
+                    els.hidden.value = JSON.stringify(valores);
+
+                    const qtd = valores.length;
+                    const total = CFG.VALOR * qtd;
+
+                    if (CFG.VALOR > 0 && qtd > 0) {
+                        els.totalValor.innerHTML =
+                            `<span class="breakdown">${brl(CFG.VALOR)} × ${qtd}</span> <span class="sum">= ${brl(total)}</span>`;
+                    } else {
+                        els.totalValor.textContent = brl(total);
+                    }
+                    els.btnConfirmar.disabled = (qtd === 0);
+                }
+
                 function renderLista(selectedDates) {
+                    const selectedKeys = new Set(selectedDates.map(dateKeyLocal));
+
+                    for (const k of Object.keys(state.escolhas)) {
+                        if (!selectedKeys.has(k)) delete state.escolhas[k];
+                    }
+
                     els.lista.textContent = "";
                     const datas = [...selectedDates].sort((a, b) => a - b);
 
@@ -418,25 +469,28 @@
                         select.setAttribute("aria-label", `Selecione um horário para ${spanData.textContent}`);
                         select.dataset.key = dataKey;
 
-                        if (opcoes.length === 0) {
-                            const o = document.createElement("option");
-                            o.value = "";
-                            o.textContent = "Sem horários";
-                            select.appendChild(o);
-                            select.disabled = true;
-                        } else {
-                            const ph = document.createElement("option");
-                            ph.value = "";
-                            ph.textContent = "Hora";
-                            select.appendChild(ph);
+                        const ph = document.createElement("option");
+                        ph.value = "";
+                        ph.textContent = opcoes.length ? "Hora" : "Sem horários";
+                        select.appendChild(ph);
+
+                        if (opcoes.length) {
                             for (const o of opcoes) {
                                 const opt = document.createElement("option");
                                 opt.value = o.value;
                                 opt.textContent = o.label;
                                 select.appendChild(opt);
                             }
-                            if (!state.escolhas[dataKey]) state.escolhas[dataKey] = opcoes[0].value;
-                            select.value = state.escolhas[dataKey];
+                            const prev = state.escolhas[dataKey];
+                            if (prev && opcoes.some(o => o.value === prev)) {
+                                select.value = prev;
+                            } else {
+                                delete state.escolhas[dataKey];
+                                select.value = "";
+                            }
+                        } else {
+                            delete state.escolhas[dataKey];
+                            select.disabled = true;
                         }
 
                         linha.appendChild(spanData);
@@ -444,23 +498,6 @@
                         els.lista.appendChild(linha);
                     }
                     syncHiddenAndTotal();
-                }
-
-                function syncHiddenAndTotal() {
-                    const valores = Object.values(state.escolhas).filter(Boolean);
-                    els.hidden.value = JSON.stringify(valores);
-
-                    const qtd = valores.length;
-                    const total = CFG.VALOR * qtd;
-
-                    if (CFG.VALOR > 0 && qtd > 0) {
-                        const breakdown = `${brl(CFG.VALOR)} × ${qtd}`;
-                        const sum = `= ${brl(total)}`;
-                        els.totalValor.innerHTML = `<span class="breakdown">${breakdown}</span> <span class="sum">${sum}</span>`;
-                    } else {
-                        els.totalValor.textContent = brl(total);
-                    }
-                    els.btnConfirmar.disabled = (qtd === 0);
                 }
 
                 function onSelectChange(ev) {
@@ -477,13 +514,42 @@
                     syncHiddenAndTotal();
                 }
 
-                function setStickyTop() {
-                    const top = ((window.cabecalhoEspaco && window.cabecalhoEspaco.offsetHeight) ? window.cabecalhoEspaco.offsetHeight : 0) + 30;
-                    document.getElementById("agendamentoConsulta").style.top = `${top}px`;
-                }
-
-                return {renderLista, onSelectChange, setStickyTop};
+                return {renderLista, onSelectChange, state};
             })();
+
+            let fp = null;
+            let currentMonday = null;
+
+            async function loadWeekMatrix(dMonday) {
+                const qs = `?week=${ymdLocal(dMonday)}`;
+                try {
+                    const resp = await fetch(API_PUBLICA + qs, { credentials: 'same-origin' });
+                    if (!resp.ok) throw new Error(`GET ${resp.status}`);
+                    const data = await resp.json();
+
+                    CFG.MATRIZ = data.matriz;
+
+                    if (window.DisponibilidadeTabela && typeof window.DisponibilidadeTabela.atualizar === "function") {
+                        window.DisponibilidadeTabela.matriz_disponibilidade_booleanos = data.matriz;
+                        window.DisponibilidadeTabela.atualizar();
+                    }
+
+                    const selecionadas = fp ? fp.selectedDates : [];
+                    BookingUI.renderLista(selecionadas);
+                } catch (err) {
+                    console.error("Falha ao carregar matriz semanal:", err);
+                }
+            }
+
+            function syncFromCalendarMonth() {
+                if (!fp) return;
+                const y = fp.currentYear;
+                const m = fp.currentMonth;
+                const mondayInMonth = firstMondayInMonth(y, m);
+                currentMonday = mondayInMonth;
+                setHeaderDate(currentMonday);
+                loadWeekMatrix(currentMonday);
+            }
 
             function initCalendar() {
                 const now = new Date();
@@ -496,22 +562,83 @@
                     }
                 });
 
-                flatpickr("#calendario", {
+                let prevSelectedKeys = new Set();
+
+                fp = flatpickr("#calendario", {
                     locale: ptOneLetter,
                     inline: true,
                     mode: "multiple",
                     dateFormat: "Y-m-d",
                     monthSelectorType: "static",
                     minDate: minY,
-                    onChange: (selectedDates) => BookingUI.renderLista(selectedDates),
+                    onChange: (selectedDates) => {
+                        const selectedKeys = new Set(selectedDates.map(dateKeyLocal));
+
+                        for (const key of Object.keys(BookingUI.state.escolhas)) {
+                            if (!selectedKeys.has(key)) delete BookingUI.state.escolhas[key];
+                        }
+
+                        BookingUI.renderLista(selectedDates);
+
+                        let clickedDate = null;
+                        if (selectedKeys.size > prevSelectedKeys.size) {
+                            for (const d of selectedDates) {
+                                const k = dateKeyLocal(d);
+                                if (!prevSelectedKeys.has(k)) { clickedDate = d; break; }
+                            }
+                            if (!clickedDate && selectedDates.length) {
+                                clickedDate = selectedDates[selectedDates.length - 1];
+                            }
+                        }
+                        if (clickedDate) {
+                            currentMonday = mondayOf(clickedDate);
+                            setHeaderDate(currentMonday);
+                            loadWeekMatrix(currentMonday);
+                        }
+
+                        prevSelectedKeys = selectedKeys;
+                    },
+                    onMonthChange: syncFromCalendarMonth,
+                    onYearChange:  syncFromCalendarMonth,
+                });
+
+                currentMonday = firstMondayInMonth(now.getFullYear(), now.getMonth());
+                setHeaderDate(currentMonday);
+                if (fp) fp.jumpToDate(currentMonday, true);
+                loadWeekMatrix(currentMonday);
+            }
+
+            function attachWeekNav() {
+                const prev = document.getElementById('prev-week');
+                const next = document.getElementById('next-week');
+
+                if (prev) prev.addEventListener('click', () => {
+                    currentMonday.setDate(currentMonday.getDate() - 7);
+                    setHeaderDate(currentMonday);
+                    if (fp) fp.jumpToDate(currentMonday, true);
+                    loadWeekMatrix(currentMonday);
+                });
+
+                if (next) next.addEventListener('click', () => {
+                    currentMonday.setDate(currentMonday.getDate() + 7);
+                    setHeaderDate(currentMonday);
+                    if (fp) fp.jumpToDate(currentMonday, true);
+                    loadWeekMatrix(currentMonday);
                 });
             }
 
             document.addEventListener("DOMContentLoaded", () => {
                 initCalendar();
+                attachWeekNav();
+
                 document.getElementById("lista-slots").addEventListener("change", BookingUI.onSelectChange);
-                BookingUI.setStickyTop();
-                window.addEventListener("resize", BookingUI.setStickyTop);
+
+                const setStickyTop = () => {
+                    const top = ((window.cabecalhoEspaco && window.cabecalhoEspaco.offsetHeight) ? window.cabecalhoEspaco.offsetHeight : 0) + 30;
+                    document.getElementById("agendamentoConsulta").style.top = `${top}px`;
+                };
+                setStickyTop();
+                window.addEventListener("resize", setStickyTop);
             });
         })();
     </script>

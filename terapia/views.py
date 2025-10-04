@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
 import json
+from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth import login
@@ -7,15 +7,19 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_protect
 from django.views.generic import FormView, ListView, TemplateView, UpdateView
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 
-from terapia.constantes import (
+from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
+from .constantes import (
     CONSULTA_ANTECEDENCIA_MAXIMA,
     CONSULTA_ANTECEDENCIA_MINIMA,
     CONSULTA_DURACAO,
@@ -30,8 +34,7 @@ from .forms import (
     ConsultaCreationForm,
     ConsultaFiltrosForm,
 )
-from .models import Consulta, EstadoConsulta, Psicologo
-from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
+from .models import Consulta, EstadoConsulta, Psicologo, WeekAvailability
 
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
@@ -46,13 +49,13 @@ class DeveTerCargoMixin(LoginRequiredMixin):
 
 class DeveSerPsicologoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
-        if (
-            request.user.is_authenticated and
-            not request.user.is_psicologo
-        ):
-            return self.handle_no_permission()
+        if request.user.is_authenticated and not getattr(request.user, "is_psicologo", False):
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("Sua conta precisa ser do tipo psicólogo.")
         return super().dispatch(request, *args, **kwargs)
-    
+
+def monday_of(d: date) -> date:
+    return d - timedelta(days=d.weekday())
 
 class GetFormMixin(FormMixin):
     def get_form_kwargs(self):
@@ -72,7 +75,7 @@ class FluxoAlternativoLoginContextMixin(ContextMixin):
             }
         ]
         return context
-    
+
 
 class TabelaDisponibilidadeContextMixin(ContextMixin):
     def get_context_data(self, **kwargs):
@@ -101,15 +104,15 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
             inline = form_inline.save(commit=False)
             inline.usuario = usuario
             inline.save()
-                
+
             login(self.request, usuario)
             return self.get_redirect()
-        
+
         return self.render_to_response(self.get_context_data(form=form_usuario, form_inline=form_inline))
 
     def get_form_inline(self):
         raise NotImplementedError("Subclasses devem implementar o método get_form_inline para retornar o formulário inline específico.")
-    
+
     def get_redirect(self):
         raise NotImplementedError("Subclasses devem implementar o método get_redirect para retornar a URL de redirecionamento.")
 
@@ -122,7 +125,7 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
         })
 
         return context
-    
+
 
 class PacienteCadastroView(CadastroView):
     def get_form_inline_class(self):
@@ -130,7 +133,7 @@ class PacienteCadastroView(CadastroView):
 
     def get_redirect(self):
         return redirect('pesquisa')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["heading_form"] = "Cadastro de Paciente"
@@ -151,7 +154,7 @@ class PsicologoCadastroView(CadastroView):
 
     def get_redirect(self):
         return redirect('meu_perfil')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["heading_form"] = "Cadastro de Profissional"
@@ -249,7 +252,7 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
         kwargs["usuario"] = self.request.user
         kwargs["psicologo"] = self.get_object()
         return kwargs
-    
+
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
         ctx = super().get_context_data(**kwargs)
@@ -301,11 +304,11 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
             return redirect(self.get_success_url())
 
         return super().post(request, *args, **kwargs)
-    
+
     def form_valid(self, form):
         form.save()
         return super().form_valid(form)
-    
+
 
 class PesquisaView(ListView, GetFormMixin):
     template_name = "pesquisa/pesquisa.html"
@@ -413,4 +416,220 @@ class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
-    
+
+
+def _validate_matriz(matriz):
+    if not isinstance(matriz, list) or len(matriz) != 7:
+        return False
+    for row in matriz:
+        if not isinstance(row, list) or len(row) != NUMERO_PERIODOS_POR_DIA:
+            return False
+        if not all(isinstance(x, bool) for x in row):
+            return False
+    return True
+
+
+def _baseline_matrix(psicologo: Psicologo):
+    try:
+        j = psicologo.get_matriz_disponibilidade_booleanos_em_json()
+        m = json.loads(j)
+        if _validate_matriz(m):
+            return m
+    except Exception:
+        pass
+    return [[False] * NUMERO_PERIODOS_POR_DIA for _ in range(7)]
+
+
+def _resolve_matrix(psicologo: Psicologo, week_start: date):
+    ov = WeekAvailability.objects.filter(
+        psicologo=psicologo, week_start=week_start, kind=WeekAvailability.Kind.OVERRIDE
+    ).first()
+    if ov and _validate_matriz(ov.matriz):
+        return ov.matriz, "OVERRIDE"
+
+    an = (WeekAvailability.objects
+          .filter(psicologo=psicologo,
+                  kind=WeekAvailability.Kind.ANCHOR,
+                  week_start__lte=week_start)
+          .order_by("-week_start")
+          .first())
+    if an and _validate_matriz(an.matriz):
+        return an.matriz, f"ANCHOR@{an.week_start.isoformat()}"
+
+    return _baseline_matrix(psicologo), "BASELINE"
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class DisponibilidadeSemanalAPI(View):
+    """
+    GET: público (paciente ou anônimo) — requer ?week=YYYY-MM-DD e ?psicologo=<id>.
+         Retorna a matriz resolvida (OVERRIDE da semana, senão última ANCHOR <= semana, senão baseline).
+    POST: restrito ao psicólogo dono — salva OVERRIDE/ANCHOR da semana.
+    """
+
+    @staticmethod
+    def monday_of(d: date) -> date:
+        return d - timedelta(days=d.weekday())
+
+    def get(self, request, *args, **kwargs):
+        week_str = request.GET.get("week")
+        d = parse_date(week_str) if week_str else None
+        if d is None:
+            return HttpResponseBadRequest("Parâmetro 'week' inválido ou ausente (YYYY-MM-DD).")
+
+        psicologo_id = request.GET.get("psicologo")
+        if not psicologo_id:
+            if request.user.is_authenticated and getattr(request.user, "is_psicologo", False):
+                psicologo = request.user.psicologo
+            else:
+                return HttpResponseBadRequest("Informe o parâmetro 'psicologo'.")
+        else:
+            psicologo = get_object_or_404(Psicologo, pk=psicologo_id)
+
+        week_start = self.monday_of(d)
+
+        ov = WeekAvailability.objects.filter(
+            psicologo=psicologo, week_start=week_start, kind=WeekAvailability.KIND_OVERRIDE
+        ).first()
+        if ov and _validate_matriz(ov.matriz):
+            matriz = ov.matriz
+        else:
+            an = (WeekAvailability.objects
+                  .filter(psicologo=psicologo,
+                          kind=WeekAvailability.KIND_ANCHOR,
+                          week_start__lte=week_start)
+                  .order_by("-week_start")
+                  .first())
+            if an and _validate_matriz(an.matriz):
+                matriz = an.matriz
+            else:
+                matriz = _baseline_matrix(psicologo)
+
+        return JsonResponse({
+            "week_start": str(week_start),
+            "matriz": matriz,
+        })
+
+    def post(self, request, *args, **kwargs):
+        if not (request.user.is_authenticated and getattr(request.user, "is_psicologo", False)):
+            return HttpResponseBadRequest("Apenas psicólogos podem salvar.")
+
+        try:
+            body = json.loads(request.body.decode("utf-8"))
+        except Exception:
+            return HttpResponseBadRequest("JSON inválido.")
+
+        week_str = body.get("week")
+        kind = body.get("kind")
+        matriz = body.get("matriz")
+
+        d = parse_date(week_str) if week_str else None
+        if d is None:
+            return HttpResponseBadRequest("Campo 'week' inválido.")
+        if kind not in (WeekAvailability.KIND_OVERRIDE, WeekAvailability.KIND_ANCHOR):
+            return HttpResponseBadRequest("Campo 'kind' inválido.")
+        if not _validate_matriz(matriz):
+            return HttpResponseBadRequest("Campo 'matriz' precisa ser 7 x NUMERO_PERIODOS_POR_DIA de booleanos.")
+
+        week_start = self.monday_of(d)
+        psicologo = request.user.psicologo
+
+        obj, _ = WeekAvailability.objects.update_or_create(
+            psicologo=psicologo,
+            week_start=week_start,
+            defaults={"kind": kind, "matriz": matriz},
+        )
+
+        return JsonResponse({
+            "ok": True,
+            "week_start": str(obj.week_start),
+            "kind": obj.kind,
+        })
+
+
+class DisponibilidadeSemanalPublicAPI(View):
+    """
+    Retorna a matriz 7 x NUMERO_PERIODOS_POR_DIA para a semana pedida,
+    resolvendo OVERRIDE > ANCHOR > baseline (IntervaloDisponibilidade).
+    Pode ser chamada por pacientes (GET apenas).
+    """
+    def get(self, request, pk, *args, **kwargs):
+        week_str = request.GET.get("week")
+        d = parse_date(week_str) if week_str else None
+        if d is None:
+            return HttpResponseBadRequest("Parâmetro 'week' inválido (YYYY-MM-DD).")
+
+        week_start = monday_of(d)
+        psicologo = get_object_or_404(Psicologo, pk=pk)
+
+        matriz, source = _resolve_matrix(psicologo, week_start)
+        return JsonResponse({
+            "week_start": str(week_start),
+            "matriz": matriz,
+            "source": source,
+        })
+
+def _validate_matriz(matriz):
+    if not isinstance(matriz, list) or len(matriz) != 7:
+        return False
+    for row in matriz:
+        if not isinstance(row, list) or len(row) != NUMERO_PERIODOS_POR_DIA:
+            return False
+        if not all(isinstance(x, bool) for x in row):
+            return False
+    return True
+
+def _baseline_matrix(psicologo: Psicologo):
+    try:
+        j = psicologo.get_matriz_disponibilidade_booleanos_em_json()
+        m = json.loads(j)
+        if _validate_matriz(m):
+            return m
+    except Exception:
+        pass
+    return [[False] * NUMERO_PERIODOS_POR_DIA for _ in range(7)]
+
+def _resolve_matrix(psicologo: Psicologo, week_start: date):
+    """Resolve a matriz 7xN para a semana pedida, usando OVERRIDE > ANCHOR > baseline."""
+    ov = WeekAvailability.objects.filter(
+        psicologo=psicologo,
+        week_start=week_start,
+        kind=WeekAvailability.KIND_OVERRIDE,
+    ).first()
+    if ov and _validate_matriz(ov.matriz):
+        return ov.matriz, "OVERRIDE"
+
+    an = (WeekAvailability.objects
+          .filter(psicologo=psicologo,
+                  kind=WeekAvailability.KIND_ANCHOR,
+                  week_start__lte=week_start)
+          .order_by("-week_start")
+          .first())
+    if an and _validate_matriz(an.matriz):
+        return an.matriz, f"ANCHOR@{an.week_start.isoformat()}"
+
+    return _baseline_matrix(psicologo), "BASELINE"
+
+def monday_of(d: date) -> date:
+    return d - timedelta(days=d.weekday())
+
+class DisponibilidadePublicaAPI(View):
+    """
+    GET /perfil/<pk>/api/disponibilidade/?week=YYYY-MM-DD
+    Retorna {"week_start": "YYYY-MM-DD", "matriz": [...], "source": "..."} para o psicólogo <pk>.
+    """
+    def get(self, request, pk, *args, **kwargs):
+        week_str = request.GET.get("week")
+        d = parse_date(week_str) if week_str else None
+        if d is None:
+            return HttpResponseBadRequest("Parâmetro 'week' inválido ou ausente (YYYY-MM-DD).")
+
+        week_start = monday_of(d)
+        psicologo = get_object_or_404(Psicologo, pk=pk)
+
+        matriz, source = _resolve_matrix(psicologo, week_start)
+        return JsonResponse({
+            "week_start": str(week_start),
+            "matriz": matriz,
+            "source": source,
+        })
