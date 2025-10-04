@@ -63,9 +63,11 @@
                         <h6 class="text-center booking__title">Agende sua consulta</h6>
 
                         <div class="dispo-header">
-                            <button type="button" class="nav-btn" id="prev-week" aria-label="Semana anterior">&lsaquo;</button>
+                            <button type="button" class="nav-btn" id="prev-week" aria-label="Semana anterior">&lsaquo;
+                            </button>
                             <div class="dispo-title"><span id="week-date">--/--/----</span></div>
-                            <button type="button" class="nav-btn" id="next-week" aria-label="Próxima semana">&rsaquo;</button>
+                            <button type="button" class="nav-btn" id="next-week" aria-label="Próxima semana">&rsaquo;
+                            </button>
                         </div>
 
                         <input id="calendario" type="text" class="d-none" aria-label="Calendário de seleção de datas"/>
@@ -154,14 +156,26 @@
             font-size: var(--fs-title);
         }
 
-        .dispo-header{
-            display:flex; align-items:center; justify-content:center;
-            gap:.75rem; margin:.5rem 0 .25rem; text-align:center;
+        .dispo-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .75rem;
+            margin: .5rem 0 .25rem;
+            text-align: center;
         }
-        .dispo-title{ font-weight:600; }
-        .nav-btn{
-            border:1px solid rgba(0,0,0,.125); background:#fff;
-            border-radius:.5rem; padding:.25rem .5rem; line-height:1; cursor:pointer;
+
+        .dispo-title {
+            font-weight: 600;
+        }
+
+        .nav-btn {
+            border: 1px solid rgba(0, 0, 0, .125);
+            background: #fff;
+            border-radius: .5rem;
+            padding: .25rem .5rem;
+            line-height: 1;
+            cursor: pointer;
         }
         .nav-btn:active{ transform:scale(.98); }
 
@@ -364,7 +378,7 @@
             const $ = (sel) => document.querySelector(sel);
             const pad = (n) => String(n).padStart(2, "0");
             const brl = (v) => v.toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
-
+            const ymdLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
             function dateKeyLocal(d) {
                 const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
@@ -422,7 +436,6 @@
                 const els = {
                     lista: $("#lista-slots"),
                     totalValor: $("#total-valor"),
-                    totalDesc: $("#total-descricao"),
                     btnConfirmar: $("#btn-confirmar"),
                     hidden: $("#id_agendamentos"),
                 };
@@ -486,9 +499,7 @@
                     const total = CFG.VALOR * qtd;
 
                     if (CFG.VALOR > 0 && qtd > 0) {
-                        const breakdown = `${brl(CFG.VALOR)} × ${qtd}`;
-                        const sum = `= ${brl(total)}`;
-                        els.totalValor.innerHTML = `<span class="breakdown">${breakdown}</span> <span class="sum">${sum}</span>`;
+                        els.totalValor.innerHTML = `<span class="breakdown">${brl(CFG.VALOR)} × ${qtd}</span> <span class="sum">= ${brl(total)}</span>`;
                     } else {
                         els.totalValor.textContent = brl(total);
                     }
@@ -516,7 +527,7 @@
             let currentMonday = null;
 
             async function loadWeekMatrix(dMonday) {
-                const qs = `?week=${dMonday.toISOString().slice(0,10)}`;
+                const qs = `?week=${ymdLocal(dMonday)}`;
                 try {
                     const resp = await fetch(API_PUBLICA + qs, { credentials: 'same-origin' });
                     if (!resp.ok) throw new Error(`GET ${resp.status}`);
@@ -529,8 +540,8 @@
                         window.DisponibilidadeTabela.atualizar();
                     }
 
-                    if (fp) fp.clear();
-                    BookingUI.renderLista([]);
+                    const selecionadas = fp ? fp.selectedDates : [];
+                    BookingUI.renderLista(selecionadas);
                 } catch (err) {
                     console.error("Falha ao carregar matriz semanal:", err);
                 }
