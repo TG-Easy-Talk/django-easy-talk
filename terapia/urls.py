@@ -19,4 +19,6 @@ urlpatterns = [
     path("consultas/<int:pk>/aceitar/", views.AceitarConsultaPsicologoView.as_view(), name="consulta_aceitar"),
     path("consultas/<int:pk>/cancelar/", views.CancelarConsultaPacienteView.as_view(), name="consulta_cancelar"),
     path("meu_perfil/api/disponibilidade/", DisponibilidadeSemanalAPI.as_view(), name="api_disponibilidade_semanal"),
+    path("perfil/<int:pk>/api/disponibilidade/", views.DisponibilidadeSemanalPublicAPI.as_view(), name="api_disponibilidade_publica"),
+    path("perfil/<int:pk>/api/disponibilidade/", views.DisponibilidadePublicaAPI.as_view(), name="api_disponibilidade_publica"),
 ]

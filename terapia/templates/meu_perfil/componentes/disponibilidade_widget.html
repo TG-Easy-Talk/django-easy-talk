@@ -190,7 +190,10 @@
 
         static atualizarInputETabela() {
             this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_atual);
-            if (window.DisponibilidadeTabela) {
+
+            if (typeof DisponibilidadeTabela !== "undefined"
+                && DisponibilidadeTabela
+                && typeof DisponibilidadeTabela.atualizar === "function") {
                 DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_atual;
                 DisponibilidadeTabela.atualizar();
             }
@@ -245,11 +248,7 @@
                     body: JSON.stringify(payload)
                 });
                 if (!resp.ok) throw new Error(`POST ${resp.status}`);
-                const data = await resp.json();
-                const msg = kind === 'OVERRIDE'
-                    ? 'Disponibilidade salva somente para esta semana.'
-                    : 'Âncora salva: esta disponibilidade se aplica a esta e às próximas semanas até nova âncora.';
-                console.log(msg, data);
+                await resp.json();
                 this.matriz_disponibilidade_booleanos_original =
                     this.matriz_disponibilidade_booleanos_atual.map(l => [...l]);
             } catch (err) {

@@ -7,6 +7,7 @@
             <col style="width: 14.2857%;">
             <col style="width: 14.2857%;">
             <col style="width: 14.2857%;">
+            <col style="width: 14.2857%;">
         </colgroup>
         <thead class="table-primary">
             <tr>
@@ -28,7 +29,7 @@
 <script>
 
     class DisponibilidadeTabela {
-        static matriz_disponibilidade_booleanos = JSON.parse("{{ matriz_disponibilidade_booleanos_em_json }}")
+        static matriz_disponibilidade_booleanos = JSON.parse('{{ matriz_disponibilidade_booleanos_em_json|escapejs }}')
         static tbody = document.getElementById('tbodyDisponibilidade')
 
         static getNumeroMaximoIntervalos() {
@@ -122,6 +123,7 @@
         }
     }
 
-    DisponibilidadeTabela.atualizar()
+    window.DisponibilidadeTabela = DisponibilidadeTabela;
 
+    DisponibilidadeTabela.atualizar();
 </script>

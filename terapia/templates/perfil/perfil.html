@@ -62,6 +62,12 @@
 
                         <h6 class="text-center booking__title">Agende sua consulta</h6>
 
+                        <div class="dispo-header">
+                            <button type="button" class="nav-btn" id="prev-week" aria-label="Semana anterior">&lsaquo;</button>
+                            <div class="dispo-title"><span id="week-date">--/--/----</span></div>
+                            <button type="button" class="nav-btn" id="next-week" aria-label="Próxima semana">&rsaquo;</button>
+                        </div>
+
                         <input id="calendario" type="text" class="d-none" aria-label="Calendário de seleção de datas"/>
 
                         <div id="lista-slots" class="vstack gap-2" aria-live="polite"></div>
@@ -147,6 +153,17 @@
             font-weight: 400;
             font-size: var(--fs-title);
         }
+
+        .dispo-header{
+            display:flex; align-items:center; justify-content:center;
+            gap:.75rem; margin:.5rem 0 .25rem; text-align:center;
+        }
+        .dispo-title{ font-weight:600; }
+        .nav-btn{
+            border:1px solid rgba(0,0,0,.125); background:#fff;
+            border-radius:.5rem; padding:.25rem .5rem; line-height:1; cursor:pointer;
+        }
+        .nav-btn:active{ transform:scale(.98); }
 
         .flatpickr-calendar, .flatpickr-day, .flatpickr-weekday,
         .flatpickr-current-month, .flatpickr-current-month .cur-month,
@@ -334,8 +351,10 @@
             "use strict";
             const OCUPADOS = new Set(JSON.parse(`{{ SLOTS_OCUPADOS_JSON|safe }}`));
 
+            const API_PUBLICA = "{% url 'api_disponibilidade_publica' pk=psicologo.pk %}";
+
             const CFG = {
-                MATRIZ: JSON.parse(`{{ psicologo.get_matriz_disponibilidade_booleanos_em_json|safe }}`),
+                MATRIZ: JSON.parse('{{ psicologo.get_matriz_disponibilidade_booleanos_em_json|escapejs }}'),
                 DURACAO: {{ CONSULTA_DURACAO_MINUTOS|default:50 }},
                 MIN_ANT: {{ CONSULTA_ANTECEDENCIA_MINIMA_MINUTOS|default:0 }},
                 MAX_ANT: {{ CONSULTA_ANTECEDENCIA_MAXIMA_MINUTOS|default:0 }},
@@ -357,6 +376,20 @@
                 const h = Math.floor(mins / 60);
                 const m = mins % 60;
                 return `${pad(h)}:${pad(m)}`;
+            }
+
+            function mondayOf(d) {
+                const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const wd = (x.getDay() + 6) % 7;
+                x.setDate(x.getDate() - wd);
+                return x;
+            }
+            function formatBR(d) {
+                return d.toLocaleDateString('pt-BR');
+            }
+            function setHeaderDate(dMonday) {
+                const el = $('#week-date');
+                if (el) el.textContent = formatBR(dMonday);
             }
 
             function horariosParaData(date) {
@@ -392,7 +425,6 @@
                     totalDesc: $("#total-descricao"),
                     btnConfirmar: $("#btn-confirmar"),
                     hidden: $("#id_agendamentos"),
-                    sidebar: $("#agendamentoConsulta"),
                 };
 
                 function renderLista(selectedDates) {
@@ -477,13 +509,32 @@
                     syncHiddenAndTotal();
                 }
 
-                function setStickyTop() {
-                    const top = ((window.cabecalhoEspaco && window.cabecalhoEspaco.offsetHeight) ? window.cabecalhoEspaco.offsetHeight : 0) + 30;
-                    document.getElementById("agendamentoConsulta").style.top = `${top}px`;
-                }
-
-                return {renderLista, onSelectChange, setStickyTop};
+                return {renderLista, onSelectChange};
             })();
+
+            let fp = null;
+            let currentMonday = null;
+
+            async function loadWeekMatrix(dMonday) {
+                const qs = `?week=${dMonday.toISOString().slice(0,10)}`;
+                try {
+                    const resp = await fetch(API_PUBLICA + qs, { credentials: 'same-origin' });
+                    if (!resp.ok) throw new Error(`GET ${resp.status}`);
+                    const data = await resp.json();
+
+                    CFG.MATRIZ = data.matriz;
+
+                    if (window.DisponibilidadeTabela && typeof window.DisponibilidadeTabela.atualizar === "function") {
+                        window.DisponibilidadeTabela.matriz_disponibilidade_booleanos = data.matriz;
+                        window.DisponibilidadeTabela.atualizar();
+                    }
+
+                    if (fp) fp.clear();
+                    BookingUI.renderLista([]);
+                } catch (err) {
+                    console.error("Falha ao carregar matriz semanal:", err);
+                }
+            }
 
             function initCalendar() {
                 const now = new Date();
@@ -496,7 +547,7 @@
                     }
                 });
 
-                flatpickr("#calendario", {
+                fp = flatpickr("#calendario", {
                     locale: ptOneLetter,
                     inline: true,
                     mode: "multiple",
@@ -505,13 +556,44 @@
                     minDate: minY,
                     onChange: (selectedDates) => BookingUI.renderLista(selectedDates),
                 });
+
+                currentMonday = mondayOf(new Date());
+                setHeaderDate(currentMonday);
+                if (fp) fp.jumpToDate(currentMonday, true);
+                loadWeekMatrix(currentMonday);
+            }
+
+            function attachWeekNav() {
+                const prev = document.getElementById('prev-week');
+                const next = document.getElementById('next-week');
+
+                if (prev) prev.addEventListener('click', () => {
+                    currentMonday.setDate(currentMonday.getDate() - 7);
+                    setHeaderDate(currentMonday);
+                    if (fp) fp.jumpToDate(currentMonday, true);
+                    loadWeekMatrix(currentMonday);
+                });
+
+                if (next) next.addEventListener('click', () => {
+                    currentMonday.setDate(currentMonday.getDate() + 7);
+                    setHeaderDate(currentMonday);
+                    if (fp) fp.jumpToDate(currentMonday, true);
+                    loadWeekMatrix(currentMonday);
+                });
             }
 
             document.addEventListener("DOMContentLoaded", () => {
                 initCalendar();
+                attachWeekNav();
+
                 document.getElementById("lista-slots").addEventListener("change", BookingUI.onSelectChange);
-                BookingUI.setStickyTop();
-                window.addEventListener("resize", BookingUI.setStickyTop);
+
+                const setStickyTop = () => {
+                    const top = ((window.cabecalhoEspaco && window.cabecalhoEspaco.offsetHeight) ? window.cabecalhoEspaco.offsetHeight : 0) + 30;
+                    document.getElementById("agendamentoConsulta").style.top = `${top}px`;
+                };
+                setStickyTop();
+                window.addEventListener("resize", setStickyTop);
             });
         })();
     </script>
