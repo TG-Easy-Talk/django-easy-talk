@@ -1,4 +1,5 @@
 {% extends 'geral/base.html' %}
+{% load static %}
 {% block titulo %} {{ psicologo }} {% endblock %}
 
 {% block conteudo %}
@@ -12,4 +13,10 @@
     {% csrf_token %}
     {{ form }}
 </form>
+
+<!-- ADICIONE ESTA LINHA -->
+<link rel="stylesheet" href="{% static 'css/perfil.css' %}">
+
+<link rel="stylesheet" href="{% static 'css/multicombobox.css' %}">
+<script defer src="{% static 'js/multicombobox.js' %}"></script>
 {% endblock %}

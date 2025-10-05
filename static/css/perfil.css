@@ -1,0 +1,45 @@
+/* static/css/perfil.css */
+
+/* Tokens do layout (ajuste fino aqui) */
+:root{
+  /* Coluna esquerda enxuta */
+  --perfil-left-basis: 18rem;      /* 9–11rem conforme seu gosto */
+
+  /* Pesos relativos no lg+ (equilíbrio 3:2) */
+  --perfil-espec-grow: 3;          /* meio */
+  --perfil-sobre-grow: 2.5;          /* direita */
+
+  /* NOVO: recuo interno à esquerda só no bloco do meio
+     (tira a “invasão” sem alterar a largura da direita) */
+  --perfil-espec-pad-left: 0.75rem; /* aumente p/ 1rem se quiser mais recuo */
+}
+
+@media (min-width: 992px){
+  .perfil-cols{
+    align-items: flex-start;
+    /* gap vem do Bootstrap (gap-4) */
+  }
+
+  /* ESQUERDA: largura FIXA real */
+  .perfil-left{
+    flex: 0 0 var(--perfil-left-basis);
+    width: var(--perfil-left-basis);
+    max-width: var(--perfil-left-basis);
+    min-width: 0; /* evita overflow “empurrar” as outras colunas */
+  }
+
+  /* MEIO (Especializações) */
+  .perfil-espec{
+    flex: var(--perfil-espec-grow) 1 0;
+    min-width: 0;
+
+    /* >>> Ajuste pedido: recuo só no conteúdo do meio <<< */
+    padding-left: var(--perfil-espec-pad-left);
+  }
+
+  /* DIREITA (Sobre mim) */
+  .perfil-sobre{
+    flex: var(--perfil-sobre-grow) 1 0;
+    min-width: 0;
+  }
+}
