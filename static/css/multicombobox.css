@@ -1,55 +1,25 @@
-/* static/css/multicombobox.css */
-
-/* ---------- Tokens (definições das CSS Custom Properties) ---------- */
 :root {
-    /* Tipografia base dos chips (herdará do Bootstrap se existir) */
     --mc-chip-font: var(--bs-body-font-size, .875rem);
-
-    /* Altura mínima da linha de input para manter área clicável estável */
     --mc-input-min-h: 2rem;
-
-    /* Cantos dos chips (compacto) */
     --mc-chip-radius: .25rem;
 }
 
-/* Escopo do componente */
 .mc-root {
-    --mc-chip-font: var(--bs-body-font-size, .875rem);
-    --mc-input-min-h: 2rem;
-    --mc-chip-radius: var(--bs-border-radius, .25rem);
-
     position: relative;
     width: 100%;
-    max-width: 100%;
     min-width: 0;
 }
 
-/* NÃO reduzir tipografia automaticamente (evita ilegibilidade) */
-.mc-root.mc-dense {
-    --mc-chip-font: var(--bs-body-font-size, .875rem);
-}
-
-@media (max-width: 576px) {
-    .mc-root.mc-dense {
-        --mc-chip-font: .8125rem;
-    }
-}
-
-/* ---------- Wrapper visual (altura *automática*) ---------- */
 .mc-inputwrap {
     display: grid;
-    grid-template-rows: auto auto; /* chips em cima, input embaixo */
+    grid-template-rows:auto auto;
     align-items: start;
     gap: .25rem;
-
-    /* sem height/min/max-height fixo */
-
     border: 1px solid var(--bs-border-color);
     border-radius: .375rem;
     padding: .375rem .5rem;
     background: var(--bs-body-bg);
     width: 100%;
-    max-width: 100%;
     min-width: 0;
 }
 
@@ -58,7 +28,6 @@
     outline-offset: 1px;
 }
 
-/* ---------- Área de chips ---------- */
 .mc-chips {
     display: flex;
     flex-wrap: wrap;
@@ -66,31 +35,22 @@
     max-width: 100%;
     min-width: 0;
     padding-block: .125rem;
-    scrollbar-gutter: stable;
-    overscroll-behavior: contain;
 }
 
-/* ---------- Chips (entorno mínimo, levemente maior agora) ---------- */
-.mc-chip {
+.mc-chip, .mc-chip-summary {
     display: inline-flex;
     align-items: center;
-
-    /* antes: .0625rem .375rem — agora um pouquinho maior */
     padding: .1rem .5rem;
     border-radius: var(--mc-chip-radius);
-
     background: var(--bs-secondary-bg);
     color: var(--bs-body-color);
+    white-space: nowrap;
+}
 
+.mc-chip {
     font-size: var(--mc-chip-font);
     line-height: 1.15;
-    font-weight: 400;
-
-    /* não cresce/não encolhe no flex; largura = conteúdo */
     flex: 0 0 auto;
-
-    /* manter numa linha e, se faltar espaço, elipse */
-    white-space: nowrap;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -106,30 +66,11 @@
     cursor: pointer;
 }
 
-.mc-chip .mc-chip-x:focus {
-    outline: 2px solid var(--bs-primary);
-    border-radius: 50%;
-}
-
-/* ---------- “+N” (para não crescer lateralmente quando houver muitas) ---------- */
 .mc-chip-summary {
-    display: inline-flex;
-    align-items: center;
-    padding: .1rem .5rem;
-    border-radius: var(--mc-chip-radius);
-    background: var(--bs-secondary-bg);
-    color: var(--bs-body-color);
     font-weight: 600;
     cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
 }
 
-.mc-chip-summary:focus {
-    outline: 2px solid var(--bs-primary);
-}
-
-/* ---------- Input ---------- */
 .mc-input {
     width: 100%;
     border: 0;
@@ -144,7 +85,6 @@
     color: var(--bs-secondary-color);
 }
 
-/* ---------- Listbox (dropdown) ---------- */
 .mc-listbox {
     position: absolute;
     left: 0;
@@ -177,9 +117,4 @@
 
 .mc-option.mc-active {
     background: var(--bs-primary-bg-subtle);
-}
-
-/* ---------- Responsividade ---------- */
-@media (max-width: 576px) {
-    /* layout já estável por +N e altura automática */
 }
