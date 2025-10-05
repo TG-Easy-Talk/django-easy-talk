@@ -123,115 +123,115 @@
 
 <script>
     class DisponibilidadeWidget {
-        static widget = document.querySelector('input[name="{{ widget.name }}"]');
-        static celulas = document.querySelectorAll('[data-grade]');
-        static classesNaoSelecionado = ["bg-body-secondary"];
-        static classesSelecionado = ["bg-secondary"];
+        static widget = document.querySelector('input[name="{{ widget.name }}"]')
+        static celulas = document.querySelectorAll('[data-grade]')
+        static classesNaoSelecionado = ["bg-body-secondary"]
+        static classesSelecionado = ["bg-secondary"]
 
-        static matriz_disponibilidade_booleanos_original = JSON.parse("{{ widget.value }}");
-        static matriz_disponibilidade_booleanos_atual = JSON.parse("{{ widget.value }}");
+        static matriz_disponibilidade_booleanos_original = JSON.parse("{{ widget.value }}")
+        static matriz_disponibilidade_booleanos_atual = JSON.parse("{{ widget.value }}")
 
-        static apiUrl = "{% url 'api_disponibilidade_semanal' %}";
-        static currentWeekStart = null;
+        static apiUrl = "{% url 'api_disponibilidade_semanal' %}"
+        static currentWeekStart = null
 
         static getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+            const value = `; ${document.cookie}`
+            const parts = value.split(`; ${name}=`)
+            if (parts.length === 2) return parts.pop().split(';').shift()
         }
 
         static mondayOf(date) {
-            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const wd = (d.getUTCDay() + 6) % 7;
-            d.setUTCDate(d.getUTCDate() - wd);
-            return d;
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+            const wd = (d.getUTCDay() + 6) % 7
+            d.setUTCDate(d.getUTCDate() - wd)
+            return d
         }
 
         static formatBR(d) {
-            return d.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+            return d.toLocaleDateString('pt-BR', {timeZone: 'UTC'})
         }
 
         static setHeaderDate(dMonday) {
-            const el = document.getElementById('week-date');
-            if (el) el.textContent = this.formatBR(dMonday);
+            const el = document.getElementById('week-date')
+            if (el) el.textContent = this.formatBR(dMonday)
         }
 
         static atualizarItemPelaMatriz(item) {
-            const linha = Number(item.dataset.linha);
-            const coluna = Number(item.dataset.coluna);
-            if (this.matriz_disponibilidade_booleanos_atual[linha][coluna]) this.selecionar(item);
-            else this.tirar(item);
+            const linha = Number(item.dataset.linha)
+            const coluna = Number(item.dataset.coluna)
+            if (this.matriz_disponibilidade_booleanos_atual[linha][coluna]) this.selecionar(item)
+            else this.tirar(item)
         }
 
         static atualizarMatrizPeloItem(item) {
-            const linha = Number(item.dataset.linha);
-            const coluna = Number(item.dataset.coluna);
-            this.matriz_disponibilidade_booleanos_atual[linha][coluna] = (item.dataset.selecionado === "true");
+            const linha = Number(item.dataset.linha)
+            const coluna = Number(item.dataset.coluna)
+            this.matriz_disponibilidade_booleanos_atual[linha][coluna] = (item.dataset.selecionado === "true")
         }
 
         static selecionar(item) {
-            item.dataset.selecionado = "true";
-            this.classesNaoSelecionado.forEach(c => item.classList.remove(c));
-            this.classesSelecionado.forEach(c => item.classList.add(c));
+            item.dataset.selecionado = "true"
+            this.classesNaoSelecionado.forEach(c => item.classList.remove(c))
+            this.classesSelecionado.forEach(c => item.classList.add(c))
         }
 
         static tirar(item) {
-            item.dataset.selecionado = "false";
-            this.classesSelecionado.forEach(c => item.classList.remove(c));
-            this.classesNaoSelecionado.forEach(c => item.classList.add(c));
+            item.dataset.selecionado = "false"
+            this.classesSelecionado.forEach(classe => item.classList.remove(classe))
+            this.classesNaoSelecionado.forEach(classe => item.classList.add(classe))
         }
 
         static selecionarOuTirar(item) {
-            if (item.dataset.selecionado === "false") this.selecionar(item);
-            else this.tirar(item);
-            this.atualizarMatrizPeloItem(item);
-            this.atualizarInputETabela();
+            if (item.dataset.selecionado === "false") this.selecionar(item)
+            else this.tirar(item)
+            this.atualizarMatrizPeloItem(item)
+            this.atualizarInputETabela()
         }
 
         static atualizarInputETabela() {
-            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_atual);
+            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_atual)
 
             if (typeof DisponibilidadeTabela !== "undefined"
                 && DisponibilidadeTabela
                 && typeof DisponibilidadeTabela.atualizar === "function") {
-                DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_atual;
-                DisponibilidadeTabela.atualizar();
+                DisponibilidadeTabela.matriz_disponibilidade_booleanos = this.matriz_disponibilidade_booleanos_atual
+                DisponibilidadeTabela.atualizar()
             }
         }
 
         static limparGrade() {
             this.celulas.forEach(item => {
                 this.tirar(item);
-                this.atualizarMatrizPeloItem(item);
+                this.atualizarMatrizPeloItem(item)
             });
-            this.atualizarInputETabela();
+            this.atualizarInputETabela()
         }
 
         static redefinir() {
             this.matriz_disponibilidade_booleanos_atual =
-                this.matriz_disponibilidade_booleanos_original.map(l => [...l]);
-            this.celulas.forEach(item => this.atualizarItemPelaMatriz(item));
+                this.matriz_disponibilidade_booleanos_original.map(l => [...l])
+            this.celulas.forEach(item => this.atualizarItemPelaMatriz(item))
             this.atualizarInputETabela();
         }
 
         static async loadWeek(dMonday) {
-            this.currentWeekStart = dMonday;
-            this.setHeaderDate(dMonday);
-            const qs = `?week=${dMonday.toISOString().slice(0, 10)}`;
+            this.currentWeekStart = dMonday
+            this.setHeaderDate(dMonday)
+            const qs = `?week=${dMonday.toISOString().slice(0, 10)}`
             try {
-                const resp = await fetch(this.apiUrl + qs, {credentials: 'same-origin'});
-                if (!resp.ok) throw new Error(`GET ${resp.status}`);
-                const data = await resp.json();
-                this.matriz_disponibilidade_booleanos_atual = data.matriz;
-                this.celulas.forEach(item => this.atualizarItemPelaMatriz(item));
-                this.atualizarInputETabela();
+                const resp = await fetch(this.apiUrl + qs, {credentials: 'same-origin'})
+                if (!resp.ok) throw new Error(`GET ${resp.status}`)
+                const data = await resp.json()
+                this.matriz_disponibilidade_booleanos_atual = data.matriz
+                this.celulas.forEach(item => this.atualizarItemPelaMatriz(item))
+                this.atualizarInputETabela()
             } catch (err) {
-                console.error('Falha ao carregar a semana:', err);
+                console.error('Falha ao carregar a semana:', err)
             }
         }
 
         static async save(kind) {
-            if (!this.currentWeekStart) return;
+            if (!this.currentWeekStart) return
             const payload = {
                 week: this.currentWeekStart.toISOString().slice(0, 10),
                 kind: kind,
@@ -247,50 +247,50 @@
                     },
                     body: JSON.stringify(payload)
                 });
-                if (!resp.ok) throw new Error(`POST ${resp.status}`);
+                if (!resp.ok) throw new Error(`POST ${resp.status}`)
                 await resp.json();
                 this.matriz_disponibilidade_booleanos_original =
-                    this.matriz_disponibilidade_booleanos_atual.map(l => [...l]);
+                    this.matriz_disponibilidade_booleanos_atual.map(l => [...l])
             } catch (err) {
                 console.error('Falha ao salvar:', err);
-                alert('Falha ao salvar a disponibilidade da semana.');
+                alert('Falha ao salvar a disponibilidade da semana.')
             }
         }
 
         static lidarComEvento(e, item) {
-            if (e.buttons === 1) this.selecionarOuTirar(item);
+            if (e.buttons === 1) this.selecionarOuTirar(item)
         }
 
         static preparar() {
             document.querySelectorAll('[draggable="false"]').forEach(item => {
-                item.classList.add('prevent-select');
-                item.addEventListener('dragstart', e => e.preventDefault());
+                item.classList.add('prevent-select')
+                item.addEventListener('dragstart', e => e.preventDefault())
             });
             this.celulas.forEach(item => {
-                this.atualizarItemPelaMatriz(item);
-                item.addEventListener('mouseover', e => this.lidarComEvento(e, item));
-                item.addEventListener('mousedown', e => this.lidarComEvento(e, item));
+                this.atualizarItemPelaMatriz(item)
+                item.addEventListener('mouseover', e => this.lidarComEvento(e, item))
+                item.addEventListener('mousedown', e => this.lidarComEvento(e, item))
             });
 
-            const today = new Date();
-            const monday = this.mondayOf(today);
+            const today = new Date()
+            const monday = this.mondayOf(today)
 
-            const prev = document.getElementById('prev-week');
-            const next = document.getElementById('next-week');
+            const prev = document.getElementById('prev-week')
+            const next = document.getElementById('next-week')
             if (prev) prev.addEventListener('click', () => {
-                const d = new Date(this.currentWeekStart);
-                d.setUTCDate(d.getUTCDate() - 7);
+                const d = new Date(this.currentWeekStart)
+                d.setUTCDate(d.getUTCDate() - 7)
                 this.loadWeek(d);
             });
             if (next) next.addEventListener('click', () => {
-                const d = new Date(this.currentWeekStart);
-                d.setUTCDate(d.getUTCDate() + 7);
-                this.loadWeek(d);
+                const d = new Date(this.currentWeekStart)
+                d.setUTCDate(d.getUTCDate() + 7)
+                this.loadWeek(d)
             });
 
-            this.loadWeek(monday);
+            this.loadWeek(monday)
 
-            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_original);
+            this.widget.value = JSON.stringify(this.matriz_disponibilidade_booleanos_original)
         }
     }
 
