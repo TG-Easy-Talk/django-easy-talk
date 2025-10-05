@@ -171,8 +171,8 @@
 
         static selecionar(item) {
             item.dataset.selecionado = "true"
-            this.classesNaoSelecionado.forEach(c => item.classList.remove(c))
-            this.classesSelecionado.forEach(c => item.classList.add(c))
+            this.classesNaoSelecionado.forEach(classe => item.classList.remove(classe))
+            this.classesSelecionado.forEach(classe => item.classList.add(classe))
         }
 
         static tirar(item) {
@@ -182,8 +182,10 @@
         }
 
         static selecionarOuTirar(item) {
-            if (item.dataset.selecionado === "false") this.selecionar(item)
-            else this.tirar(item)
+            if (item.dataset.selecionado === "false")
+                this.selecionar(item)
+            else
+                this.tirar(item)
             this.atualizarMatrizPeloItem(item)
             this.atualizarInputETabela()
         }
@@ -201,9 +203,9 @@
 
         static limparGrade() {
             this.celulas.forEach(item => {
-                this.tirar(item);
+                this.tirar(item)
                 this.atualizarMatrizPeloItem(item)
-            });
+            })
             this.atualizarInputETabela()
         }
 
@@ -211,7 +213,7 @@
             this.matriz_disponibilidade_booleanos_atual =
                 this.matriz_disponibilidade_booleanos_original.map(l => [...l])
             this.celulas.forEach(item => this.atualizarItemPelaMatriz(item))
-            this.atualizarInputETabela();
+            this.atualizarInputETabela()
         }
 
         static async loadWeek(dMonday) {
@@ -236,7 +238,7 @@
                 week: this.currentWeekStart.toISOString().slice(0, 10),
                 kind: kind,
                 matriz: this.matriz_disponibilidade_booleanos_atual
-            };
+            }
             try {
                 const resp = await fetch(this.apiUrl, {
                     method: 'POST',
@@ -258,19 +260,20 @@
         }
 
         static lidarComEvento(e, item) {
-            if (e.buttons === 1) this.selecionarOuTirar(item)
+            if (e.buttons === 1)
+                this.selecionarOuTirar(item)
         }
 
         static preparar() {
             document.querySelectorAll('[draggable="false"]').forEach(item => {
                 item.classList.add('prevent-select')
                 item.addEventListener('dragstart', e => e.preventDefault())
-            });
+            })
             this.celulas.forEach(item => {
                 this.atualizarItemPelaMatriz(item)
                 item.addEventListener('mouseover', e => this.lidarComEvento(e, item))
                 item.addEventListener('mousedown', e => this.lidarComEvento(e, item))
-            });
+            })
 
             const today = new Date()
             const monday = this.mondayOf(today)
@@ -281,12 +284,12 @@
                 const d = new Date(this.currentWeekStart)
                 d.setUTCDate(d.getUTCDate() - 7)
                 this.loadWeek(d);
-            });
+            })
             if (next) next.addEventListener('click', () => {
                 const d = new Date(this.currentWeekStart)
                 d.setUTCDate(d.getUTCDate() + 7)
                 this.loadWeek(d)
-            });
+            })
 
             this.loadWeek(monday)
 
