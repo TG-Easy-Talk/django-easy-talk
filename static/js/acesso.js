@@ -36,71 +36,66 @@
 })();
 
 (function () {
-  const input = document.querySelector('input[name="crp"]')
-  if (!input) return
+    const input = document.querySelector('input[name="crp"]')
+    if (!input) return
 
-  input.setAttribute('inputmode', 'text')
-  input.setAttribute('maxlength', '12')
-  input.setAttribute('placeholder', '06/124424 ou 14/05473-7')
-  input.setAttribute('autocomplete', 'off')
+    input.setAttribute('inputmode', 'text')
+    input.setAttribute('maxlength', '12')
+    input.setAttribute('placeholder', '06/124424 ou 14/05473-7')
+    input.setAttribute('autocomplete', 'off')
 
-  const MIN_REGION = 1, MAX_REGION = 24, PAD_MAX = String(MAX_REGION).padStart(2, '0')
-  const PARSE_RE = /^(\d{2})\/(\d{1,7})(?:-(\d))?$/
+    const sanitize = raw =>
+        String(raw || '')
+            .toUpperCase()
+            .replace(/\s+/g, '')
+            .replace(/^CRP:?/, '')
+            .replace(/[^0-9A-Z/-]/g, '')
 
-  const sanitize = raw =>
-    String(raw || '')
-      .toUpperCase()
-      .replace(/\s+/g, '')
-      .replace(/^CRP:?/, '')
-      .replace(/[^0-9-]/g, '')
+    function formatCRP(raw) {
+        let s = sanitize(raw)
 
-  function formatCRP(raw) {
-    const s = sanitize(raw)
-    const m = s.match(/-(\d)$/)
-    const dv = m ? m[1] : ''
-    const core = dv ? s.slice(0, -2) : s
-    const digits = core.replace(/\D/g, '').slice(0, 9)
-    const rr = digits.slice(0, 2), seq = digits.slice(2)
-    return (rr ? rr + '/' : '') + seq + (dv && seq ? '-' + dv : '')
-  }
+        if (/^\d{2}(?!\/)/.test(s)) {
+            s = s.replace(/^(\d{2})(?!\/)/, '$1/')
+        }
 
-  const isCompleteAndValid = v => {
-    const m = PARSE_RE.exec(v || '')
-    if (!m) return false
-    const rr = +m[1], seq = m[2]
-    return rr >= MIN_REGION && rr <= MAX_REGION && /[1-9]/.test(seq)
-  }
+        const slashIdx = s.indexOf('/')
+        if (slashIdx === -1) {
+            return s.replace(/\D/g, '').slice(0, 2)
+        }
 
-  const regionMessage = v => {
-    const m = /^(\d{2})\//.exec(v || '')
-    if (!m) return ''
-    const n = +m[1]
-    return n >= MIN_REGION && n <= MAX_REGION ? '' : `Código regional inválido (use 01 a ${PAD_MAX}).`
-  }
+        const rr = s.slice(0, slashIdx).replace(/\D/g, '').slice(0, 2)
+        let tail = s.slice(slashIdx + 1).replace(/\//g, '')
 
-  input.value = formatCRP(input.value || '')
+        const lettersMatch = tail.match(/^[A-Z]{1,2}/)
+        if (lettersMatch) {
+            const letters = lettersMatch[0]
+            let digits = tail.slice(letters.length).replace(/\D/g, '')
+            digits = digits.slice(0, 6)
+            return `${rr}${rr ? '/' : ''}${letters}${digits}`
+        }
 
-  input.addEventListener('input', e => {
-    e.target.value = formatCRP(e.target.value)
-    e.target.setCustomValidity('')
-  })
 
-  input.addEventListener('blur', e => {
-    e.target.value = formatCRP(e.target.value)
-    const v = e.target.value
-    e.target.setCustomValidity(
-      regionMessage(v) || (isCompleteAndValid(v) ? '' : (v ? 'Formato aceito: RR/NNNN..NN ou RR/NNNN..NN-D.' : ''))
-    )
-  })
+        tail = tail.replace(/[^0-9-]/g, '').replace(/-+/g, '-')
 
-  const form = input.form
-  if (form) {
-    form.addEventListener('submit', () => {
-      const v = input.value
-      if (isCompleteAndValid(v)) {
-        const m = PARSE_RE.exec(v)
-        input.value = `${m[1].padStart(2, '0')}/${m[2]}${m[3] ? '-' + m[3] : ''}`
-      }
+        if (tail.includes('-')) {
+            const onlyDigits = tail.replace(/-/g, '').replace(/\D/g, '')
+            const pre = onlyDigits.slice(0, 5)
+            const dv = onlyDigits.slice(5, 6)
+            const seq = pre + (tail.indexOf('-') !== -1 ? (dv ? '-' + dv : '-') : '')
+            return `${rr}${rr ? '/' : ''}${seq}`
+        } else {
+            const seq = tail.replace(/\D/g, '').slice(0, 7)
+            return `${rr}${rr ? '/' : ''}${seq}`
+        }
+    }
+
+    input.value = formatCRP(input.value || '')
+
+    input.addEventListener('input', e => {
+        e.target.value = formatCRP(e.target.value)
     })
-  }
+
+    input.addEventListener('blur', e => {
+        e.target.value = formatCRP(e.target.value)
+    })
 })()
