@@ -1,14 +1,19 @@
 import re
 from django.core.exceptions import ValidationError
 
-_CRP_RE = re.compile(r"^\d{2}/\d{5}$")
+_CRP_RE = re.compile(
+    r"^(?:CRP\s*)?(?P<rr>\d{2})/(?P<seq>\d{1,7})(?:-(?P<dv>\d))?$",
+    re.IGNORECASE,
+)
 
 
 def validar_crp(crp: str) -> bool:
-    if not _CRP_RE.fullmatch(crp or ""):
+    m = _CRP_RE.fullmatch(crp or "")
+    if not m:
         return False
-    prefixo = int(crp.split("/")[0])
-    return 1 <= prefixo <= 28  # faixas oficiais de UFs
+    rr = int(m.group("rr"))
+    seq = m.group("seq")
+    return 1 <= rr <= 24 and any(ch != "0" for ch in seq)
 
 
 def validate_crp(value: str) -> None:
