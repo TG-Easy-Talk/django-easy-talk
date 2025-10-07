@@ -305,12 +305,10 @@ class PsicologoModelTest(ModelTestCase):
     def test_crp_invalido(self):
         crps_invalidos = [
             "06-12345",
-            "06/123456",
             "06/1234a",
             "06/1234-5",
             "06/1234 5",
             "06 12345",
-            "06/1234",
             "06/12345/",
             "06/12345 ",
             "00/12345",
@@ -318,6 +316,17 @@ class PsicologoModelTest(ModelTestCase):
             "29/12345",
             "-1/12345",
             "6/12345",
+            "25/12345",
+            "06/0000000",
+            "06/00000-0",
+            "06/12345678",
+            "06/12345-99",
+            "06/12345-",
+            "CRP/12345",
+            "01/000",
+            "12/IS12",
+            "01/IP000000",
+            " 06/12345",
         ]
 
         for crp in crps_invalidos:
@@ -332,6 +341,38 @@ class PsicologoModelTest(ModelTestCase):
                 self.assertEqual(
                     'crp_invalido',
                     ctx.exception.error_dict["crp"][0].code,
+                )
+
+    def test_crp_valido(self):
+        crps_validos = [
+            "03/0010327",
+            "12/27768",
+            "03/18189",
+            "09/004840",
+            "22/01901",
+            "18/04180",
+            "06/166340",
+            "23/001789",
+            "16/331",
+            "14/05473-7",
+            "CRP06/124424",
+            "CRP 06/124424",
+            "01/17866",
+            "24/1234567",
+            "02/IS265",
+            "03/IS01083",
+            "04/IP003974",
+            "crp06/124424",
+        ]
+
+        for crp in crps_validos:
+            with self.subTest(crp=crp):
+                self.assertIsNone(
+                    Psicologo(
+                        usuario=self.usuario_dummy,
+                        nome_completo='Psicólogo com CRP válido',
+                        crp=crp,
+                    ).clean_fields()
                 )
 
     def test_impede_usuario_com_paciente(self):

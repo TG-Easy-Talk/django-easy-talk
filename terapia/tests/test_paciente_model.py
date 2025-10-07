@@ -50,6 +50,23 @@ class PacienteModelTest(ModelTestCase):
             '574.768.960-67',
             '57476896067',
             '111.111.111-11',
+            '1234567890',
+            '123456789012',
+            '1234567890a',
+            '00000000000',
+            '11111111111',
+            '22222222222',
+            '52998224726',
+            '16899535000',
+            '11144477736',
+            '86288366758',
+            '15350946057',
+            '07068058010',
+            '28625541039',
+            '98765432101',
+            '44784160877',
+            '12787226885',
+            '18803567837',
         ]
 
         for cpf in cpfs_invalidos:
@@ -65,6 +82,33 @@ class PacienteModelTest(ModelTestCase):
                     'cpf_invalido',
                     ctx.exception.error_dict["cpf"][0].code,
                 )
+
+    def test_cpf_valido(self):
+        cpfs_validos = [
+            '52998224725',
+            '16899535009',
+            '11144477735',
+            '86288366757',
+            '15350946056',
+            '07068058019',
+            '28625541038',
+            '98765432100',
+            '44784160876',
+            '12787226884',
+            '18803567836',
+            '529.982.247-25',
+            '168.995.350-09',
+            '111.444.777-35',
+            '862.883.667-57',
+        ]
+
+        for cpf in cpfs_validos:
+            with self.subTest(cpf=cpf):
+                Paciente(
+                    usuario=self.usuario_dummy,
+                    nome='Paciente Válido',
+                    cpf=cpf,
+                ).full_clean()
 
     def test_impede_usuario_com_psicologo(self):
         with self.assertRaises(ValidationError) as ctx:
