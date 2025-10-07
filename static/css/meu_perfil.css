@@ -1,0 +1,29 @@
+:root {
+    --perfil-left-basis: 18rem;
+    --perfil-espec-grow: 3;
+    --perfil-sobre-grow: 2.5;
+    --perfil-espec-pad-left: .75rem;
+}
+
+@media (min-width: 992px) {
+    .perfil-cols {
+        align-items: flex-start;
+    }
+
+    .perfil-left {
+        flex: 0 0 var(--perfil-left-basis);
+    }
+
+    .perfil-espec, .perfil-sobre {
+        min-width: 0;
+    }
+
+    .perfil-espec {
+        flex: var(--perfil-espec-grow) 1 0;
+        padding-left: var(--perfil-espec-pad-left);
+    }
+
+    .perfil-sobre {
+        flex: var(--perfil-sobre-grow) 1 0;
+    }
+}

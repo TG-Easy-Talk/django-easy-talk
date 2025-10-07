@@ -1,0 +1,225 @@
+:root {
+    --brand-green: #2E8D47;
+    --brand-black: #000000;
+    --brand-white: #FFFFFF;
+    --bs-primary: var(--brand-green);
+    --bs-success: var(--brand-green);
+
+    --font-ui: "Karla", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    --font-title: "Livvic", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+
+    --fs-title: 20px;
+    --fs-month: 20px;
+    --fs-weekday: 12px;
+    --fs-day: .95rem;
+    --slot-date-font-size: 1rem;
+
+    --radius-lg: .9rem;
+    --radius-md: .75rem;
+    --radius-sm: .5rem;
+
+    --space-1: .25rem;
+    --space-2: .5rem;
+    --space-3: .75rem;
+    --space-4: 1rem;
+
+    --total-breakdown-font-size: 14px;
+}
+
+.booking-sidebar {
+    width: clamp(300px, 32vw, 360px);
+}
+
+.profile__avatar {
+    width: 7.5rem;
+    height: 7.5rem;
+}
+
+.booking__title {
+    font-family: var(--font-title);
+    color: var(--brand-black);
+    font-weight: 600;
+    font-size: var(--fs-title);
+}
+
+.flatpickr-calendar,
+.flatpickr-day,
+.flatpickr-weekday,
+.flatpickr-current-month,
+.flatpickr-current-month .cur-month,
+.flatpickr-current-month .numInputWrapper input,
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    font-family: var(--font-ui);
+}
+
+.flatpickr-calendar:where(.inline) {
+    width: 100%;
+    min-width: 320px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--brand-green);
+    box-shadow: none;
+}
+
+.flatpickr-months {
+    background: var(--brand-green);
+    color: var(--brand-white);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--space-1) var(--space-1);
+}
+
+.flatpickr-current-month,
+.flatpickr-current-month .cur-month,
+.flatpickr-current-month .numInputWrapper input,
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    color: var(--brand-white);
+    font-weight: 400;
+    font-size: var(--fs-month);
+    text-transform: capitalize;
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+    color: var(--brand-white);
+}
+
+.flatpickr-months .flatpickr-prev-month svg,
+.flatpickr-months .flatpickr-next-month svg {
+    fill: var(--brand-white);
+}
+
+.flatpickr-weekdays .flatpickr-weekday {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 46px !important;
+    text-align: center !important;
+    padding: 0 !important;
+}
+
+.flatpickr-days {
+    padding: 0 var(--space-2) var(--space-1) !important;
+}
+
+.flatpickr-weekdays .flatpickr-weekdaycontainer {
+    justify-items: center !important;
+    align-items: center !important;
+}
+
+.dayContainer {
+    display: grid !important;
+    grid-template-columns: repeat(7, 32px) !important;
+    justify-content: space-between !important;
+}
+
+.flatpickr-day {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 700 !important;
+    width: 32px !important;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: var(--brand-green);
+    border-color: var(--brand-green);
+    color: var(--brand-white);
+}
+
+.flatpickr-day.today:not(.selected) {
+    border-color: var(--brand-green);
+}
+
+.flatpickr-day.disabled,
+.flatpickr-day.notAllowed,
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+    color: #D0D5DD;
+}
+
+#lista-slots .linha-slot {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-2);
+    align-items: center;
+    border: 0;
+    padding: .25rem 0;
+    background: transparent;
+}
+
+#lista-slots .data {
+    font-weight: 600;
+    font-size: var(--slot-date-font-size);
+}
+
+#lista-slots select.form-select {
+    border: 1px solid var(--brand-green);
+    border-radius: var(--radius-md);
+    background-color: #FFFFFF;
+    color: var(--brand-black);
+    box-shadow: none;
+    outline: 0;
+
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='%232E8D47' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .75rem center;
+    background-size: 16px 12px;
+
+    padding: .5rem 2.25rem .5rem .75rem;
+}
+
+#lista-slots select.form-select:focus {
+    border-color: var(--brand-green);
+    box-shadow: 0 0 0 .2rem rgba(46, 141, 71, .15);
+}
+
+#btn-confirmar {
+    background-color: var(--brand-green);
+    border: 1px solid var(--brand-green);
+    color: var(--brand-white);
+    border-radius: var(--radius-md);
+}
+
+#btn-confirmar:hover:not(:disabled) {
+    filter: brightness(.95);
+}
+
+#btn-confirmar:disabled {
+    background-color: var(--brand-green);
+    border-color: var(--brand-green);
+    color: var(--brand-white);
+    opacity: .65;
+}
+
+.total-row__label,
+.total-row__value {
+    color: var(--brand-black);
+    font-weight: 700;
+    font-size: var(--slot-date-font-size);
+}
+
+#total-valor .breakdown {
+    font-size: var(--total-breakdown-font-size);
+    color: rgba(0, 0, 0, .5);
+    font-weight: 400;
+}
+
+#total-valor .sum {
+    color: var(--brand-black);
+    font-weight: 700;
+}
+
+.flatpickr-current-month .numInputWrapper input {
+    pointer-events: none;
+    background: transparent;
+    border: 0;
+}
+
+.flatpickr-current-month .numInputWrapper span {
+    display: none;
+}

@@ -116,6 +116,7 @@ class PsicologoChangeForm(forms.ModelForm):
         })
         self.fields["foto"].widget = forms.FileInput()
         self.fields["especializacoes"].widget.attrs.update({"class": "h-100"})
+        self.fields["especializacoes"].widget.attrs.update({"data-combobox": "multi"})
         self.fields["disponibilidade"].widget = DisponibilidadeInput(
             psicologo=self.instance,
         )

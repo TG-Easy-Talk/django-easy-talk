@@ -1,0 +1,120 @@
+:root {
+    --mc-chip-font: var(--bs-body-font-size, .875rem);
+    --mc-input-min-h: 2rem;
+    --mc-chip-radius: .25rem;
+}
+
+.mc-root {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+.mc-inputwrap {
+    display: grid;
+    grid-template-rows:auto auto;
+    align-items: start;
+    gap: .25rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .375rem;
+    padding: .375rem .5rem;
+    background: var(--bs-body-bg);
+    width: 100%;
+    min-width: 0;
+}
+
+.mc-inputwrap:focus-within {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 1px;
+}
+
+.mc-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    max-width: 100%;
+    min-width: 0;
+    padding-block: .125rem;
+}
+
+.mc-chip, .mc-chip-summary {
+    display: inline-flex;
+    align-items: center;
+    padding: .1rem .5rem;
+    border-radius: var(--mc-chip-radius);
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    white-space: nowrap;
+}
+
+.mc-chip {
+    font-size: var(--mc-chip-font);
+    line-height: 1.15;
+    flex: 0 0 auto;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mc-chip .mc-chip-x {
+    border: 0;
+    background: transparent;
+    line-height: 1;
+    font-size: .9em;
+    margin-left: .25rem;
+    padding: 0;
+    cursor: pointer;
+}
+
+.mc-chip-summary {
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mc-input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    min-height: var(--mc-input-min-h);
+    background: transparent;
+    min-width: 0;
+    font-size: .875rem;
+}
+
+.mc-input::placeholder {
+    color: var(--bs-secondary-color);
+}
+
+.mc-listbox {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    margin-top: .25rem;
+    max-height: 18rem;
+    overflow: auto;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: .375rem;
+    box-shadow: var(--bs-box-shadow);
+    list-style: none;
+    padding: 0;
+    display: none;
+}
+
+.mc-listbox[aria-hidden="false"] {
+    display: block;
+}
+
+.mc-option {
+    padding: .5rem .75rem;
+    cursor: pointer;
+}
+
+.mc-option[aria-selected="true"] {
+    font-weight: 300;
+}
+
+.mc-option.mc-active {
+    background: var(--bs-primary-bg-subtle);
+}
