@@ -32,6 +32,8 @@ from .forms import (
 )
 from .models import Consulta, EstadoConsulta, Psicologo
 from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
+from .forms import ConsultaChecklistForm
+from .forms import ConsultaAnotacoesForm
 
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
@@ -413,4 +415,63 @@ class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
+
+
+class ConsultaChecklistUpdateView(DeveSerPsicologoMixin, View):
+    """Permite que o psicólogo atualize o campo `checklist_tarefas` de uma consulta.
+
+    Aceita apenas POST. Verifica que a consulta pertence ao psicólogo logado.
+    Espera um campo `checklist_tarefas` no POST e opcionalmente `next` para redirecionar.
+    """
+    def post(self, request, pk):
+        if not request.user.is_psicologo:
+            return HttpResponseForbidden("Sua conta precisa ser do tipo psicólogo.")
+
+        consulta = get_object_or_404(Consulta, pk=pk, psicologo=request.user.psicologo)
+
+        form = ConsultaChecklistForm(request.POST, instance=consulta)
+        if form.is_valid():
+            checklist = form.cleaned_data.get("checklist_tarefas")
+            # Salvar None se string vazia para manter consistência com null=True
+            if checklist is None or checklist.strip() == "":
+                consulta.checklist_tarefas = None
+            else:
+                consulta.checklist_tarefas = checklist
+            consulta.save(update_fields=["checklist_tarefas"])
+            messages.success(request, "Checklist salvo com sucesso.")
+        else:
+            # Caso raro de validação, anexar mensagem
+            messages.error(request, "Não foi possível salvar o checklist. Verifique os dados.")
+
+        next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or reverse_lazy("minhas_consultas")
+        return redirect(next_url)
+
+
+class ConsultaAnotacoesUpdateView(DeveSerPsicologoMixin, View):
+    """Permite que o psicólogo atualize o campo `anotacoes` de uma consulta.
+
+    Aceita apenas POST. Verifica que a consulta pertence ao psicólogo logado.
+    Espera um campo `anotacoes` no POST e opcionalmente `next` para redirecionar.
+    """
+    def post(self, request, pk):
+        if not request.user.is_psicologo:
+            return HttpResponseForbidden("Sua conta precisa ser do tipo psicólogo.")
+
+        consulta = get_object_or_404(Consulta, pk=pk, psicologo=request.user.psicologo)
+
+        form = ConsultaAnotacoesForm(request.POST, instance=consulta)
+        if form.is_valid():
+            anot = form.cleaned_data.get("anotacoes")
+            # Salvar None se string vazia para manter consistência com null=True
+            if anot is None or anot.strip() == "":
+                consulta.anotacoes = None
+            else:
+                consulta.anotacoes = anot
+            consulta.save(update_fields=["anotacoes"])
+            messages.success(request, "Anotações salvas com sucesso.")
+        else:
+            messages.error(request, "Não foi possível salvar as anotações. Verifique os dados.")
+
+        next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or reverse_lazy("minhas_consultas")
+        return redirect(next_url)
     

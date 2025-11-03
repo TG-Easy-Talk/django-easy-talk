@@ -53,40 +53,123 @@
                     <td>{{ consulta.data_hora_agendada|date:"d/m/Y" }} às {{ consulta.data_hora_agendada|time }}</td>
 
                     <td class="align-middle">
-                      <div class="d-flex justify-content-end align-items-center" style="height:100%">
-                        {% if request.user.is_paciente and consulta.estado != 'CANCELADA' and consulta.estado != 'FINALIZADA' %}
-                            <form method="post"
-                                  action="{% url 'consulta_cancelar' consulta.pk %}"
-                                  class="d-inline m-0"
-                                  onsubmit="return confirm('Confirma cancelar esta consulta?');">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
-                            </form>
+                        <div class="d-flex justify-content-end align-items-center gap-2" style="height:100%">
+                            {% if request.user.is_paciente and consulta.estado != 'CANCELADA' and consulta.estado != 'FINALIZADA' %}
+                                <form method="post"
+                                    action="{% url 'consulta_cancelar' consulta.pk %}"
+                                    class="d-inline m-0"
+                                    onsubmit="return confirm('Confirma cancelar esta consulta?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn btn-danger text-white btn-sm">Cancelar</button>
+                                </form>
 
-                        {% elif request.user.is_psicologo and consulta.estado == 'SOLICITADA' %}
-                            <form method="post"
-                                  action="{% url 'consulta_aceitar' consulta.pk %}"
-                                  class="d-inline m-0 me-2"
-                                  onsubmit="return confirm('Confirma aceitar esta consulta?');">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                <button type="submit" class="btn btn-success btn-sm">Aceitar</button>
-                            </form>
+                            {% elif request.user.is_psicologo and consulta.estado == 'SOLICITADA' %}
+                                <form method="post"
+                                    action="{% url 'consulta_aceitar' consulta.pk %}"
+                                    class="d-inline m-0"
+                                    onsubmit="return confirm('Confirma aceitar esta consulta?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn btn-success btn-sm">Aceitar</button>
+                                </form>
 
-                            <form method="post"
-                                  action="{% url 'consulta_cancelar' consulta.pk %}"
-                                  class="d-inline m-0"
-                                  onsubmit="return confirm('Confirma cancelar esta consulta?');">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
-                            </form>
-                        {% endif %}
-                      </div>
+                                <form method="post"
+                                    action="{% url 'consulta_cancelar' consulta.pk %}"
+                                    class="d-inline m-0"
+                                    onsubmit="return confirm('Confirma cancelar esta consulta?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn btn-danger text-white btn-sm">Cancelar</button>
+                                </form>
+                            {% endif %}
+
+                            {% if consulta.estado == 'FINALIZADA' %}
+
+                                {% if request.user.is_paciente %}
+                                    {% if consulta.checklist_tarefas %}
+                                        <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}" class="btn btn-info btn-sm">
+                                            Checklist
+                                        </button>
+                                    {% else %}
+                                        <span class="text-body-secondary">Sem checklist.</span>
+                                    {% endif %}
+
+                                {% elif request.user.is_psicologo %}
+                                    <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}" class="btn btn-info btn-sm">
+                                        Checklist
+                                    </button>
+                                    <button data-bs-toggle="modal" data-bs-target="#anotacoesModal{{ consulta.pk }}" class="btn btn-warning btn-sm">
+                                        Anotações
+                                    </button>
+                                {% endif %}
+
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+{% for consulta in consultas %}
+    {% if consulta.estado == 'FINALIZADA' %}
+        {% if consulta.checklist_tarefas or request.user.is_psicologo %}
+            <div class="modal fade" id="checklistModal{{ consulta.pk }}" tabindex="-1" aria-labelledby="checklistModalLabel{{ consulta.pk }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="checklistModalLabel{{ consulta.pk }}">Checklist da consulta em {{ consulta.data_hora_agendada|date:"d/m/Y H:i" }}</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            {% if request.user.is_paciente %}
+                                {{ consulta.checklist_tarefas }}
+                            {% elif request.user.is_psicologo %}
+                                <form method="post" action="{% url 'consulta_checklist' consulta.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <div class="mb-3">
+                                        <label for="checklist_{{ consulta.pk }}" class="visually-hidden">Checklist</label>
+                                        <textarea id="checklist_{{ consulta.pk }}" name="checklist_tarefas" class="form-control" rows="8" placeholder="Escreva o checklist desta consulta (tarefas, recomendações...)">{{ consulta.checklist_tarefas|default:"" }}</textarea>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-danger text-white" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Salvar</button>
+                                    </div>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if request.user.is_psicologo %}
+            <div class="modal fade" id="anotacoesModal{{ consulta.pk }}" tabindex="-1" aria-labelledby="anotacoesModalLabel{{ consulta.pk }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="anotacoesModalLabel{{ consulta.pk }}">Anotações da consulta em {{ consulta.data_hora_agendada|date:"d/m/Y H:i" }}</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" action="{% url 'consulta_anotacoes' consulta.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <div class="mb-3">
+                                    <label for="anotacoes_{{ consulta.pk }}" class="visually-hidden">Anotações</label>
+                                    <textarea id="anotacoes_{{ consulta.pk }}" name="anotacoes" class="form-control" rows="10" placeholder="Escreva as anotações desta consulta (observações clínicas, progressos, histórico...)">{{ consulta.anotacoes|default:"" }}</textarea>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-danger text-white" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endfor %}

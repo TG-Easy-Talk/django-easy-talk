@@ -161,3 +161,29 @@ class ConsultaCreationForm(forms.ModelForm):
         self.instance.paciente = self.usuario.paciente
         self.instance.psicologo = self.psicologo
         super()._post_clean()
+
+
+class ConsultaChecklistForm(forms.ModelForm):
+    """Formulário mínimo para editar o campo `checklist_tarefas` da Consulta.
+
+    Usado pelo psicólogo para salvar/atualizar o checklist referente a uma consulta.
+    """
+    class Meta:
+        model = Consulta
+        fields = ["checklist_tarefas"]
+        widgets = {
+            "checklist_tarefas": forms.Textarea(attrs={"rows": 8, "placeholder": "Escreva a checklist desta consulta (tarefas, recomendações, etc.)..."}),
+        }
+
+
+class ConsultaAnotacoesForm(forms.ModelForm):
+    """Formulário mínimo para editar o campo `anotacoes` da Consulta.
+
+    Usado pelo psicólogo para salvar/atualizar as anotações referentes a uma consulta.
+    """
+    class Meta:
+        model = Consulta
+        fields = ["anotacoes"]
+        widgets = {
+            "anotacoes": forms.Textarea(attrs={"rows": 10, "placeholder": "Escreva as anotações desta consulta (observações clínicas, progressos, histórico)..."}),
+        }
