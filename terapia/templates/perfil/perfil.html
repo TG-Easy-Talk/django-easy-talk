@@ -33,21 +33,21 @@
                 </div>
             </header>
 
-            <section class="vstack gap-2">
+            <section class="d-flex flex-column gap-2">
                 <h6>Especializações</h6>
                 <div class="hstack gap-2 flex-wrap">
                     {% include "geral/especializacoes.html" %}
                 </div>
             </section>
 
-            <section class="vstack gap-2">
+            <section class="d-flex flex-column gap-2">
                 <h6>Sobre mim</h6>
                 <div class="text-body-secondary">
                     {{ psicologo.sobre_mim|default:"<i>Este psicólogo ainda não definiu seu Sobre Mim.</i>" }}
                 </div>
             </section>
 
-            <section class="vstack gap-2">
+            <section class="d-flex flex-column gap-2">
                 <h6>Disponibilidade</h6>
                 {% if psicologo.disponibilidade %}
                     {% include 'geral/tabela_disponibilidade.html' with matriz_disponibilidade_booleanos_em_json=psicologo.get_matriz_disponibilidade_booleanos_em_json %}
