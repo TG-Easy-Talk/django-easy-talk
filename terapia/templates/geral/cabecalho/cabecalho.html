@@ -1,5 +1,5 @@
 <header id="cabecalho"
-class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} navbar-expand-sm {% endif %} text-bg-dark fixed-top shadow">
+class="navbar {% if request.user.is_anonymous %} navbar-expand-lg {% else %} navbar-expand-sm {% endif %} text-bg-dark fixed-top shadow">
     <div class="container-fluid">
 
         <a class="navbar-brand font-family-easytalk-logo" href="{% url 'home' %}">EasyTalk</a>
@@ -12,35 +12,35 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-md {% else %} nav
             </div>
             <div class="offcanvas-body">
                 <ul class="navbar-nav my-2 justify-content-end flex-grow-1
-                    {% if request.user.is_anonymous %} align-items-md-center {% else %} align-items-sm-center {% endif %}"
+                    {% if request.user.is_anonymous %} align-items-lg-center {% else %} align-items-sm-center {% endif %}"
                 >
                     {% if request.user.is_anonymous %}
                         {% include 'geral/nav_items_compartilhados.html' %}
                         <li class="nav-item">
-                            <a type="button" class="btn text-white btn-secondary me-md-3 mt-3 mt-md-0 w-100 w-md-auto rounded-3"
+                            <a type="button" class="btn text-white btn-secondary me-lg-3 mt-3 mt-lg-0 w-100 w-lg-auto rounded-3"
                                 href="{% url 'login' %}">Entrar</a>
                             <a type="button"
-                                class="btn text-white btn-primary mt-3 mt-md-0 w-100 w-md-auto rounded-3"
+                                class="btn text-white btn-primary mt-3 mt-lg-0 w-100 w-lg-auto rounded-3"
                                 href="{% url 'cadastro_escolha' %}">Cadastrar-se</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link me-md-5 text-nowrap" href="{% url 'pesquisa' %}">Profissionais</a>
+                            <a class="nav-link me-lg-5 text-nowrap" href="{% url 'pesquisa' %}">Profissionais</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link me-md-0 text-nowrap" href="{% url 'minhas_consultas' %}">Minhas consultas</a>
+                            <a class="nav-link me-lg-0 text-nowrap" href="{% url 'minhas_consultas' %}">Minhas consultas</a>
                         </li>
                         {% if request.user.is_psicologo %}
                             <li class="nav-item">
-                                <a class="nav-link ms-md-5 text-nowrap position-relative" href="{% url 'meu_perfil' %}">
+                                <a class="nav-link ms-lg-5 text-nowrap position-relative" href="{% url 'meu_perfil' %}">
                                     Meu perfil
                                 </a>
                             </li>
                         {% endif %}
                         <li class="nav-item">
-                            <a class="d-block d-sm-none nav-link me-md-5 text-nowrap text-warning" href="#" onclick="logout()">Encerrar sessão</a>
+                            <a class="d-block d-sm-none nav-link me-lg-5 text-nowrap text-warning" href="#" onclick="logout()">Encerrar sessão</a>
                         </li>
-                        <li class="d-none d-sm-block m-0 mx-sm-5 vr text-primary opacity-100"></li>
+                        <li class="d-none d-sm-block m-0 mx-lg-5 vr text-primary opacity-100"></li>
                     {% endif %}
                 </ul>
             </div>

@@ -2,14 +2,16 @@
 {% block titulo %} Home {% endblock %}
 {% load static %}
 
-{% block div_conteudo_classes %}
-{% endblock %}
+{% block div_conteudo_classes %}container-fluid p-0 overflow-x-hidden{% endblock %}
 
 {% block conteudo %}
-<div class="d-flex text-bg-dark align-items-center flex-wrap gap-5 px-5 py-5">
-    <img src="{% static 'img/consultorio_desenho.png' %}" alt="" class="img-fluid" style="max-width: 600px;">
-    <div class="text-center flex-grow-1 d-flex flex-column align-items-center">
-        <div style="max-width: 32.5rem;">
+
+<div class="row row-cols-1 row-cols-lg-2 gy-5 text-bg-dark align-items-center px-3 px-lg-5 py-5">
+    <div class="col order-1 order-lg-0 d-flex justify-content-center">
+        <img src="{% static 'img/consultorio_desenho.png' %}" alt="" class="img-fluid">
+    </div>
+    <div class="col text-center d-flex flex-column align-items-center">
+        <div style="max-width: 30rem;">
             <h1 class="display-3">
                 Você merece ser <span class="text-secondary fw-bold">feliz</span>.<br>
                 <span class="display-6">Terapia de forma fácil, como você gostaria que fosse.</span>
