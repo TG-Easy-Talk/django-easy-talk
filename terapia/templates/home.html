@@ -21,4 +21,95 @@
         </div>
     </div>
 </div>
+
+<div class="row row-cols-1 row-cols-lg-2 gy-5 align-items-center px-3 px-lg-5 pt-5 mb-5">
+    <div class="col d-flex flex-column align-items-center">
+        <div style="max-width: 30rem;">
+            <h2 class="display-3">
+                Encontre o psicólogo <span class="text-primary fw-bold">ideal</span> para você.
+            </h2>
+            <p class="lead" style="margin-top: 3rem;">Encontre o profissional perfeito para você com facilidade. Utilize nossos filtros de especialização, faixa de preço e horários disponíveis para localizar psicólogos que atendam às suas necessidades e preferências. Seu bem-estar começa com a escolha certa.</p>
+            <button class="btn btn-lg text-bg-primary mt-3">Buscar profissionais</button>
+        </div>
+    </div>
+    <div class="col d-flex justify-content-center">
+        <img src="{% static 'img/mosaico_pessoas.png' %}" alt="" class="img-fluid">
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-lg-2 gy-5 align-items-center text-bg-primary px-3 px-lg-5 mt-5 pb-5">
+    <div class="col d-flex justify-content-center">
+        <img src="{% static 'img/videochamada.png' %}" alt="" class="img-fluid">
+    </div>
+    <div class="col d-flex flex-column align-items-center">
+        <div style="max-width: 30rem;">
+            <h2 class="display-3">
+                Realize sua consulta <span class="fw-bold">agora mesmo</span>!
+            </h2>
+            <p class="lead" style="margin-top: 3rem;">
+                O EasyTalk fornece a possibilidade de te parear automaticamente com algum profissional que corresponda às suas preferências e esteja disponível neste mesmo momento para realizar uma consulta instantânea.
+                <br><br>
+                Dessa forma, não é necessário solicitar um agendamento ou aguardar o horário da consulta.</p>
+            <button class="btn btn-lg text-bg-dark mt-3">Realizar consulta instantânea</button>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-center px-3 px-lg-5 py-5 mt-4">
+    <div class="vstack gap-5 align-items-center" style="max-width: 64.25rem;">
+        <h2 class="text-center display-3 mb-5 fw-bold">Como funciona</h2>
+
+        <div class="row row-cols-1 row-cols-md-2 gy-5 justify-content-center align-items-center">
+            <div class="col">
+                <div style="max-width: 30rem;">
+                    <h3 class="h1">
+                        Defina suas preferências
+                    </h3>
+                    <p class="lead" style="margin-top: 3rem;">
+                        Especifique o tratamento que você está buscando utilizando filtros como o assunto a ser abordado (especializações), valor da consulta e horários de disponibilidade.
+                    </p>
+                </div>
+            </div>
+            <div class="col">
+                <img src="{% static 'img/mosaico_pessoas_2.png' %}" alt="" class="w-100 h-100 object-fit-contain">
+            </div>
+        </div>
+
+        <img src="{% static "img/seta_baixo.png" %}" alt="" style="width: 4rem;">
+
+        <div class="row row-cols-1 row-cols-md-2 gy-5 justify-content-center align-items-center">
+            <div class="col">
+                <div style="max-width: 30rem;">
+                    <h3 class="h1">
+                        Agende sua consulta ou realize uma agora mesmo
+                    </h3>
+                    <p class="lead" style="margin-top: 3rem;">
+                        O EasyTalk permite que você encontre perfis de profissionais correspondentes às suas preferências e agende uma consulta com um deles ou, então, seja pareado automaticamente para uma consulta instantânea.
+                    </p>
+                </div>
+            </div>
+            <div class="col">
+                <img src="{% static 'img/mosaico_pessoas_3.png' %}" alt="" class="w-100 h-100 object-fit-contain">
+            </div>
+        </div>
+
+        <img src="{% static "img/seta_baixo.png" %}" alt="" style="width: 4rem;">
+
+        <div class="row row-cols-1 row-cols-md-2 gy-5 justify-content-center align-items-center">
+            <div class="col">
+                <div style="max-width: 30rem;">
+                    <h3 class="h1">
+                        Escolha a sua forma de se comunicar
+                    </h3>
+                    <p class="lead" style="margin-top: 3rem;">
+                        As consultas podem ser realizadas por chat, ligação ou videochamada. Você escolhe a modalidade com a qual se sentir mais confortável.
+                    </p>
+                </div>
+            </div>
+            <div class="col">
+                <img src="{% static 'img/videochamada_cartoon.png' %}" alt="" class="w-100 h-100 object-fit-contain">
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
