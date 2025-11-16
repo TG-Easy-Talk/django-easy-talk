@@ -1,5 +1,5 @@
 {% load static %}
-<div class="card bg-body-secondary border-0 shadow-sm h-100">
+<div class="card bg-body-secondary border-0 shadow-sm h-100 position-relative scale-on-hover">
     <div class="card-body vstack gap-4 p-4 justify-content-between">
         <div class="hstack gap-4 flex-column flex-sm-row flex-md-column flex-lg-row">
             <img class="rounded-circle mx-auto"
@@ -15,7 +15,6 @@
 
         <div class="hstack gap-2 flex-wrap">
             {% include "geral/especializacoes.html" %}
-            <span class="text-body-secondary ms-2">+3</span>
         </div>
 
         <div class="hstack justify-content-between gap-3 flex-wrap">
@@ -33,11 +32,11 @@
                     </span>
                 </div>
             </div>
-        
-            <div class="flex-grow-1">
-                <a class="btn text-white btn-primary w-100" href="{{ psicologo.get_absolute_url }}">Visualizar</a>
-            </div>
         </div>
     </div>
+
+    <a href="{{ psicologo.get_absolute_url }}" class="stretched-link">
+        <span class="visually-hidden">Ver perfil</span>
+    </a>
 </div>
     

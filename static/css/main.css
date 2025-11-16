@@ -6111,7 +6111,7 @@ textarea.form-control-lg {
   display: none !important;
 }
 
-.shadow {
+.shadow, .scale-on-hover:hover {
   box-shadow: var(--bs-box-shadow) !important;
 }
 
@@ -11478,4 +11478,11 @@ Classes próprias do EasyTalk
 .table-equal-col-width th,
 .table-equal-col-width td {
   width: 14.28%;
+}
+
+.scale-on-hover {
+  transition: all 0.2s ease-out;
+}
+.scale-on-hover:hover {
+  transform: scale(1.05);
 }/*# sourceMappingURL=main.css.map */

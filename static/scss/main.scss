@@ -343,3 +343,12 @@ Classes próprias do EasyTalk
 .table-equal-col-width td {
     width: 14.28%;
 }
+
+.scale-on-hover {
+    transition: all 0.2s ease-out;
+    
+    &:hover {
+        transform: scale(1.05);
+        @extend .shadow;
+    }
+}
