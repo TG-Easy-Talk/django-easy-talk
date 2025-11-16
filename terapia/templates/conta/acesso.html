@@ -3,16 +3,16 @@
 
 {% block cabecalho %}{% endblock %}
 
-{% block div_conteudo_classes %} container-fluid p-0 {% endblock %}
+{% block div_conteudo_classes %} container-fluid p-0 overflow-y-hidden {% endblock %}
 
 {% block conteudo %}
 
     <div class="row g-0 vh-100">
-        <div class="col-8">
+        <div class="col">
             <img class="w-100 h-100 object-fit-cover" src="{% static "img/consulta.jpg" %}" alt="">
         </div>
 
-        <div class="col d-flex align-items-{% block alignment %}center{% endblock %} p-5 overflow-y-auto" style="max-height: 100vh;">
+        <div class="acesso-form-wrapper d-flex align-items-{% block alignment_lg %}center{% endblock %} p-5 overflow-y-auto" style="max-height: 100vh;">
             <form novalidate method="post" class="w-100 d-flex flex-column gap-2 justify-content-center">
                 {% csrf_token %}
 
@@ -36,4 +36,5 @@
     </div>
 
     <script src="{% static 'js/acesso.js' %}"></script>
+
 {% endblock %}

@@ -11485,4 +11485,21 @@ Classes próprias do EasyTalk
 }
 .scale-on-hover:hover {
   transform: scale(1.05);
+}
+
+.acesso-form-wrapper {
+  flex: 0 0 auto;
+  width: 33.33333333%;
+  display: flex;
+}
+@media (max-width: 991.98px) {
+  .acesso-form-wrapper {
+    background: white;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    position: fixed;
+    width: min(90%, 25rem);
+    height: 90vh;
+  }
 }/*# sourceMappingURL=main.css.map */

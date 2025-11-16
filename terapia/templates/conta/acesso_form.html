@@ -1,0 +1,19 @@
+<form novalidate method="post" class="w-100 d-flex flex-column gap-2 justify-content-center">
+    {% csrf_token %}
+
+    <h1 class="font-family-easytalk-logo display-1 mb-5 text-center">
+        <span class="text-primary">Easy</span>Talk
+    </h1>
+    <h3>{% block heading_form %}{% endblock %}</h3>
+
+    {% block form_inline %}{% endblock %}
+    {% block form %}{{ form }}{% endblock %}
+
+    <button class="btn text-white btn-primary {% block classes_adicionais_submit %}{% endblock %}" type="submit">
+        {% block texto_submit %}{% endblock %}
+    </button>
+
+    <div class="mt-3">
+        {% include 'conta/componentes/fluxos_alternativos.html' %}
+    </div>
+</form>

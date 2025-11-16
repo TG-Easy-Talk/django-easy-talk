@@ -352,3 +352,18 @@ Classes próprias do EasyTalk
         @extend .shadow;
     }
 }
+
+.acesso-form-wrapper {
+    @include make-col(4);
+    display: flex;
+
+    @include media-breakpoint-down(lg) {
+        background: white;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        position: fixed;
+        width: min(90%, 25rem);
+        height: 90vh;
+    }
+}
