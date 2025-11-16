@@ -1,12 +1,22 @@
 {% extends 'geral/base.html' %}
 {% block titulo %} Home {% endblock %}
+{% load static %}
 
 {% block div_conteudo_classes %}
-{{ block.super }} justify-content-center
 {% endblock %}
 
 {% block conteudo %}
-<div class="font-family-easytalk-logo display-1 text-center">
-    Home em construção
+<div class="d-flex text-bg-dark align-items-center flex-wrap gap-5 px-5 py-5">
+    <img src="{% static 'img/consultorio_desenho.png' %}" alt="" class="img-fluid" style="max-width: 600px;">
+    <div class="text-center flex-grow-1 d-flex flex-column align-items-center">
+        <div style="max-width: 32.5rem;">
+            <h1 class="display-3">
+                Você merece ser <span class="text-secondary fw-bold">feliz</span>.<br>
+                <span class="display-6">Terapia de forma fácil, como você gostaria que fosse.</span>
+            </h1>
+            <p class="lead" style="margin-top: 3rem;">Centenas de profissionais especializados que respeitam seus valores e compreendem profundamente seus princípios de vida.</p>
+            <button class="btn btn-lg text-bg-primary mt-3">Agende sua consulta online</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
