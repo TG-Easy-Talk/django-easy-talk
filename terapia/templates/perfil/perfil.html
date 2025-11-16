@@ -3,8 +3,12 @@
 
 {% load static %}
 
+{% block div_conteudo_classes %}
+{{ block.super }} overflow-x-hidden
+{% endblock %}
+
 {% block conteudo %}
-    <div class="row gap-4 flex-nowrap profile">
+    <div class="row g-5 flex-xl-nowrap justify-content-center profile">
         <main class="col d-flex flex-column gap-5 profile__main">
             <header class="hstack gap-4 profile__header">
                 <img
@@ -53,38 +57,40 @@
             </section>
         </main>
 
-        <aside class="col-auto rounded-3 booking-sidebar">
-            <div class="vstack gap-3 sticky-top" id="agendamentoConsulta">
+        <aside class="col-4 rounded-3 booking-sidebar">
+            <div class="vstack gap-3" id="agendamentoConsulta">
                 <form method="post" class="booking">
                     {% csrf_token %}
-                    <fieldset class="vstack gap-3" {% if not request.user.is_paciente %} disabled {% endif %}>
+                    <fieldset class="vstack align-items-center gap-3" {% if not request.user.is_paciente %} disabled {% endif %}>
                         {{ form.non_field_errors }}
 
                         <h6 class="text-center booking__title">Agende sua consulta</h6>
 
                         <input id="calendario" type="text" class="d-none" aria-label="Calendário de seleção de datas"/>
 
-                        <div id="lista-slots" class="vstack gap-2" aria-live="polite"></div>
+                        <div class="vstack gap-3">
+                            <div id="lista-slots" class="vstack gap-2" aria-live="polite"></div>
 
-                        <div class="d-flex justify-content-between align-items-center total-row">
-                            <span id="total-descricao" class="total-row__label">Total</span>
-                            <span id="total-valor" class="total-row__value fw-semibold">R$0,00</span>
+                            <div class="d-flex justify-content-between align-items-center total-row">
+                                <span id="total-descricao" class="total-row__label">Total</span>
+                                <span id="total-valor" class="total-row__value fw-semibold">R$0,00</span>
+                            </div>
+                            <input type="hidden" name="agendamentos" id="id_agendamentos" value="[]"/>
+
+                            <button id="btn-confirmar" class="btn btn-success btn-lg w-100" type="submit" disabled>
+                                Confirmar consultas
+                            </button>
+
+                            {% if request.user.is_anonymous %}
+                                <div class="text-body-secondary">
+                                    Você precisa estar logado para agendar uma consulta.
+                                </div>
+                            {% elif not request.user.is_paciente %}
+                                <div class="text-body-secondary">
+                                    Sua conta não é de paciente para poder agendar uma consulta.
+                                </div>
+                            {% endif %}
                         </div>
-                        <input type="hidden" name="agendamentos" id="id_agendamentos" value="[]"/>
-
-                        <button id="btn-confirmar" class="btn btn-success btn-lg w-100" type="submit" disabled>
-                            Confirmar consultas
-                        </button>
-
-                        {% if request.user.is_anonymous %}
-                            <div class="text-body-secondary">
-                                Você precisa estar logado para agendar uma consulta.
-                            </div>
-                        {% elif not request.user.is_paciente %}
-                            <div class="text-body-secondary">
-                                Sua conta não é de paciente para poder agendar uma consulta.
-                            </div>
-                        {% endif %}
                     </fieldset>
                 </form>
             </div>
