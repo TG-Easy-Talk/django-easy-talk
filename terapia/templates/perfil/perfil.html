@@ -13,7 +13,8 @@
             <header class="hstack gap-4 profile__header">
                 <img
                         class="rounded-circle mx-auto profile__avatar"
-                        src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
+                        src="{{ psicologo.get_url_foto_propria_ou_padrao }}
+                        "
                         alt="Foto de perfil do psicólogo"
                 />
 
@@ -105,6 +106,18 @@
           rel="stylesheet">
 
     <link rel="stylesheet" href="{% static 'css/perfil.css' %}"/>
+
+    {# NOVO BLOCO: CONFIGURAÇÃO PARA perfil.js #}
+    <script id="perfil-config" type="application/json">
+        {
+            "matriz": {{ psicologo.get_matriz_disponibilidade_booleanos_em_json|safe }},
+            "ocupados": {{ SLOTS_OCUPADOS_JSON|safe }},
+            "duracao": {{ CONSULTA_DURACAO_MINUTOS }},
+            "minAntecedencia": 0,
+            "maxAntecedencia": 0,
+            "valor": "{{ psicologo.valor_consulta|default_if_none:'0' }}"
+        }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js" defer></script>
