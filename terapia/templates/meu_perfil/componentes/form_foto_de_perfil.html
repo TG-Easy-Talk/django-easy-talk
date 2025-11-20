@@ -1,0 +1,7 @@
+<div class="d-flex flex-column flex-sm-row align-items-center column-gap-5 row-gap-4 mb-4">
+    <img style="width: 10rem; height: 10rem;" class="object-fit-cover" src="{{ form.instance.get_url_foto_propria_ou_padrao }}" alt="Foto de perfil">
+    <div>
+        {{ form.foto }}
+        {{ form.foto.errors }}
+    </div>
+</div>

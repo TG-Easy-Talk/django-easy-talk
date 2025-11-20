@@ -25,7 +25,8 @@ from terapia.constantes import (
 from .forms import (
     PacienteCreationForm,
     PsicologoCreationForm,
-    PsicologoChangeForm,
+    PsicologoFotoDePerfilChangeForm,
+    PsicologoInfoProfissionalChangeForm,
     PsicologoFiltrosForm,
     ConsultaCreationForm,
     ConsultaFiltrosForm,
@@ -152,7 +153,7 @@ class PsicologoCadastroView(CadastroView):
         return PsicologoCreationForm
 
     def get_redirect(self):
-        return redirect('meu_perfil')
+        return redirect('meu_perfil_info_profissional')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -408,18 +409,29 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
         return context
 
 
-class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
-    template_name = "meu_perfil/meu_perfil.html"
-    form_class = PsicologoChangeForm
+class PsicologoInfoProfissionalView(DeveSerPsicologoMixin, UpdateView):
+    template_name = "meu_perfil/info_profissional.html"
+    form_class = PsicologoInfoProfissionalChangeForm
     context_object_name = "psicologo"
+    success_url = reverse_lazy("meu_perfil_info_profissional")
+
+    def get_object(self, queryset=None):
+        return Psicologo.objects.get(usuario=self.request.user)
+    
+
+class PsicologoFotoDePerfilView(DeveSerPsicologoMixin, UpdateView):
+    template_name = "meu_perfil/foto_de_perfil.html"
+    form_class = PsicologoFotoDePerfilChangeForm
+    context_object_name = "psicologo"
+    success_url = reverse_lazy("meu_perfil_foto")
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
 
 
 class ConsultaChecklistUpdateView(DeveSerPsicologoMixin, View):
-    """Permite que o psicólogo atualize o campo `checklist_tarefas` de uma consulta.
-
+    """
+    Permite que o psicólogo atualize o campo `checklist_tarefas` de uma consulta.
     Aceita apenas POST. Verifica que a consulta pertence ao psicólogo logado.
     Espera um campo `checklist_tarefas` no POST e opcionalmente `next` para redirecionar.
     """

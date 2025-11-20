@@ -1,10 +1,12 @@
 <div class="mb-5">
     <h6 class="mb-2">Valor da consulta</h6>
-    <div class="input-group">
+    <div class="input-group has-validation">
         <span class="input-group-text text-bg-secondary border-0 text-white">R$</span>
         {{ form.valor_consulta }}
+        <div class="invalid-feedback">
+            {{ form.valor_consulta.errors }}
+        </div>
     </div>
-    {{ form.valor_consulta.errors }}
 </div>
 
 <div class="mb-5 p-0 perfil-espec">

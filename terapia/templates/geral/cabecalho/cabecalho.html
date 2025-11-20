@@ -32,7 +32,7 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-lg {% else %} nav
                         </li>
                         {% if request.user.is_psicologo %}
                             <li class="nav-item">
-                                <a class="nav-link ms-lg-5 text-nowrap position-relative" href="{% url 'meu_perfil' %}">
+                                <a class="nav-link ms-lg-5 text-nowrap position-relative" href="{% url 'meu_perfil_info_profissional' %}">
                                     Meu perfil
                                 </a>
                             </li>

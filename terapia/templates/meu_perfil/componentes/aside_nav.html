@@ -1,5 +1,5 @@
 <div class="d-flex align-items-center justify-content-center gap-4">
-    <img class="rounded-circle mx-auto"
+    <img class="rounded-circle mx-auto object-fit-cover"
         style="width: 5rem; aspect-ratio: 1;"
         src="{{ form.instance.get_url_foto_propria_ou_padrao }}"
         alt="Foto de perfil">
@@ -14,19 +14,19 @@
 </div>
 <ul id="meu-perfil-nav" class="nav nav-pills flex-column align-items-start gap-3 mt-5">
     <li class="nav-item">
-        <a href="{% url 'meu_perfil' %}" class="nav-link rounded-pill active d-flex align-items-center">
+        <a href="{% url 'meu_perfil_info_profissional' %}" class="nav-link rounded-pill active d-flex align-items-center">
             <i class="fs-4 bi bi-person-fill me-3"></i>
             Informações profissionais
         </a>
     </li>
     <li class="nav-item">
-        <a href="{% url 'meu_perfil' %}" class="nav-link rounded-pill d-flex align-items-center">
+        <a href="{% url 'meu_perfil_foto' %}" class="nav-link rounded-pill d-flex align-items-center">
             <i class="fs-4 bi bi-camera-fill me-3"></i>
             Foto de perfil
         </a>
     </li>
     <li class="nav-item">
-        <a href="{% url 'meu_perfil' %}" class="nav-link rounded-pill d-flex align-items-center">
+        <a href="{% url 'meu_perfil_info_profissional' %}" class="nav-link rounded-pill d-flex align-items-center">
             <i class="fs-4 bi bi-calendar-fill me-3"></i>
             Disponibilidade
         </a>
