@@ -2,20 +2,38 @@
 {% load static %}
 {% block titulo %} {{ psicologo }} {% endblock %}
 
-{% block conteudo %}
-    {% if not psicologo.esta_com_perfil_completo %}
-        <div class="alert alert-warning d-flex align-items-center" role="alert">
+{% block body_classes %}bg-body-tertiary overflow-x-hidden{% endblock body_classes %}
+
+{% block pos_cabecalho %}
+    {% if not psicologo.esta_com_perfil_completo or True %}
+        <div style="--bs-alert-bg: var(--bs-warning);" class="alert alert-warning d-flex align-items-center rounded-0 mb-0 border-0" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-3"></i>
             Você ainda não completou o seu perfil. Complete-o para que os pacientes possam agendar consultas com você.
         </div>
     {% endif %}
-    <form id="PsicologoChangeForm" enctype="multipart/form-data" method="post">
-        {% csrf_token %}
-        {{ form }}
-    </form>
+{% endblock %}
+
+{% block conteudo %}
+    <div class="row g-5">
+        <div class="col-12 col-lg-4 d-flex flex-column justify-content-center justify-content-lg-start align-items-center">
+            {% include 'meu_perfil/componentes/aside_nav.html' %}
+        </div>
+        <div class="col-12 col-lg-8">
+
+            <h1>Informações profissionais</h1>
+            <p class="text-body-secondary mb-4">Atualize seu valor de consulta, especializações e outras informações relevantes.</p>
+
+            <form class="d-flex flex-column align-items-center" id="PsicologoChangeForm" enctype="multipart/form-data" method="post">
+                {% csrf_token %}
+                <div class="bg-body-secondary p-4 rounded-3 border">
+                    {{ form }}
+                    <button type="submit" class="w-100 btn text-white btn-primary">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <link rel="stylesheet" href="{% static 'css/meu_perfil.css' %}">
-
     <link rel="stylesheet" href="{% static 'css/multicombobox.css' %}">
     <script defer src="{% static 'js/multicombobox.js' %}"></script>
 {% endblock %}

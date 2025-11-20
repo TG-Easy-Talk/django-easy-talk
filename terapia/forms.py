@@ -120,7 +120,7 @@ class PsicologoChangeForm(forms.ModelForm):
         self.fields["disponibilidade"].widget = DisponibilidadeInput(
             psicologo=self.instance,
         )
-        self.fields["sobre_mim"].widget.attrs.update({"rows": "8"})
+        self.fields["sobre_mim"].widget.attrs.update({"rows": "4"})
 
     def clean_disponibilidade(self):
         return IntervaloDisponibilidade.from_matriz(self.cleaned_data.get("disponibilidade"))

@@ -18,7 +18,6 @@
     border: 1px solid var(--bs-border-color);
     border-radius: .375rem;
     padding: .375rem .5rem;
-    background: var(--bs-body-bg);
     width: 100%;
     min-width: 0;
 }
@@ -42,7 +41,7 @@
     align-items: center;
     padding: .1rem .5rem;
     border-radius: var(--mc-chip-radius);
-    background: var(--bs-secondary-bg);
+    background: #F2F2F2;
     color: var(--bs-body-color);
     white-space: nowrap;
 }

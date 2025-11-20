@@ -98,8 +98,8 @@ Importar fontes
   --bs-secondary-bg-rgb: 255, 255, 255;
   --bs-tertiary-color: rgba(0, 0, 0, 0.5);
   --bs-tertiary-color-rgb: 0, 0, 0;
-  --bs-tertiary-bg: #f8f9fa;
-  --bs-tertiary-bg-rgb: 248, 249, 250;
+  --bs-tertiary-bg: #F2F2F2;
+  --bs-tertiary-bg-rgb: 242, 242, 242;
   --bs-heading-color: inherit;
   --bs-link-color: #1e863a;
   --bs-link-color-rgb: 30, 134, 58;
@@ -11502,4 +11502,16 @@ Classes próprias do EasyTalk
     width: min(90%, 25rem);
     height: 90vh;
   }
+}
+
+#meu-perfil-nav {
+  --bs-nav-link-color: black;
+  --bs-nav-link-hover-color: black;
+  --bs-nav-pills-link-active-color: black;
+  --bs-nav-pills-link-active-bg: white;
+  --bs-nav-link-padding-x: 1rem;
+  --bs-nav-link-padding-y: 0.1rem;
+}
+#meu-perfil-nav .nav-link.active, #meu-perfil-nav .nav-link:hover {
+  background-color: white;
 }/*# sourceMappingURL=main.css.map */
