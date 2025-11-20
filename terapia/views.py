@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import FormView, ListView, TemplateView, UpdateView
+from django.views.generic import FormView, ListView, TemplateView, UpdateView, DetailView
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 
 from terapia.constantes import (
@@ -25,6 +25,7 @@ from terapia.constantes import (
 from .forms import (
     PacienteCreationForm,
     PsicologoCreationForm,
+    PsicologoDisponibilidadeChangeForm,
     PsicologoFotoDePerfilChangeForm,
     PsicologoInfoProfissionalChangeForm,
     PsicologoFiltrosForm,
@@ -424,6 +425,25 @@ class PsicologoFotoDePerfilView(DeveSerPsicologoMixin, UpdateView):
     form_class = PsicologoFotoDePerfilChangeForm
     context_object_name = "psicologo"
     success_url = reverse_lazy("meu_perfil_foto")
+
+    def get_object(self, queryset=None):
+        return Psicologo.objects.get(usuario=self.request.user)
+    
+
+class PsicologoDisponibilidadeView(DeveSerPsicologoMixin, TemplateView, TabelaDisponibilidadeContextMixin):
+    template_name = "meu_perfil/disponibilidade.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["psicologo"] = Psicologo.objects.get(usuario=self.request.user)
+        return context
+    
+
+class PsicologoEditarDisponibilidadeView(DeveSerPsicologoMixin, UpdateView, TabelaDisponibilidadeContextMixin):
+    template_name = "meu_perfil/disponibilidade_editar.html"
+    form_class = PsicologoDisponibilidadeChangeForm
+    context_object_name = "psicologo"
+    success_url = reverse_lazy("meu_perfil_disponibilidade")
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)

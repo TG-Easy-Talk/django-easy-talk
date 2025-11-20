@@ -131,8 +131,41 @@ class PsicologoFotoDePerfilChangeForm(forms.ModelForm):
         model = Psicologo
         fields = ["foto"]
 
+
+class PsicologoDisponibilidadeChangeForm(forms.ModelForm):
+    default_renderer = FormComValidacaoRenderer
+    template_name = "meu_perfil/componentes/form_disponibilidade.html"
+
+    disponibilidade = forms.JSONField(required=False)
+
+    class Meta:
+        model = Psicologo
+        fields = []
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["disponibilidade"].widget = DisponibilidadeInput(
+            psicologo=self.instance,
+        )
+
+    def clean_disponibilidade(self):
+        return IntervaloDisponibilidade.from_matriz(self.cleaned_data.get("disponibilidade"))
+
+    def save(self, commit=True):
+        psicologo = super().save(commit=False)
+        disponibilidade = self.cleaned_data.get("disponibilidade", [])
+
+        for intervalo in disponibilidade:
+            intervalo.psicologo = psicologo
+
+        IntervaloDisponibilidade.objects.filter(psicologo=psicologo).delete()
+        IntervaloDisponibilidade.objects.bulk_create(disponibilidade)
+
+        if commit:
+            psicologo.save()
+            self.save_m2m()
+
+        return psicologo
 
 
 class ConsultaCreationForm(forms.ModelForm):
