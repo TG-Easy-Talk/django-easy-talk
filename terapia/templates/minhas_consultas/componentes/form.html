@@ -1,4 +1,4 @@
-<div class="card-body">
+{% comment %} <div class="card-body">
     <h5 class="card-title mb-3">Filtros</h5>
 
     <div class="vstack gap-3">
@@ -17,5 +17,29 @@
         </div>
 
         <button type="submit" class="btn text-white btn-secondary">Filtrar</button>
+    </div>
+</div> {% endcomment %}
+
+<div class="row row-cols-1 row-cols-md-2 gy-3">
+    <div class="col">
+        <div class="vstack gap-3">
+            {{ form.estado }}
+            {{ form.paciente_ou_psicologo }}
+        </div>
+    </div>
+    <div class="col">
+        <div class="vstack gap-3">
+            <div class="hstack gap-3 flex-column flex-sm-row">
+                <div class="input-group">
+                    <span class="input-group-text text-bg-secondary border-0 text-white">De</span>
+                    {{ form.data_inicial }}
+                </div>
+                <div class="input-group">
+                    <span class="input-group-text text-bg-secondary border-0 text-white">Até</span>
+                    {{ form.data_final }}
+                </div>
+            </div>
+            <button type="submit" class="btn text-white btn-secondary">Pesquisar profissionais</button>
+        </div>
     </div>
 </div>
