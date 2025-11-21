@@ -11700,7 +11700,7 @@ Classes próprias do EasyTalk
   transition: all 0.2s ease-out;
 }
 .scale-on-hover:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .acesso-form-wrapper {

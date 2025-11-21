@@ -3,8 +3,12 @@
 
 {% load static %}
 
-{% block div_conteudo_classes %}
+{% block body_classes %}
 {{ block.super }} overflow-x-hidden
+{% endblock %}
+
+{% block div_conteudo_classes %}
+{{ block.super }} overflow-x-visible
 {% endblock %}
 
 {% block conteudo %}
