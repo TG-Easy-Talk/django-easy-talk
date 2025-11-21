@@ -19,4 +19,5 @@ urlpatterns = [
     path("consultas/<int:pk>/checklist/", views.ConsultaChecklistUpdateView.as_view(), name="consulta_checklist"),
     path("consultas/<int:pk>/anotacoes/", views.ConsultaAnotacoesUpdateView.as_view(), name="consulta_anotacoes"),
     path("consultas/<int:pk>/cancelar/", views.CancelarConsultaPacienteView.as_view(), name="consulta_cancelar"),
+    path("consultas/<int:pk>/chamada/", views.ConsultaChamadaView.as_view(), name="consulta_chamada"),  # NOVA ROTA
 ]

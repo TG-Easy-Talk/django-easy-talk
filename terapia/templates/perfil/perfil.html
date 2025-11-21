@@ -106,6 +106,18 @@
 
     <link rel="stylesheet" href="{% static 'css/perfil.css' %}"/>
 
+    {# BLOCO DE CONFIGURAÇÃO PARA perfil.js – JSON VÁLIDO #}
+    <script id="perfil-config" type="application/json">
+        {
+            "matriz": {{ psicologo.get_matriz_disponibilidade_booleanos_em_json|safe }},
+            "ocupados": {{ SLOTS_OCUPADOS_JSON|safe }},
+            "duracao": {{ CONSULTA_DURACAO_MINUTOS }},
+            "minAntecedencia": 60,
+            "maxAntecedencia": 0,
+            "valor": "{{ psicologo.valor_consulta|default_if_none:'0' }}"
+        }
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js" defer></script>
     <script src="{% static 'js/perfil.js' %}" defer></script>
