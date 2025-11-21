@@ -13,8 +13,7 @@
             <header class="hstack gap-4 profile__header">
                 <img
                         class="rounded-circle mx-auto profile__avatar"
-                        src="{{ psicologo.get_url_foto_propria_ou_padrao }}
-                        "
+                        src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
                         alt="Foto de perfil do psicólogo"
                 />
 
@@ -107,7 +106,7 @@
 
     <link rel="stylesheet" href="{% static 'css/perfil.css' %}"/>
 
-    {# NOVO BLOCO: CONFIGURAÇÃO PARA perfil.js #}
+    {# BLOCO DE CONFIGURAÇÃO PARA perfil.js – JSON VÁLIDO #}
     <script id="perfil-config" type="application/json">
         {
             "matriz": {{ psicologo.get_matriz_disponibilidade_booleanos_em_json|safe }},

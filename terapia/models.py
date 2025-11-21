@@ -1,3 +1,5 @@
+import secrets
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -758,6 +760,12 @@ class Consulta(models.Model):
         related_name="consultas",
         limit_choices_to=Psicologo.completos.get_filtros(),
     )
+    jitsi_room = models.CharField(
+        "Sala Jitsi",
+        max_length=128,
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         verbose_name = "Consulta"
@@ -766,28 +774,33 @@ class Consulta(models.Model):
 
     def clean(self):
         super().clean()
-
         self.data_hora_agendada = desprezar_segundos_e_microssegundos(self.data_hora_agendada)
 
-        criando_um_novo_objeto = self.pk is None
+    def ensure_jitsi_room(self):
+        """
+        Gera um identificador de sala Jitsi *curto* se ainda não existir.
+        Ex: 'cnslt-a1b2c3'
+        """
+        if not self.jitsi_room:
+            token = secrets.token_urlsafe(6)
+            self.jitsi_room = f"cnslt-{token}"
+            self.save(update_fields=["jitsi_room"])
+        return self.jitsi_room
 
-        if criando_um_novo_objeto:
-            if hasattr(self, "psicologo") and not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
-                raise ValidationError({
-                    "data_hora_agendada": ValidationError(
-                        "O psicólogo não tem disponibilidade nessa data e horário",
-                        code="psicologo_nao_disponivel"
-                    )
-                })
-            
-            elif hasattr(self, "paciente") and self.paciente.ja_tem_consulta_em(self.data_hora_agendada):
-                raise ValidationError({
-                    "data_hora_agendada": ValidationError(
-                        "O paciente já tem uma consulta marcada que tomaria o tempo dessa que se deseja agendar",
-                        code="paciente_nao_disponivel"
-                    )
-                })
+    @property
+    def jitsi_join_url(self):
+        """
+        URL completa para abrir a call direto no meet.jit.si.
+        Ex: https://meet.jit.si/cnslt-a1b2c3
+        """
+        if not self.jitsi_room:
+            self.ensure_jitsi_room()
+        return f"https://meet.jit.si/{self.jitsi_room}"
 
     def __str__(self):
-        return f"Consulta {self.estado.upper()} agendada para {timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} ({timezone.get_current_timezone_name()}) com {self.paciente.nome} e {self.psicologo.nome_completo}"
-    
+        return (
+            f"Consulta {self.estado.upper()} agendada para "
+            f"{timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} "
+            f"({timezone.get_current_timezone_name()}) com "
+            f"{self.paciente.nome} e {self.psicologo.nome_completo}"
+        )
