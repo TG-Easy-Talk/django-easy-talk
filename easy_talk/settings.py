@@ -129,3 +129,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 FORM_RENDERER = 'easy_talk.renderers.CustomFormRenderer'
 FIXTURE_DIRS = [BASE_DIR / 'fixtures']
+
+# Email
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@easytalk.com'

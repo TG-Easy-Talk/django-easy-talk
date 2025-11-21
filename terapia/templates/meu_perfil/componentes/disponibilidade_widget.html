@@ -16,67 +16,70 @@
     }
 </style>
 
-<div draggable="false" class="grade-intervalos mt-5">
-    {% for _ in "1234567" %}
-        <div draggable="false" class="text-end font-monospace me-3">
-            {% if forloop.counter|divisibleby:"7" %}
-                Sáb
-            {% elif forloop.counter|divisibleby:"6" %}
-                Sex
-            {% elif forloop.counter|divisibleby:"5" %}
-                Qui
-            {% elif forloop.counter|divisibleby:"4" %}
-                Qua
-            {% elif forloop.counter|divisibleby:"3" %}
-                Ter
-            {% elif forloop.counter|divisibleby:"2" %}
-                Seg
-            {% else %}
-                Dom
-            {% endif %}
-        </div>
-
-        {% for _ in numero_periodos_por_dia_range %}
-            <div
-                data-grade
-                data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
-                data-linha="{{ forloop.parentloop.counter0 }}"
-                data-coluna="{{ forloop.counter0 }}"
-                class="position-relative border-bottom border-primary
-                    {% if forloop.parentloop.first %}
-                        border-top
-                    {% endif %}
-
-                    {% if forloop.first %}
-                        border-start
-                    {% endif %}
-
-                    border-end
-                "
-            >
-                {% if forloop.parentloop.first %}
-                    <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%; cursor: default;">
-                        {{ forloop.counter0 }}h
-                    </div>
-
-                    {% if forloop.last %}
-                        <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%; cursor: default;">
-                            {{ forloop.counter }}h
-                        </div>
-                    {% endif %}
+<div class="w-100 overflow-x-auto overflow-x-lg-visible">
+    <div draggable="false" class="grade-intervalos mt-5" style="min-width: 870px;">
+        {% for _ in "1234567" %}
+            <div draggable="false" class="text-end font-monospace me-3">
+                {% if forloop.counter|divisibleby:"7" %}
+                    Sáb
+                {% elif forloop.counter|divisibleby:"6" %}
+                    Sex
+                {% elif forloop.counter|divisibleby:"5" %}
+                    Qui
+                {% elif forloop.counter|divisibleby:"4" %}
+                    Qua
+                {% elif forloop.counter|divisibleby:"3" %}
+                    Ter
+                {% elif forloop.counter|divisibleby:"2" %}
+                    Seg
+                {% else %}
+                    Dom
                 {% endif %}
             </div>
+
+            {% for _ in numero_periodos_por_dia_range %}
+                <div
+                    data-grade
+                    data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
+                    data-linha="{{ forloop.parentloop.counter0 }}"
+                    data-coluna="{{ forloop.counter0 }}"
+                    class="position-relative border-bottom border-primary
+                        {% if forloop.parentloop.first %}
+                            border-top
+                        {% endif %}
+
+                        {% if forloop.first %}
+                            border-start
+                        {% endif %}
+
+                        border-end
+                    "
+                >
+                    {% if forloop.parentloop.first %}
+                        <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%; cursor: default;">
+                            {{ forloop.counter0 }}h
+                        </div>
+
+                        {% if forloop.last %}
+                            <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%; cursor: default;">
+                                {{ forloop.counter }}h
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
         {% endfor %}
-    {% endfor %}
+    </div>
 </div>
-<div class="d-flex justify-content-end gap-3">
+
+<div class="d-flex justify-content-end gap-3 mt-2">
     <a type="button" class="link-primary" onclick="DisponibilidadeWidget.limparGrade()">Limpar grade</a>
     <a type="button" class="link-primary" onclick="DisponibilidadeWidget.redefinir()">Redefinir</a>
 </div>
 
 {% include "django/forms/widgets/input.html" with widget=widget %}
 
-<div class="text-body-secondary">Sua tabela de disponibilidade ficará assim:</div>
+<div class="text-body-secondary mt-4 mb-2">Sua tabela de disponibilidade ficará assim:</div>
 {% include "geral/tabela_disponibilidade.html" with matriz_disponibilidade_booleanos_em_json=widget.value %}
 
 <script>

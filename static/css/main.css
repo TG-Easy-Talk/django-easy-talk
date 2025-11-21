@@ -98,8 +98,8 @@ Importar fontes
   --bs-secondary-bg-rgb: 255, 255, 255;
   --bs-tertiary-color: rgba(0, 0, 0, 0.5);
   --bs-tertiary-color-rgb: 0, 0, 0;
-  --bs-tertiary-bg: #f8f9fa;
-  --bs-tertiary-bg-rgb: 248, 249, 250;
+  --bs-tertiary-bg: #F2F2F2;
+  --bs-tertiary-bg-rgb: 242, 242, 242;
   --bs-heading-color: inherit;
   --bs-link-color: #1e863a;
   --bs-link-color-rgb: 30, 134, 58;
@@ -5100,6 +5100,162 @@ textarea.form-control-lg {
     overflow-y: auto;
   }
 }
+.popover {
+  --bs-popover-zindex: 1070;
+  --bs-popover-max-width: 276px;
+  --bs-popover-font-size: 0.875rem;
+  --bs-popover-bg: var(--bs-body-bg);
+  --bs-popover-border-width: var(--bs-border-width);
+  --bs-popover-border-color: var(--bs-border-color-translucent);
+  --bs-popover-border-radius: var(--bs-border-radius-lg);
+  --bs-popover-inner-border-radius: calc(var(--bs-border-radius-lg) - var(--bs-border-width));
+  --bs-popover-box-shadow: var(--bs-box-shadow);
+  --bs-popover-header-padding-x: 1rem;
+  --bs-popover-header-padding-y: 0.5rem;
+  --bs-popover-header-font-size: 1rem;
+  --bs-popover-header-color: inherit;
+  --bs-popover-header-bg: var(--bs-secondary-bg);
+  --bs-popover-body-padding-x: 1rem;
+  --bs-popover-body-padding-y: 1rem;
+  --bs-popover-body-color: var(--bs-body-color);
+  --bs-popover-arrow-width: 1rem;
+  --bs-popover-arrow-height: 0.5rem;
+  --bs-popover-arrow-border: var(--bs-popover-border-color);
+  z-index: var(--bs-popover-zindex);
+  display: block;
+  max-width: var(--bs-popover-max-width);
+  font-family: Karla, sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  text-align: start;
+  text-decoration: none;
+  text-shadow: none;
+  text-transform: none;
+  letter-spacing: normal;
+  word-break: normal;
+  white-space: normal;
+  word-spacing: normal;
+  line-break: auto;
+  font-size: var(--bs-popover-font-size);
+  word-wrap: break-word;
+  background-color: var(--bs-popover-bg);
+  background-clip: padding-box;
+  border: var(--bs-popover-border-width) solid var(--bs-popover-border-color);
+  border-radius: var(--bs-popover-border-radius);
+}
+.popover .popover-arrow {
+  display: block;
+  width: var(--bs-popover-arrow-width);
+  height: var(--bs-popover-arrow-height);
+}
+.popover .popover-arrow::before, .popover .popover-arrow::after {
+  position: absolute;
+  display: block;
+  content: "";
+  border-color: transparent;
+  border-style: solid;
+  border-width: 0;
+}
+
+.bs-popover-top > .popover-arrow, .bs-popover-auto[data-popper-placement^=top] > .popover-arrow {
+  bottom: calc(-1 * (var(--bs-popover-arrow-height)) - var(--bs-popover-border-width));
+}
+.bs-popover-top > .popover-arrow::before, .bs-popover-auto[data-popper-placement^=top] > .popover-arrow::before, .bs-popover-top > .popover-arrow::after, .bs-popover-auto[data-popper-placement^=top] > .popover-arrow::after {
+  border-width: var(--bs-popover-arrow-height) calc(var(--bs-popover-arrow-width) * 0.5) 0;
+}
+.bs-popover-top > .popover-arrow::before, .bs-popover-auto[data-popper-placement^=top] > .popover-arrow::before {
+  bottom: 0;
+  border-top-color: var(--bs-popover-arrow-border);
+}
+.bs-popover-top > .popover-arrow::after, .bs-popover-auto[data-popper-placement^=top] > .popover-arrow::after {
+  bottom: var(--bs-popover-border-width);
+  border-top-color: var(--bs-popover-bg);
+}
+
+/* rtl:begin:ignore */
+.bs-popover-end > .popover-arrow, .bs-popover-auto[data-popper-placement^=right] > .popover-arrow {
+  left: calc(-1 * (var(--bs-popover-arrow-height)) - var(--bs-popover-border-width));
+  width: var(--bs-popover-arrow-height);
+  height: var(--bs-popover-arrow-width);
+}
+.bs-popover-end > .popover-arrow::before, .bs-popover-auto[data-popper-placement^=right] > .popover-arrow::before, .bs-popover-end > .popover-arrow::after, .bs-popover-auto[data-popper-placement^=right] > .popover-arrow::after {
+  border-width: calc(var(--bs-popover-arrow-width) * 0.5) var(--bs-popover-arrow-height) calc(var(--bs-popover-arrow-width) * 0.5) 0;
+}
+.bs-popover-end > .popover-arrow::before, .bs-popover-auto[data-popper-placement^=right] > .popover-arrow::before {
+  left: 0;
+  border-right-color: var(--bs-popover-arrow-border);
+}
+.bs-popover-end > .popover-arrow::after, .bs-popover-auto[data-popper-placement^=right] > .popover-arrow::after {
+  left: var(--bs-popover-border-width);
+  border-right-color: var(--bs-popover-bg);
+}
+
+/* rtl:end:ignore */
+.bs-popover-bottom > .popover-arrow, .bs-popover-auto[data-popper-placement^=bottom] > .popover-arrow {
+  top: calc(-1 * (var(--bs-popover-arrow-height)) - var(--bs-popover-border-width));
+}
+.bs-popover-bottom > .popover-arrow::before, .bs-popover-auto[data-popper-placement^=bottom] > .popover-arrow::before, .bs-popover-bottom > .popover-arrow::after, .bs-popover-auto[data-popper-placement^=bottom] > .popover-arrow::after {
+  border-width: 0 calc(var(--bs-popover-arrow-width) * 0.5) var(--bs-popover-arrow-height);
+}
+.bs-popover-bottom > .popover-arrow::before, .bs-popover-auto[data-popper-placement^=bottom] > .popover-arrow::before {
+  top: 0;
+  border-bottom-color: var(--bs-popover-arrow-border);
+}
+.bs-popover-bottom > .popover-arrow::after, .bs-popover-auto[data-popper-placement^=bottom] > .popover-arrow::after {
+  top: var(--bs-popover-border-width);
+  border-bottom-color: var(--bs-popover-bg);
+}
+.bs-popover-bottom .popover-header::before, .bs-popover-auto[data-popper-placement^=bottom] .popover-header::before {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: block;
+  width: var(--bs-popover-arrow-width);
+  margin-left: calc(-0.5 * var(--bs-popover-arrow-width));
+  content: "";
+  border-bottom: var(--bs-popover-border-width) solid var(--bs-popover-header-bg);
+}
+
+/* rtl:begin:ignore */
+.bs-popover-start > .popover-arrow, .bs-popover-auto[data-popper-placement^=left] > .popover-arrow {
+  right: calc(-1 * (var(--bs-popover-arrow-height)) - var(--bs-popover-border-width));
+  width: var(--bs-popover-arrow-height);
+  height: var(--bs-popover-arrow-width);
+}
+.bs-popover-start > .popover-arrow::before, .bs-popover-auto[data-popper-placement^=left] > .popover-arrow::before, .bs-popover-start > .popover-arrow::after, .bs-popover-auto[data-popper-placement^=left] > .popover-arrow::after {
+  border-width: calc(var(--bs-popover-arrow-width) * 0.5) 0 calc(var(--bs-popover-arrow-width) * 0.5) var(--bs-popover-arrow-height);
+}
+.bs-popover-start > .popover-arrow::before, .bs-popover-auto[data-popper-placement^=left] > .popover-arrow::before {
+  right: 0;
+  border-left-color: var(--bs-popover-arrow-border);
+}
+.bs-popover-start > .popover-arrow::after, .bs-popover-auto[data-popper-placement^=left] > .popover-arrow::after {
+  right: var(--bs-popover-border-width);
+  border-left-color: var(--bs-popover-bg);
+}
+
+/* rtl:end:ignore */
+.popover-header {
+  padding: var(--bs-popover-header-padding-y) var(--bs-popover-header-padding-x);
+  margin-bottom: 0;
+  font-size: var(--bs-popover-header-font-size);
+  color: var(--bs-popover-header-color);
+  background-color: var(--bs-popover-header-bg);
+  border-bottom: var(--bs-popover-border-width) solid var(--bs-popover-border-color);
+  border-top-left-radius: var(--bs-popover-inner-border-radius);
+  border-top-right-radius: var(--bs-popover-inner-border-radius);
+}
+.popover-header:empty {
+  display: none;
+}
+
+.popover-body {
+  padding: var(--bs-popover-body-padding-y) var(--bs-popover-body-padding-x);
+  color: var(--bs-popover-body-color);
+}
+
 .offcanvas, .offcanvas-xxl, .offcanvas-xl, .offcanvas-lg, .offcanvas-md, .offcanvas-sm {
   --bs-offcanvas-zindex: 1045;
   --bs-offcanvas-width: 300px;
@@ -8029,6 +8185,18 @@ textarea.form-control-lg {
     -o-object-fit: none !important;
        object-fit: none !important;
   }
+  .overflow-x-sm-auto {
+    overflow-x: auto !important;
+  }
+  .overflow-x-sm-hidden {
+    overflow-x: hidden !important;
+  }
+  .overflow-x-sm-visible {
+    overflow-x: visible !important;
+  }
+  .overflow-x-sm-scroll {
+    overflow-x: scroll !important;
+  }
   .d-sm-inline {
     display: inline !important;
   }
@@ -8709,6 +8877,18 @@ textarea.form-control-lg {
   .object-fit-md-none {
     -o-object-fit: none !important;
        object-fit: none !important;
+  }
+  .overflow-x-md-auto {
+    overflow-x: auto !important;
+  }
+  .overflow-x-md-hidden {
+    overflow-x: hidden !important;
+  }
+  .overflow-x-md-visible {
+    overflow-x: visible !important;
+  }
+  .overflow-x-md-scroll {
+    overflow-x: scroll !important;
   }
   .d-md-inline {
     display: inline !important;
@@ -9391,6 +9571,18 @@ textarea.form-control-lg {
     -o-object-fit: none !important;
        object-fit: none !important;
   }
+  .overflow-x-lg-auto {
+    overflow-x: auto !important;
+  }
+  .overflow-x-lg-hidden {
+    overflow-x: hidden !important;
+  }
+  .overflow-x-lg-visible {
+    overflow-x: visible !important;
+  }
+  .overflow-x-lg-scroll {
+    overflow-x: scroll !important;
+  }
   .d-lg-inline {
     display: inline !important;
   }
@@ -10072,6 +10264,18 @@ textarea.form-control-lg {
     -o-object-fit: none !important;
        object-fit: none !important;
   }
+  .overflow-x-xl-auto {
+    overflow-x: auto !important;
+  }
+  .overflow-x-xl-hidden {
+    overflow-x: hidden !important;
+  }
+  .overflow-x-xl-visible {
+    overflow-x: visible !important;
+  }
+  .overflow-x-xl-scroll {
+    overflow-x: scroll !important;
+  }
   .d-xl-inline {
     display: inline !important;
   }
@@ -10752,6 +10956,18 @@ textarea.form-control-lg {
   .object-fit-xxl-none {
     -o-object-fit: none !important;
        object-fit: none !important;
+  }
+  .overflow-x-xxl-auto {
+    overflow-x: auto !important;
+  }
+  .overflow-x-xxl-hidden {
+    overflow-x: hidden !important;
+  }
+  .overflow-x-xxl-visible {
+    overflow-x: visible !important;
+  }
+  .overflow-x-xxl-scroll {
+    overflow-x: scroll !important;
   }
   .d-xxl-inline {
     display: inline !important;
@@ -11484,7 +11700,7 @@ Classes próprias do EasyTalk
   transition: all 0.2s ease-out;
 }
 .scale-on-hover:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .acesso-form-wrapper {
@@ -11502,4 +11718,28 @@ Classes próprias do EasyTalk
     width: min(90%, 25rem);
     height: 90vh;
   }
+}
+
+#meu-perfil-nav {
+  --bs-nav-link-color: black;
+  --bs-nav-link-hover-color: black;
+  --bs-nav-pills-link-active-color: black;
+  --bs-nav-pills-link-active-bg: white;
+  --bs-nav-link-padding-x: 1rem;
+  --bs-nav-link-padding-y: 0.1rem;
+}
+#meu-perfil-nav .nav-link.active, #meu-perfil-nav .nav-link:hover {
+  background-color: white;
+}
+
+.notificacoes-popover {
+  --bs-popover-max-width: 300px;
+  --bs-popover-border-color: var(--bs-primary);
+  --bs-popover-header-bg: var(--bs-primary);
+  --bs-popover-header-color: var(--bs-white);
+  --bs-popover-body-padding-x: 1rem;
+  --bs-popover-body-padding-y: .5rem;
+}
+.notificacoes-popover .popover-arrow {
+  --bs-popover-bg: var(--bs-primary);
 }/*# sourceMappingURL=main.css.map */

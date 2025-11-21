@@ -56,8 +56,8 @@ class FormComValidacaoRenderer(CustomFormRenderer):
                 if bound_field.errors:
                     classes.append('is-invalid')
 
-                elif form.is_bound and bound_field.html_name not in ['username', 'password', 'password1', 'password2']:
-                    classes.append('is-valid')
+                # elif form.is_bound and bound_field.html_name not in ['username', 'password', 'password1', 'password2']:
+                #     classes.append('is-valid')
 
                 self.update_widget_classes(bound_field.field.widget, classes)
 

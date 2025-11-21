@@ -14,10 +14,14 @@ urlpatterns = [
     path('pesquisa/', views.PesquisaView.as_view(), name='pesquisa'),
     path('minhas_consultas/', views.MinhasConsultasView.as_view(), name='minhas_consultas'),
     path("consultas/<int:pk>/cancelar/", views.CancelarConsultaPacienteView.as_view(), name="consulta_cancelar"),
-    path('meu_perfil/', views.PsicologoMeuPerfilView.as_view(), name='meu_perfil'),
+    path('meu-perfil/informacoes-profissionais/', views.PsicologoInfoProfissionalView.as_view(), name='meu_perfil_info_profissional'),
+    path('meu-perfil/foto-de-perfil/', views.PsicologoFotoDePerfilView.as_view(), name='meu_perfil_foto'),
+    path('meu-perfil/disponibilidade/', views.PsicologoDisponibilidadeView.as_view(), name='meu_perfil_disponibilidade'),
+    path('meu-perfil/disponibilidade/editar/', views.PsicologoEditarDisponibilidadeView.as_view(), name='meu_perfil_disponibilidade_editar'),
     path("consultas/<int:pk>/aceitar/", views.AceitarConsultaPsicologoView.as_view(), name="consulta_aceitar"),
     path("consultas/<int:pk>/checklist/", views.ConsultaChecklistUpdateView.as_view(), name="consulta_checklist"),
     path("consultas/<int:pk>/anotacoes/", views.ConsultaAnotacoesUpdateView.as_view(), name="consulta_anotacoes"),
     path("consultas/<int:pk>/cancelar/", views.CancelarConsultaPacienteView.as_view(), name="consulta_cancelar"),
-    path("consultas/<int:pk>/chamada/", views.ConsultaChamadaView.as_view(), name="consulta_chamada"),  # NOVA ROTA
+    path('notificacoes/marcar-como-lidas/', views.MarcarNotificacoesComoLidasView.as_view(), name='marcar_notificacoes_como_lidas'),
+    path("consultas/<int:pk>/chamada/", views.ConsultaChamadaView.as_view(), name="consulta_chamada"),
 ]

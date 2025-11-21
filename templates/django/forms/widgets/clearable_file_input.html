@@ -1,0 +1,10 @@
+{{ widget.input_text }}:
+<input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+
+{% if widget.is_initial %}
+    {% if not widget.required %}
+        <input class="mt-3" type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}{% if widget.attrs.checked %} checked{% endif %}>
+        <label for="{{ widget.checkbox_id }}">Remover foto</label>
+    {% endif %}<br>
+{% endif %}
+

@@ -1,0 +1,32 @@
+{% extends "meu_perfil/meu_perfil.html" %}
+
+{% block disponibilidade %}active{% endblock %}
+{% block form_titulo %}Disponibilidade{% endblock %}
+{% block form_descricao %}Defina sua rotina semanal de disponibilidade para consultas.{% endblock %}
+
+{% block form %}
+    <p>Disponibilidade semanal atual:</p>
+
+    {% include "geral/tabela_disponibilidade.html" with var_name='dt2' rounded='rounded-0' CONSULTA_DURACAO_MINUTOS=CONSULTA_DURACAO_MINUTOS matriz_disponibilidade_booleanos_em_json=psicologo.get_matriz_disponibilidade_booleanos_em_json %}
+    
+    <a href="{% url "meu_perfil_disponibilidade_editar" %}" class="mt-4 w-100 btn text-white btn-primary">
+        Editar
+    </a>
+
+    <div class="modal fade" id="disponibilidadeModal" tabindex="-1" aria-labelledby="disponibilidadeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="disponibilidadeModalLabel">Editar Disponibilidade</h1>
+                </div>
+                <div class="modal-body">
+                    {{ form }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger text-white" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary">Salvar alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

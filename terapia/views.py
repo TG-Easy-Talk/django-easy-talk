@@ -15,6 +15,7 @@ from django.views import View
 from django.views.generic import FormView, ListView, TemplateView, UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
+from .models import Notificacao
 
 from terapia.constantes import (
     CONSULTA_ANTECEDENCIA_MAXIMA,
@@ -26,15 +27,18 @@ from terapia.constantes import (
 from .forms import (
     PacienteCreationForm,
     PsicologoCreationForm,
-    PsicologoChangeForm,
+    PsicologoDisponibilidadeChangeForm,
+    PsicologoFotoDePerfilChangeForm,
+    PsicologoInfoProfissionalChangeForm,
     PsicologoFiltrosForm,
     ConsultaCreationForm,
     ConsultaFiltrosForm,
 )
-from .models import Consulta, EstadoConsulta, Psicologo
+from .models import Consulta, EstadoConsulta, Psicologo, TipoNotificacao
 from usuario.forms import EmailAuthenticationForm, UsuarioCreationForm
 from .forms import ConsultaChecklistForm
 from .forms import ConsultaAnotacoesForm
+
 
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
@@ -153,7 +157,7 @@ class PsicologoCadastroView(CadastroView):
         return PsicologoCreationForm
 
     def get_redirect(self):
-        return redirect('meu_perfil')
+        return redirect('meu_perfil_info_profissional')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -205,6 +209,21 @@ class CancelarConsultaPacienteView(DeveTerCargoMixin, View):
             consulta.save(update_fields=["estado"])
             messages.success(request, "Consulta cancelada com sucesso.")
 
+        if getattr(request.user, "is_paciente", False):
+            Notificacao.objects.create(
+                tipo=TipoNotificacao.CONSULTA_CANCELADA,
+                remetente=request.user,
+                destinatario=consulta.psicologo.usuario,
+                consulta=consulta,
+            )
+        else:
+            Notificacao.objects.create(
+                tipo=TipoNotificacao.CONSULTA_RECUSADA,
+                remetente=request.user,
+                destinatario=consulta.paciente.usuario,
+                consulta=consulta,
+            )
+
         next_url = request.POST.get("next") or reverse_lazy("minhas_consultas")
         return redirect(next_url)
 
@@ -227,6 +246,12 @@ class AceitarConsultaPsicologoView(View):
             consulta.estado = EstadoConsulta.CONFIRMADA
             consulta.save(update_fields=["estado"])
             messages.success(request, "Consulta confirmada com sucesso.")
+            Notificacao.objects.create(
+                tipo=TipoNotificacao.CONSULTA_CONFIRMADA,
+                remetente=request.user,
+                destinatario=consulta.paciente.usuario,
+                consulta=consulta,
+            )
 
         next_url = request.POST.get("next") or reverse_lazy("minhas_consultas")
         return redirect(next_url)
@@ -317,6 +342,12 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
     
     def form_valid(self, form):
         form.save()
+        Notificacao.objects.create(
+            tipo=TipoNotificacao.CONSULTA_SOLICITADA,
+            remetente=form.paciente.usuario,
+            destinatario=form.psicologo.usuario,
+            consulta=form.instance,
+        )
         return super().form_valid(form)
     
 
@@ -422,18 +453,48 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
         return context
 
 
-class PsicologoMeuPerfilView(DeveSerPsicologoMixin, UpdateView):
-    template_name = "meu_perfil/meu_perfil.html"
-    form_class = PsicologoChangeForm
+class PsicologoInfoProfissionalView(DeveSerPsicologoMixin, UpdateView):
+    template_name = "meu_perfil/info_profissional.html"
+    form_class = PsicologoInfoProfissionalChangeForm
     context_object_name = "psicologo"
+    success_url = reverse_lazy("meu_perfil_info_profissional")
+
+    def get_object(self, queryset=None):
+        return Psicologo.objects.get(usuario=self.request.user)
+    
+
+class PsicologoFotoDePerfilView(DeveSerPsicologoMixin, UpdateView):
+    template_name = "meu_perfil/foto_de_perfil.html"
+    form_class = PsicologoFotoDePerfilChangeForm
+    context_object_name = "psicologo"
+    success_url = reverse_lazy("meu_perfil_foto")
+
+    def get_object(self, queryset=None):
+        return Psicologo.objects.get(usuario=self.request.user)
+    
+
+class PsicologoDisponibilidadeView(DeveSerPsicologoMixin, TemplateView, TabelaDisponibilidadeContextMixin):
+    template_name = "meu_perfil/disponibilidade.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["psicologo"] = Psicologo.objects.get(usuario=self.request.user)
+        return context
+    
+
+class PsicologoEditarDisponibilidadeView(DeveSerPsicologoMixin, UpdateView, TabelaDisponibilidadeContextMixin):
+    template_name = "meu_perfil/disponibilidade_editar.html"
+    form_class = PsicologoDisponibilidadeChangeForm
+    context_object_name = "psicologo"
+    success_url = reverse_lazy("meu_perfil_disponibilidade")
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
 
 
 class ConsultaChecklistUpdateView(DeveSerPsicologoMixin, View):
-    """Permite que o psicólogo atualize o campo `checklist_tarefas` de uma consulta.
-
+    """
+    Permite que o psicólogo atualize o campo `checklist_tarefas` de uma consulta.
     Aceita apenas POST. Verifica que a consulta pertence ao psicólogo logado.
     Espera um campo `checklist_tarefas` no POST e opcionalmente `next` para redirecionar.
     """
@@ -488,6 +549,18 @@ class ConsultaAnotacoesUpdateView(DeveSerPsicologoMixin, View):
 
         next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or reverse_lazy("minhas_consultas")
         return redirect(next_url)
+    
+
+class MarcarNotificacoesComoLidasView(DeveTerCargoMixin, View):
+    """
+    Marca todas as notificações do usuário autenticado como lidas.
+    """
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden("Você precisa estar autenticado para marcar notificações como lidas.")
+
+        Notificacao.objects.filter(destinatario=request.user, lida=False).update(lida=True)
+        return redirect(request.META.get("HTTP_REFERER", "/"))
 
 class ConsultaChamadaView(DeveTerCargoMixin, DetailView):
     model = Consulta

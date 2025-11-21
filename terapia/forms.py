@@ -97,30 +97,56 @@ class ConsultaFiltrosForm(forms.Form):
             self.fields["paciente_ou_psicologo"].queryset = Paciente.objects.filter(consultas__psicologo=usuario.psicologo).distinct()
 
 
-class PsicologoChangeForm(forms.ModelForm):
+class PsicologoInfoProfissionalChangeForm(forms.ModelForm):
     default_renderer = FormComValidacaoRenderer
-    template_name = "meu_perfil/componentes/form.html"
-
-    disponibilidade = forms.JSONField(
-        required=False,
-    )
+    template_name = "meu_perfil/componentes/form_info_profissional.html"
 
     class Meta:
         model = Psicologo
-        fields = ["valor_consulta", "sobre_mim", "foto", "especializacoes"]
+        fields = ["valor_consulta", "sobre_mim", "especializacoes"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["sobre_mim"].widget.attrs.update({
             "placeholder": "Apresente-se para os pacientes do EasyTalk...",
         })
-        self.fields["foto"].widget = forms.FileInput()
-        self.fields["especializacoes"].widget.attrs.update({"class": "h-100"})
         self.fields["especializacoes"].widget.attrs.update({"data-combobox": "multi"})
+        self.fields["sobre_mim"].widget.attrs.update({"rows": "4"})
+
+    def save(self, commit=True):
+        psicologo = super().save(commit=False)
+
+        if commit:
+            psicologo.save()
+            self.save_m2m()
+
+        return psicologo
+    
+
+class PsicologoFotoDePerfilChangeForm(forms.ModelForm):
+    default_renderer = FormComValidacaoRenderer
+    template_name = "meu_perfil/componentes/form_foto_de_perfil.html"
+
+    class Meta:
+        model = Psicologo
+        fields = ["foto"]
+
+
+class PsicologoDisponibilidadeChangeForm(forms.ModelForm):
+    default_renderer = FormComValidacaoRenderer
+    template_name = "meu_perfil/componentes/form_disponibilidade.html"
+
+    disponibilidade = forms.JSONField(required=False)
+
+    class Meta:
+        model = Psicologo
+        fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.fields["disponibilidade"].widget = DisponibilidadeInput(
             psicologo=self.instance,
         )
-        self.fields["sobre_mim"].widget.attrs.update({"rows": "8"})
 
     def clean_disponibilidade(self):
         return IntervaloDisponibilidade.from_matriz(self.cleaned_data.get("disponibilidade"))

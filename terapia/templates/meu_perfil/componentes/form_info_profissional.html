@@ -1,0 +1,23 @@
+<div class="mb-5">
+    <h6 class="mb-2">Valor da consulta</h6>
+    <div class="input-group has-validation">
+        <span class="input-group-text text-bg-secondary border-0 text-white">R$</span>
+        {{ form.valor_consulta }}
+        <div class="invalid-feedback">
+            {{ form.valor_consulta.errors }}
+        </div>
+    </div>
+</div>
+
+<div class="mb-5 p-0 perfil-espec">
+    <h6 class="mb-2">Especializações</h6>
+    <div class="text-body-secondary mb-2 small">Selecione uma ou mais especializações. Digite para filtrar.</div>
+    {{ form.especializacoes }}
+    {{ form.especializacoes.errors }}
+</div>
+
+<div class="mb-5">
+    <h6 class="mb-2">Sobre mim</h6>
+    {{ form.sobre_mim }}
+    {{ form.sobre_mim.errors }}
+</div>

@@ -32,7 +32,7 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-lg {% else %} nav
                         </li>
                         {% if request.user.is_psicologo %}
                             <li class="nav-item">
-                                <a class="nav-link ms-lg-5 text-nowrap position-relative" href="{% url 'meu_perfil' %}">
+                                <a class="nav-link ms-lg-5 text-nowrap position-relative" href="{% url 'meu_perfil_info_profissional' %}">
                                     Meu perfil
                                 </a>
                             </li>
@@ -40,7 +40,34 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-lg {% else %} nav
                         <li class="nav-item">
                             <a class="d-block d-sm-none nav-link me-lg-5 text-nowrap text-warning" href="#" onclick="logout()">Encerrar sessão</a>
                         </li>
-                        <li class="d-none d-sm-block m-0 mx-lg-5 vr text-primary opacity-100"></li>
+                        <li class="nav-item m-0 mx-lg-4">
+                            <button id="notificationBell" class="btn btn-dark position-relative" type="button"
+                                data-bs-toggle="popover" data-bs-html="true" data-bs-placement="bottom"
+                                data-bs-custom-class="notificacoes-popover"
+                                aria-label="Notificações" data-bs-title="Notificações">
+                                <i class="bi bi-bell-fill fs-4" style="color: yellow;"></i>
+                                {% if request.user.tem_notificacao_nao_lida %}
+                                    <span class="top-0 end-0 position-absolute p-1 bg-danger border border-light rounded-circle">
+                                        <span class="visually-hidden">Novas notificações</span>
+                                    </span>
+                                {% endif %}
+                            </button>
+
+                            <div id="notifications-template" class="d-none p-0">
+                                {% for n in request.user.notificacoes_como_destinatario.all %}
+                                    <div class="text-muted small mb-1">
+                                        {% if not n.lida %}
+                                            <span class="badge rounded-pill text-bg-secondary me-2">Nova</span>
+                                        {% endif %}
+                                        Recebida em {{ n.data_hora_criada|date:"d/m/Y H:i" }}
+                                    </div>
+                                    <div>{{ n.mensagem }}</div>
+                                    {% if not forloop.last %}<hr>{% endif %}
+                                {% empty %}
+                                    <div class="p-2 text-muted">Sem notificações.</div>
+                                {% endfor %}
+                            </div>
+                        </li>
                     {% endif %}
                 </ul>
             </div>
@@ -100,4 +127,38 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-lg {% else %} nav
 
     setHeightCabecalhoEspaco();
     window.addEventListener('resize', setHeightCabecalhoEspaco);
+</script>
+
+<script>
+    // Inicializa o popover quando o DOM estiver pronto (garante que o bundle Bootstrap carregado com `defer` já esteja disponível)
+    document.addEventListener('DOMContentLoaded', function(){
+        // Inicializa o popover do sino de notificações
+        const bell = document.getElementById('notificationBell')
+        if(!bell) return
+
+        const template = document.getElementById('notifications-template')
+
+        function getPopoverContent(){
+            return template.innerHTML
+        }
+
+        const pop = new bootstrap.Popover(bell, {
+            content: getPopoverContent,
+            sanitize: false,
+            trigger: 'focus',
+            container: 'body'
+        })
+
+        bell.addEventListener('shown.bs.popover', function(){
+            // Marca todas as notificações como lidas quando o popover é exibido
+            fetch('{% url "marcar_notificacoes_como_lidas" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+        })
+    })
 </script>

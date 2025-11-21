@@ -3,8 +3,12 @@
 
 {% load static %}
 
-{% block div_conteudo_classes %}
+{% block body_classes %}
 {{ block.super }} overflow-x-hidden
+{% endblock %}
+
+{% block div_conteudo_classes %}
+{{ block.super }} overflow-x-visible
 {% endblock %}
 
 {% block conteudo %}
@@ -12,7 +16,7 @@
         <main class="col d-flex flex-column gap-5 profile__main">
             <header class="hstack gap-4 profile__header">
                 <img
-                        class="rounded-circle mx-auto profile__avatar"
+                        class="rounded-circle mx-auto profile__avatar object-fit-cover"
                         src="{{ psicologo.get_url_foto_propria_ou_padrao }}"
                         alt="Foto de perfil do psicólogo"
                 />

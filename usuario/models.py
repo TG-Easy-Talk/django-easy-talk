@@ -55,6 +55,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.email
+    
+    def tem_notificacao_nao_lida(self):
+        return self.notificacoes_como_destinatario.filter(lida=False).exists()
 
     def __str__(self):
         return self.email

@@ -3,9 +3,12 @@
 
 {% include 'geral/head.html' %}
 
-<body class="min-vh-100 vstack">
+<body class="{% block body_classes %}{% endblock %}">
     {% block cabecalho %}
         {% include 'geral/cabecalho/cabecalho.html' %}
+    {% endblock %}
+
+    {% block pos_cabecalho %}
     {% endblock %}
 
     <div id="conteudoContainer"

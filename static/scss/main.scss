@@ -83,14 +83,15 @@ $theme-colors: (
 // Outras cores
 //
 
-$body-color:                 black;
-$body-bg:                    #F5F5F5;
-$body-secondary-color:       #575757;
-$body-secondary-bg:          white;
-$body-color-dark:            white;
-$body-bg-dark:               black;
-$body-secondary-color-dark:  #7B7B7B;
-$body-secondary-bg-dark:     #222427;
+$body-color:                black;
+$body-bg:                   #F5F5F5;
+$body-secondary-color:      #575757;
+$body-secondary-bg:         white;
+$body-tertiary-bg:          #F2F2F2;
+$body-color-dark:           white;
+$body-bg-dark:              black;
+$body-secondary-color-dark: #7B7B7B;
+$body-secondary-bg-dark:    #222427;
 
 //
 // Navegação (navbar)
@@ -210,7 +211,7 @@ $input-bg:  $body-secondary-bg;
 // @import "../../node_modules/bootstrap/scss/toasts";
 @import "../../node_modules/bootstrap/scss/modal";
 // @import "../../node_modules/bootstrap/scss/tooltip";
-// @import "../../node_modules/bootstrap/scss/popover";
+@import "../../node_modules/bootstrap/scss/popover";
 // @import "../../node_modules/bootstrap/scss/carousel";
 // @import "../../node_modules/bootstrap/scss/spinners";
 @import "../../node_modules/bootstrap/scss/offcanvas";
@@ -229,6 +230,12 @@ $input-bg:  $body-secondary-bg;
 $utilities: map-merge(
   $utilities,
   (
+    "overflow-x": map-merge(
+      map-get($utilities, "overflow-x"),
+      (
+        responsive: true,
+      ),
+    ),
     "width": map-merge(
       map-get($utilities, "width"),
       (
@@ -348,7 +355,7 @@ Classes próprias do EasyTalk
     transition: all 0.2s ease-out;
     
     &:hover {
-        transform: scale(1.05);
+        transform: scale(1.03);
         @extend .shadow;
     }
 }
@@ -367,3 +374,33 @@ Classes próprias do EasyTalk
         height: 90vh;
     }
 }
+
+#meu-perfil-nav {
+  --bs-nav-link-color: black;
+  --bs-nav-link-hover-color: black;
+  --bs-nav-pills-link-active-color: black;
+  --bs-nav-pills-link-active-bg: white;
+  --bs-nav-link-padding-x: 1rem;
+  --bs-nav-link-padding-y: 0.1rem;
+
+  .nav-link {
+    &.active, &:hover {
+      background-color: white;
+    }
+  }
+}
+
+.notificacoes-popover {
+  --bs-popover-max-width: 300px;
+  --bs-popover-border-color: var(--bs-primary);
+  --bs-popover-header-bg: var(--bs-primary);
+  --bs-popover-header-color: var(--bs-white);
+  --bs-popover-body-padding-x: 1rem;
+  --bs-popover-body-padding-y: .5rem;
+
+  .popover-arrow {
+    --bs-popover-bg: var(--bs-primary);
+  }
+}
+
+  
