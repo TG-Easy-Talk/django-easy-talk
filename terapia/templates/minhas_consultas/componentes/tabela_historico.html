@@ -84,7 +84,7 @@
                                 </form>
                             {% endif %}
 
-                            {% if consulta.estado == 'CONFIRMADA' or consulta.estado == 'EM_ANDAMENTO' %}
+                            {% if consulta.estado == 'EM_ANDAMENTO' %}
                                 <a href="{{ consulta.jitsi_join_url }}"
                                    class="btn btn-primary btn-sm"
                                    target="_blank" rel="noopener noreferrer">

@@ -776,6 +776,63 @@ class Consulta(models.Model):
         super().clean()
         self.data_hora_agendada = desprezar_segundos_e_microssegundos(self.data_hora_agendada)
 
+    def atualizar_estado_automatico(self, agora=None):
+        """
+        Atualiza o estado da consulta com base em 'data_hora_agendada'
+        e na duração padrão da consulta (CONSULTA_DURACAO).
+
+        Regras:
+        - Antes do horário de início: não altera nada.
+        - Entre início e fim:
+            * SOLICITADA  -> CANCELADA (psicólogo não respondeu a tempo)
+            * CONFIRMADA  -> EM_ANDAMENTO (consulta começou)
+        - Após o fim:
+            * SOLICITADA  -> CANCELADA
+            * CONFIRMADA  -> FINALIZADA
+            * EM_ANDAMENTO -> FINALIZADA
+        - CANCELADA e FINALIZADA permanecem inalteradas.
+        """
+        if agora is None:
+            agora = timezone.now()
+
+        if self.estado in (EstadoConsulta.CANCELADA, EstadoConsulta.FINALIZADA):
+            return False
+
+        inicio = self.data_hora_agendada
+        fim = self.data_hora_agendada + CONSULTA_DURACAO
+        novo_estado = self.estado
+
+        if inicio <= agora < fim:
+            if self.estado == EstadoConsulta.SOLICITADA:
+                novo_estado = EstadoConsulta.CANCELADA
+            elif self.estado == EstadoConsulta.CONFIRMADA:
+                novo_estado = EstadoConsulta.EM_ANDAMENTO
+        elif agora >= fim:
+            if self.estado == EstadoConsulta.SOLICITADA:
+                novo_estado = EstadoConsulta.CANCELADA
+            elif self.estado in (EstadoConsulta.CONFIRMADA, EstadoConsulta.EM_ANDAMENTO):
+                novo_estado = EstadoConsulta.FINALIZADA
+
+        if novo_estado != self.estado:
+            self.estado = novo_estado
+            self.save(update_fields=["estado"])
+            return True
+
+        return False
+
+    @classmethod
+    def atualizar_estados_automaticamente(cls, queryset=None):
+        """
+        Atualiza automaticamente o estado de todas as consultas do queryset.
+        Se nenhum queryset for informado, atualiza todas as consultas.
+        """
+        if queryset is None:
+            queryset = cls.objects.all()
+
+        agora = timezone.now()
+        for consulta in queryset:
+            consulta.atualizar_estado_automatico(agora=agora)
+
     def ensure_jitsi_room(self):
         """
         Gera um identificador de sala Jitsi *curto* se ainda não existir.

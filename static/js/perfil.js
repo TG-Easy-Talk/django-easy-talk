@@ -50,6 +50,7 @@
             const [hh, mm] = idxToHora(i).split(":").map(Number);
             const dt = new Date(y, m, d, hh, mm, 0, 0);
 
+            if (dt < agora) continue;
             if (CFG.MIN_ANT && dt < minOK) continue;
             if (maxOK && dt > maxOK) continue;
 
@@ -137,7 +138,15 @@
         }
 
         function syncHiddenAndTotal() {
-            const valores = Object.values(state.escolhas).filter(Boolean);
+            const selects = els.lista.querySelectorAll("select.form-select");
+            const valores = [];
+
+            selects.forEach((select) => {
+                if (select.value) {
+                    valores.push(select.value);
+                }
+            });
+
             els.hidden.value = JSON.stringify(valores);
 
             const qtd = valores.length;

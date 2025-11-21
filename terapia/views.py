@@ -372,6 +372,9 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
         elif self.request.user.is_psicologo:
             queryset = Consulta.objects.filter(psicologo=self.request.user.psicologo)
 
+        if queryset is not None:
+            Consulta.atualizar_estados_automaticamente(queryset)
+
         form = self.get_form()
 
         if form.is_valid():
@@ -503,7 +506,9 @@ class ConsultaChamadaView(DeveTerCargoMixin, DetailView):
         else:
             return HttpResponseForbidden("Sua conta precisa ser paciente ou psicólogo.")
 
-        if consulta.estado not in (EstadoConsulta.CONFIRMADA, EstadoConsulta.EM_ANDAMENTO):
+        consulta.atualizar_estado_automatico()
+
+        if consulta.estado != EstadoConsulta.EM_ANDAMENTO:
             return HttpResponseForbidden("Esta consulta não está em um estado que permita chamada de vídeo.")
 
         consulta.ensure_jitsi_room()
