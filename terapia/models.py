@@ -795,9 +795,9 @@ class Consulta(models.Model):
 
 class TipoNotificacao(models.TextChoices):
     CONSULTA_SOLICITADA = "CONSULTA_SOLICITADA", "Consulta Solicitada"
-    CONSULTA_ACEITA = "CONSULTA_ACEITA", "Consulta Aceita"
+    CONSULTA_CONFIRMADA = "CONSULTA_CONFIRMADA", "Consulta Confirmada"
     CONSULTA_CANCELADA = "CONSULTA_CANCELADA", "Consulta Cancelada"
-
+    CONSULTA_RECUSADA = "CONSULTA_RECUSADA", "Consulta Recusada"
 
 class Notificacao(models.Model):
     tipo = models.CharField("Tipo", max_length=50, choices=TipoNotificacao.choices)
@@ -826,13 +826,14 @@ class Notificacao(models.Model):
     def mensagem(self):
         mensagens = {
             TipoNotificacao.CONSULTA_SOLICITADA: "O paciente {remetente} solicitou uma nova consulta agendada para {data_hora_agendada}.",
-            TipoNotificacao.CONSULTA_ACEITA: "O psicólogo {remetente} aceitou sua solicitação de consulta agendada para {data_hora_agendada}.",
-            TipoNotificacao.CONSULTA_CANCELADA: "O psicólogo {remetente} cancelou a consulta agendada para {data_hora_agendada}.",
+            TipoNotificacao.CONSULTA_CONFIRMADA: "O psicólogo {remetente} aceitou sua solicitação de consulta agendada para {data_hora_agendada}.",
+            TipoNotificacao.CONSULTA_RECUSADA: "O psicólogo {remetente} recusou sua solicitação de consulta agendada para {data_hora_agendada}.",
+            TipoNotificacao.CONSULTA_CANCELADA: "O paciente {remetente} cancelou a consulta agendada para {data_hora_agendada}.",
         }
 
         return mensagens[self.tipo].format(
-            remetente=str(self.remetente),
-            data_hora_agendada=str(self.consulta.data_hora_agendada),
+            remetente=self.remetente.paciente.nome if self.remetente.is_paciente else self.remetente.psicologo.nome_completo,
+            data_hora_agendada=timezone.localtime(self.consulta.data_hora_agendada).strftime("%d/%m/%Y %H:%M"),
         )
 
     class Meta:

@@ -207,10 +207,19 @@ class CancelarConsultaPacienteView(DeveTerCargoMixin, View):
             consulta.estado = EstadoConsulta.CANCELADA
             consulta.save(update_fields=["estado"])
             messages.success(request, "Consulta cancelada com sucesso.")
+
+        if getattr(request.user, "is_paciente", False):
             Notificacao.objects.create(
                 tipo=TipoNotificacao.CONSULTA_CANCELADA,
                 remetente=request.user,
-                destinatario=consulta.psicologo.usuario if request.user.is_paciente else consulta.paciente.usuario,
+                destinatario=consulta.psicologo.usuario,
+                consulta=consulta,
+            )
+        else:
+            Notificacao.objects.create(
+                tipo=TipoNotificacao.CONSULTA_RECUSADA,
+                remetente=request.user,
+                destinatario=consulta.paciente.usuario,
                 consulta=consulta,
             )
 
