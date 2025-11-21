@@ -49,14 +49,20 @@
             if (!linha[i]) continue;
             const [hh, mm] = idxToHora(i).split(":").map(Number);
             const dt = new Date(y, m, d, hh, mm, 0, 0);
+            const value = `${y}-${pad(m + 1)}-${pad(d)}T${pad(hh)}:${pad(mm)}`;
+            if (OCUPADOS.has(value)) continue;
 
-            if (dt < agora) continue;
+            const ehPassadoNoDia = dt < agora;
+
+            if (ehPassadoNoDia) {
+                opcoes.push({label: `${pad(hh)}:${pad(mm)}`, value, disabled: true});
+                continue;
+            }
+
             if (CFG.MIN_ANT && dt < minOK) continue;
             if (maxOK && dt > maxOK) continue;
 
-            const value = `${y}-${pad(m + 1)}-${pad(d)}T${pad(hh)}:${pad(mm)}`;
-            if (OCUPADOS.has(value)) continue;
-            opcoes.push({label: `${pad(hh)}:${pad(mm)}`, value});
+            opcoes.push({label: `${pad(hh)}:${pad(mm)}`, value, disabled: false});
         }
         return opcoes;
     }
@@ -120,14 +126,34 @@
                     ph.value = "";
                     ph.textContent = "Hora";
                     select.appendChild(ph);
+
+                    let primeiraValida = null;
+
                     for (const o of opcoes) {
                         const opt = document.createElement("option");
                         opt.value = o.value;
                         opt.textContent = o.label;
+                        if (o.disabled) {
+                            opt.disabled = true;
+                            opt.classList.add("slot-passado");
+                        } else if (!primeiraValida) {
+                            primeiraValida = o.value;
+                        }
                         select.appendChild(opt);
                     }
-                    if (!state.escolhas[dataKey]) state.escolhas[dataKey] = opcoes[0].value;
-                    select.value = state.escolhas[dataKey];
+
+                    if (
+                        state.escolhas[dataKey] &&
+                        !opcoes.some((o) => !o.disabled && o.value === state.escolhas[dataKey])
+                    ) {
+                        delete state.escolhas[dataKey];
+                    }
+
+                    if (!state.escolhas[dataKey] && primeiraValida) state.escolhas[dataKey] = primeiraValida;
+
+                    if (state.escolhas[dataKey]) select.value = state.escolhas[dataKey];
+
+                    if (!primeiraValida) select.disabled = true;
                 }
 
                 linha.appendChild(spanData);
@@ -138,15 +164,7 @@
         }
 
         function syncHiddenAndTotal() {
-            const selects = els.lista.querySelectorAll("select.form-select");
-            const valores = [];
-
-            selects.forEach((select) => {
-                if (select.value) {
-                    valores.push(select.value);
-                }
-            });
-
+            const valores = Object.values(state.escolhas).filter(Boolean);
             els.hidden.value = JSON.stringify(valores);
 
             const qtd = valores.length;
