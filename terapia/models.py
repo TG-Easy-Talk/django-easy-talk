@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.db import models
 from django.db.models import Q, F
 from django.urls import reverse
@@ -790,4 +791,65 @@ class Consulta(models.Model):
 
     def __str__(self):
         return f"Consulta {self.estado.upper()} agendada para {timezone.localtime(self.data_hora_agendada):%d/%m/%Y %H:%M} ({timezone.get_current_timezone_name()}) com {self.paciente.nome} e {self.psicologo.nome_completo}"
+
+
+class TipoNotificacao(models.TextChoices):
+    CONSULTA_SOLICITADA = "CONSULTA_SOLICITADA", "Consulta Solicitada"
+    CONSULTA_ACEITA = "CONSULTA_ACEITA", "Consulta Aceita"
+    CONSULTA_CANCELADA = "CONSULTA_CANCELADA", "Consulta Cancelada"
+
+
+class Notificacao(models.Model):
+    tipo = models.CharField("Tipo", max_length=50, choices=TipoNotificacao.choices)
+    lida = models.BooleanField("Lida", default=False)
+    data_hora_criada = models.DateTimeField(auto_now_add=True)
+    remetente = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Paciente",
+        on_delete=models.CASCADE,
+        related_name="notificacoes_como_remetente",
+    )
+    destinatario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Psicólogo",
+        on_delete=models.CASCADE,
+        related_name="notificacoes_como_destinatario",
+    )
+    consulta = models.ForeignKey(
+        Consulta,
+        verbose_name="Consulta",
+        on_delete=models.CASCADE,
+        related_name="notificacoes",
+    )
+
+    @property
+    def mensagem(self):
+        mensagens = {
+            TipoNotificacao.CONSULTA_SOLICITADA: "O paciente {remetente} solicitou uma nova consulta agendada para {data_hora_agendada}.",
+            TipoNotificacao.CONSULTA_ACEITA: "O psicólogo {remetente} aceitou sua solicitação de consulta agendada para {data_hora_agendada}.",
+            TipoNotificacao.CONSULTA_CANCELADA: "O psicólogo {remetente} cancelou a consulta agendada para {data_hora_agendada}.",
+        }
+
+        return mensagens[self.tipo].format(
+            remetente=str(self.remetente),
+            data_hora_agendada=str(self.consulta.data_hora_agendada),
+        )
+
+    class Meta:
+        verbose_name = "Notificação"
+        verbose_name_plural = "Notificações"
+        ordering = ["-data_hora_criada"]
+
+    def __str__(self):
+        return f"Notificação de {self.tipo} de {self.remetente} para {self.destinatario}"
     
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            send_mail(
+                subject=self.get_tipo_display(),
+                message=self.mensagem,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[self.destinatario.email],
+            )
+            
+        super().save(*args, **kwargs)

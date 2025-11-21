@@ -98,6 +98,7 @@
 
 .flatpickr-days {
     padding: 0 var(--space-2) var(--space-1) !important;
+    overflow: visible !important;
 }
 
 .flatpickr-weekdays .flatpickr-weekdaycontainer {

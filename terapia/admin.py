@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from usuario.admin import UsuarioAdmin
 from .models import (
+    Notificacao,
     Paciente,
     Psicologo,
     Consulta,
@@ -66,3 +67,9 @@ class ConsultaAdmin(admin.ModelAdmin):
 @admin.register(IntervaloDisponibilidade)
 class IntervaloDisponibilidadeAdmin(admin.ModelAdmin):
     list_display = ['__str__', 'psicologo']
+
+
+@admin.register(Notificacao)
+class NotificacaoAdmin(admin.ModelAdmin):
+    list_display = ['__str__']
+    list_display_links = None
