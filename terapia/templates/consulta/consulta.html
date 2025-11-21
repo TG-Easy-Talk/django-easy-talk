@@ -15,15 +15,10 @@
 
     <section class="rounded-3 consulta-camera-desligada-bg position-relative h-100 overflow-hidden">
 
-        {% if True %} {# Se a câmera estiver ligada #}
-            <img class="img-fluid object-fit-cover position-absolute top-50 start-50 translate-middle"
-            src="{% static 'img/psicologa_na_consulta.jpg' %}">
-        {% else %}
-            <img class="rounded-circle position-absolute top-50 start-50 translate-middle"
-            style="width: 6em; height: 6em;"
-            src="{% static 'img/foto_de_perfil.jpg' %}"
-            alt="Foto de perfil">
-        {% endif %}
+        <div id="jitsi-container"
+             class="position-absolute top-50 start-50 translate-middle"
+             style="width: 100%; height: 100%; max-width: 100%; max-height: 100%;">
+        </div>
 
         {% include 'consulta/componentes/nome_canto.html' %}
 
@@ -80,29 +75,76 @@
     </div>
 </aside>
 
+<script src="https://meet.jit.si/external_api.js"></script>
+<script>
+    (function() {
+        const container = document.getElementById('jitsi-container')
+        if (container && "{{ JITSI_DOMAIN }}") {
+            const domain = "{{ JITSI_DOMAIN|escapejs }}"
+            const options = {
+                roomName: "{{ JITSI_ROOM|escapejs }}",
+                parentNode: container,
+                userInfo: {
+                    displayName: "{{ JITSI_USER_NAME|default_if_none:''|escapejs }}"
+                },
+                configOverwrite: {
+                    prejoinPageEnabled: false,
+                    startWithAudioMuted: true
+                }
+            };
+
+            try {
+                const api = new JitsiMeetExternalAPI(domain, options)
+
+                api.addEventListener('readyToClose', function() {
+                    // Se quiser redirecionar quando a call fechar:
+                    // window.location.href = "{% url 'minhas_consultas' %}"
+                });
+            } catch (e) {
+                console.error("Erro ao inicializar JitsiMeetExternalAPI:", e)
+            }
+        } else {
+            console.error("Container #jitsi-container não encontrado ou JITSI_DOMAIN vazio.")
+        }
+    })();
+</script>
+
+
 <script>
     const microfoneBotao = document.getElementById('microfoneBotao');
     const cameraBotao = document.getElementById('cameraBotao');
     const chatBotao = document.getElementById('chatBotao');
     const chatConsulta = document.getElementById('chatConsulta');
-    
+
     microfoneBotao.addEventListener('click', () => {
-        if (microfoneBotao.classList.replace('btn-primary', 'btn-danger')) {
+        const trocouParaDanger = microfoneBotao.classList.replace('btn-primary', 'btn-danger')
+        if (trocouParaDanger) {
             microfoneBotao.firstElementChild.classList.replace('bi-mic-fill', 'bi-mic-mute-fill')
-        }
-        else {
-            microfoneBotao.classList.replace('btn-danger', 'btn-primary')
+        } else {
+            microfoneBotao.classList.replace('btn-danger', 'btn-primary');
             microfoneBotao.firstElementChild.classList.replace('bi-mic-mute-fill', 'bi-mic-fill')
+        }
+
+        if (window.jitsiApi) {
+            window.jitsiApi.executeCommand('toggleAudio')
+        } else {
+            console.warn("jitsiApi ainda não está disponível para toggleAudio.")
         }
     })
 
     cameraBotao.addEventListener('click', () => {
-        if (cameraBotao.classList.replace('btn-primary', 'btn-danger')) {
+        const trocouParaDanger = cameraBotao.classList.replace('btn-primary', 'btn-danger')
+        if (trocouParaDanger) {
             cameraBotao.firstElementChild.classList.replace('bi-camera-video-fill', 'bi-camera-video-off-fill')
-        }
-        else {
-            cameraBotao.classList.replace('btn-danger', 'btn-primary')
+        } else {
+            cameraBotao.classList.replace('btn-danger', 'btn-primary');
             cameraBotao.firstElementChild.classList.replace('bi-camera-video-off-fill', 'bi-camera-video-fill')
+        }
+
+        if (window.jitsiApi) {
+            window.jitsiApi.executeCommand('toggleVideo')
+        } else {
+            console.warn("jitsiApi ainda não está disponível para toggleVideo.")
         }
     })
 

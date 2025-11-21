@@ -12,7 +12,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import FormView, ListView, TemplateView, UpdateView, DetailView
+from django.views.generic import FormView, ListView, TemplateView, UpdateView
+from django.views.generic.detail import DetailView
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
 from .models import Notificacao
 
@@ -285,6 +286,16 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
             for c in self.object.consultas.exclude(estado=EstadoConsulta.CANCELADA)
         ]
         ctx["SLOTS_OCUPADOS_JSON"] = json.dumps(ocupados)
+
+        ctx["perfil_config"] = {
+            "matriz": json.loads(self.object.get_matriz_disponibilidade_booleanos_em_json()),
+            "ocupados": ocupados,
+            "duracao": CONSULTA_DURACAO_MINUTOS,
+            "minAntecedencia": 0,
+            "maxAntecedencia": 0,
+            "valor": float(self.object.valor_consulta or 0),
+        }
+
         return ctx
 
     def post(self, request, *args, **kwargs):
@@ -391,6 +402,9 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
             queryset = Consulta.objects.filter(paciente=self.request.user.paciente)
         elif self.request.user.is_psicologo:
             queryset = Consulta.objects.filter(psicologo=self.request.user.psicologo)
+
+        if queryset is not None:
+            Consulta.atualizar_estados_automaticamente(queryset)
 
         form = self.get_form()
 
@@ -547,3 +561,39 @@ class MarcarNotificacoesComoLidasView(DeveTerCargoMixin, View):
 
         Notificacao.objects.filter(destinatario=request.user, lida=False).update(lida=True)
         return redirect(request.META.get("HTTP_REFERER", "/"))
+
+class ConsultaChamadaView(DeveTerCargoMixin, DetailView):
+    model = Consulta
+    context_object_name = "consulta"
+    template_name = "consulta/consulta.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        consulta = self.get_object()
+
+        if request.user.is_paciente:
+            if consulta.paciente != request.user.paciente:
+                return HttpResponseForbidden("Você não pode acessar esta consulta.")
+        elif request.user.is_psicologo:
+            if consulta.psicologo != request.user.psicologo:
+                return HttpResponseForbidden("Você não pode acessar esta consulta.")
+        else:
+            return HttpResponseForbidden("Sua conta precisa ser paciente ou psicólogo.")
+
+        consulta.atualizar_estado_automatico()
+
+        if consulta.estado != EstadoConsulta.EM_ANDAMENTO:
+            return HttpResponseForbidden("Esta consulta não está em um estado que permita chamada de vídeo.")
+
+        consulta.ensure_jitsi_room()
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        consulta = self.object
+
+        ctx["JITSI_DOMAIN"] = "meet.jit.si"
+        ctx["JITSI_ROOM"] = consulta.jitsi_room
+        ctx["JITSI_USER_NAME"] = self.request.user.get_full_name() or str(self.request.user)
+
+        return ctx
