@@ -536,3 +536,14 @@ class ConsultaAnotacoesUpdateView(DeveSerPsicologoMixin, View):
         next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or reverse_lazy("minhas_consultas")
         return redirect(next_url)
     
+
+class MarcarNotificacoesComoLidasView(DeveTerCargoMixin, View):
+    """
+    Marca todas as notificações do usuário autenticado como lidas.
+    """
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden("Você precisa estar autenticado para marcar notificações como lidas.")
+
+        Notificacao.objects.filter(destinatario=request.user, lida=False).update(lida=True)
+        return redirect(request.META.get("HTTP_REFERER", "/"))

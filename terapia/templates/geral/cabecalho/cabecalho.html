@@ -45,13 +45,22 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-lg {% else %} nav
                                 data-bs-toggle="popover" data-bs-html="true" data-bs-placement="bottom"
                                 data-bs-custom-class="notificacoes-popover"
                                 aria-label="Notificações" data-bs-title="Notificações">
-                                <i class="bi bi-bell-fill" style="color: yellow;"></i>
-                                <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">0</span>
+                                <i class="bi bi-bell-fill fs-4" style="color: yellow;"></i>
+                                {% if request.user.tem_notificacao_nao_lida %}
+                                    <span class="top-0 end-0 position-absolute p-1 bg-danger border border-light rounded-circle">
+                                        <span class="visually-hidden">Novas notificações</span>
+                                    </span>
+                                {% endif %}
                             </button>
 
                             <div id="notifications-template" class="d-none p-0">
                                 {% for n in request.user.notificacoes_como_destinatario.all %}
-                                    <div class="text-muted small mb-1">Recebida em {{ n.data_hora_criada|date:"d/m/Y H:i" }}</div>
+                                    <div class="text-muted small mb-1">
+                                        {% if not n.lida %}
+                                            <span class="badge rounded-pill text-bg-secondary me-2">Nova</span>
+                                        {% endif %}
+                                        Recebida em {{ n.data_hora_criada|date:"d/m/Y H:i" }}
+                                    </div>
                                     <div>{{ n.mensagem }}</div>
                                     {% if not forloop.last %}<hr>{% endif %}
                                 {% empty %}
@@ -124,31 +133,32 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-lg {% else %} nav
     // Inicializa o popover quando o DOM estiver pronto (garante que o bundle Bootstrap carregado com `defer` já esteja disponível)
     document.addEventListener('DOMContentLoaded', function(){
         // Inicializa o popover do sino de notificações
-        var bell = document.getElementById('notificationBell');
-        if(!bell) return;
+        const bell = document.getElementById('notificationBell')
+        if(!bell) return
 
-        var template = document.getElementById('notifications-template');
+        const template = document.getElementById('notifications-template')
+
         function getPopoverContent(){
-            return template ? template.innerHTML : '<div class="p-2 small text-muted">Sem notificações.</div>';
+            return template.innerHTML
         }
 
-        var pop = new bootstrap.Popover(bell, {
+        const pop = new bootstrap.Popover(bell, {
             content: getPopoverContent,
             sanitize: false,
             trigger: 'focus',
             container: 'body'
-        });
+        })
 
-        // Atualiza badge se houver variável `notifications` no contexto (renderizada no template)
-        try{
-            var badge = document.getElementById('notificationBadge');
-            {% if notifications %}
-                var count = {{ notifications|length }};
-                if(badge){
-                    if(count > 0){ badge.textContent = count; badge.classList.remove('d-none'); }
-                    else { badge.classList.add('d-none'); }
-                }
-            {% endif %}
-        }catch(e){/* ignore */}
-    });
+        bell.addEventListener('shown.bs.popover', function(){
+            // Marca todas as notificações como lidas quando o popover é exibido
+            fetch('{% url "marcar_notificacoes_como_lidas" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+        })
+    })
 </script>
