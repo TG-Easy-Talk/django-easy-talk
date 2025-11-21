@@ -72,8 +72,22 @@
         };
 
         function renderLista(selectedDates) {
+            if (!selectedDates || selectedDates.length === 0) {
+                els.lista.textContent = "";
+                state.escolhas = Object.create(null);
+                syncHiddenAndTotal();
+                return;
+            }
+
             els.lista.textContent = "";
             const datas = [...selectedDates].sort((a, b) => a - b);
+            const chavesAtuais = new Set(datas.map(dateKeyLocal));
+
+            for (const key of Object.keys(state.escolhas)) {
+                if (!chavesAtuais.has(key)) {
+                    delete state.escolhas[key];
+                }
+            }
 
             for (const date of datas) {
                 const dataKey = dateKeyLocal(date);
