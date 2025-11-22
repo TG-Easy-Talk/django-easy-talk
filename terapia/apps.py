@@ -3,7 +3,7 @@ from django.db.models.signals import post_migrate
 
 def run_seed(sender, **kwargs):
     from django.core.management import call_command
-    call_command('seed_psicologos')
+    call_command('psicologos_seed')
 
 class TerapiaConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

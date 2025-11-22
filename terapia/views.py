@@ -11,10 +11,12 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import FormView, ListView, TemplateView, UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
+from django_ratelimit.decorators import ratelimit
 from .models import Notificacao
 
 from terapia.constantes import (
@@ -43,9 +45,9 @@ from .forms import ConsultaAnotacoesForm
 class DeveTerCargoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if (
-            request.user.is_authenticated and
-            not request.user.is_psicologo and
-            not request.user.is_paciente
+                request.user.is_authenticated and
+                not request.user.is_psicologo and
+                not request.user.is_paciente
         ):
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
@@ -54,12 +56,12 @@ class DeveTerCargoMixin(LoginRequiredMixin):
 class DeveSerPsicologoMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if (
-            request.user.is_authenticated and
-            not request.user.is_psicologo
+                request.user.is_authenticated and
+                not request.user.is_psicologo
         ):
             return self.handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
-    
+
 
 class GetFormMixin(FormMixin):
     def get_form_kwargs(self):
@@ -79,7 +81,7 @@ class FluxoAlternativoLoginContextMixin(ContextMixin):
             }
         ]
         return context
-    
+
 
 class TabelaDisponibilidadeContextMixin(ContextMixin):
     def get_context_data(self, **kwargs):
@@ -108,17 +110,19 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
             inline = form_inline.save(commit=False)
             inline.usuario = usuario
             inline.save()
-                
+
             login(self.request, usuario)
             return self.get_redirect()
-        
+
         return self.render_to_response(self.get_context_data(form=form_usuario, form_inline=form_inline))
 
     def get_form_inline(self):
-        raise NotImplementedError("Subclasses devem implementar o método get_form_inline para retornar o formulário inline específico.")
-    
+        raise NotImplementedError(
+            "Subclasses devem implementar o método get_form_inline para retornar o formulário inline específico.")
+
     def get_redirect(self):
-        raise NotImplementedError("Subclasses devem implementar o método get_redirect para retornar a URL de redirecionamento.")
+        raise NotImplementedError(
+            "Subclasses devem implementar o método get_redirect para retornar a URL de redirecionamento.")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -129,15 +133,22 @@ class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
         })
 
         return context
-    
 
+
+@method_decorator(ratelimit(key='ip', rate='3/h', method='POST'), name='dispatch')
 class PacienteCadastroView(CadastroView):
+    """
+    Cadastro de paciente com rate limiting.
+    
+    Rate limiting: 3 cadastros por hora por IP.
+    """
+
     def get_form_inline_class(self):
         return PacienteCreationForm
 
     def get_redirect(self):
         return redirect('pesquisa')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["heading_form"] = "Cadastro de Paciente"
@@ -152,13 +163,20 @@ class PacienteCadastroView(CadastroView):
         return context
 
 
+@method_decorator(ratelimit(key='ip', rate='3/h', method='POST'), name='dispatch')
 class PsicologoCadastroView(CadastroView):
+    """
+    Cadastro de psicólogo com rate limiting.
+    
+    Rate limiting: 3 cadastros por hora por IP.
+    """
+
     def get_form_inline_class(self):
         return PsicologoCreationForm
 
     def get_redirect(self):
         return redirect('meu_perfil_info_profissional')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["heading_form"] = "Cadastro de Profissional"
@@ -172,10 +190,13 @@ class PsicologoCadastroView(CadastroView):
         return context
 
 
+@method_decorator(ratelimit(key='ip', rate='5/h', method='POST'), name='dispatch')
 class CustomLoginView(LoginView):
     """
     Exibe o formulário de login e, em caso de sucesso,
     redireciona para LOGIN_REDIRECT_URL.
+    
+    Rate limiting: 5 tentativas de login por hora por IP.
     """
     template_name = 'conta/login.html'
     authentication_form = EmailAuthenticationForm
@@ -227,6 +248,7 @@ class CancelarConsultaPacienteView(DeveTerCargoMixin, View):
         next_url = request.POST.get("next") or reverse_lazy("minhas_consultas")
         return redirect(next_url)
 
+
 class AceitarConsultaPsicologoView(View):
     def post(self, request, pk):
         if not request.user.is_psicologo:
@@ -277,7 +299,7 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
         kwargs["usuario"] = self.request.user
         kwargs["psicologo"] = self.get_object()
         return kwargs
-    
+
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
         ctx = super().get_context_data(**kwargs)
@@ -311,24 +333,15 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
                 messages.error(request, "Formato inválido dos horários selecionados.")
                 return self.get(request, *args, **kwargs)
 
-            psicologo = self.get_object()
-            paciente = request.user.paciente
-            tz = timezone.get_current_timezone()
+            # REFATORADO: Usa ConsultaService ao invés de lógica inline (SOLID)
+            from terapia.service import ConsultaService
 
-            criadas, falhas = 0, []
-            with transaction.atomic():
-                for s in slots:
-                    try:
-                        dt_naive = datetime.fromisoformat(s)
-                        dt = timezone.make_aware(dt_naive, tz)
-                        c = Consulta(paciente=paciente, psicologo=psicologo, data_hora_agendada=dt)
-                        c.full_clean()
-                        c.save()
-                        criadas += 1
-                    except ValidationError as ve:
-                        falhas.append((s, "; ".join(sum(ve.message_dict.values(), []))))
-                    except Exception as e:
-                        falhas.append((s, str(e)))
+            criadas, falhas = ConsultaService.criar_multiplas_consultas(
+                paciente=request.user.paciente,
+                psicologo=self.get_object(),
+                slots=slots,
+                timezone_obj=timezone.get_current_timezone()
+            )
 
             if criadas:
                 messages.success(request, f"{criadas} consulta(s) solicitada(s).")
@@ -339,7 +352,7 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
             return redirect(self.get_success_url())
 
         return super().post(request, *args, **kwargs)
-    
+
     def form_valid(self, form):
         form.save()
         Notificacao.objects.create(
@@ -349,7 +362,7 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
             consulta=form.instance,
         )
         return super().form_valid(form)
-    
+
 
 class PesquisaView(ListView, GetFormMixin):
     template_name = "pesquisa/pesquisa.html"
@@ -358,7 +371,11 @@ class PesquisaView(ListView, GetFormMixin):
     allow_empty = True
 
     def get_queryset(self):
-        queryset = Psicologo.completos.all()
+        # Optimize with select_related and prefetch_related to avoid N+1 queries
+        queryset = Psicologo.completos.select_related('usuario').prefetch_related(
+            'especializacoes',
+            'disponibilidade',
+        )
 
         form = self.get_form()
 
@@ -378,8 +395,17 @@ class PesquisaView(ListView, GetFormMixin):
                 queryset = queryset.filter(valor_consulta__lte=valor_maximo)
 
             if disponibilidade is not None:
-                psicologo_ids = [psicologo.id for psicologo in queryset.iterator() if psicologo.esta_agendavel_em(disponibilidade)]
-                queryset = queryset.filter(id__in=psicologo_ids)
+                # Materialize queryset first to work with prefetched data
+                # This avoids additional queries in the loop
+                psicologos_list = list(queryset)
+                psicologo_ids = [
+                    psicologo.id for psicologo in psicologos_list
+                    if psicologo.esta_agendavel_em(disponibilidade)
+                ]
+                queryset = Psicologo.completos.filter(id__in=psicologo_ids).select_related('usuario').prefetch_related(
+                    'especializacoes',
+                    'disponibilidade',
+                )
 
         return queryset
 
@@ -461,7 +487,7 @@ class PsicologoInfoProfissionalView(DeveSerPsicologoMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
-    
+
 
 class PsicologoFotoDePerfilView(DeveSerPsicologoMixin, UpdateView):
     template_name = "meu_perfil/foto_de_perfil.html"
@@ -471,7 +497,7 @@ class PsicologoFotoDePerfilView(DeveSerPsicologoMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
-    
+
 
 class PsicologoDisponibilidadeView(DeveSerPsicologoMixin, TemplateView, TabelaDisponibilidadeContextMixin):
     template_name = "meu_perfil/disponibilidade.html"
@@ -480,7 +506,7 @@ class PsicologoDisponibilidadeView(DeveSerPsicologoMixin, TemplateView, TabelaDi
         context = super().get_context_data(**kwargs)
         context["psicologo"] = Psicologo.objects.get(usuario=self.request.user)
         return context
-    
+
 
 class PsicologoEditarDisponibilidadeView(DeveSerPsicologoMixin, UpdateView, TabelaDisponibilidadeContextMixin):
     template_name = "meu_perfil/disponibilidade_editar.html"
@@ -498,6 +524,7 @@ class ConsultaChecklistUpdateView(DeveSerPsicologoMixin, View):
     Aceita apenas POST. Verifica que a consulta pertence ao psicólogo logado.
     Espera um campo `checklist_tarefas` no POST e opcionalmente `next` para redirecionar.
     """
+
     def post(self, request, pk):
         if not request.user.is_psicologo:
             return HttpResponseForbidden("Sua conta precisa ser do tipo psicólogo.")
@@ -528,6 +555,7 @@ class ConsultaAnotacoesUpdateView(DeveSerPsicologoMixin, View):
     Aceita apenas POST. Verifica que a consulta pertence ao psicólogo logado.
     Espera um campo `anotacoes` no POST e opcionalmente `next` para redirecionar.
     """
+
     def post(self, request, pk):
         if not request.user.is_psicologo:
             return HttpResponseForbidden("Sua conta precisa ser do tipo psicólogo.")
@@ -549,18 +577,20 @@ class ConsultaAnotacoesUpdateView(DeveSerPsicologoMixin, View):
 
         next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or reverse_lazy("minhas_consultas")
         return redirect(next_url)
-    
+
 
 class MarcarNotificacoesComoLidasView(DeveTerCargoMixin, View):
     """
     Marca todas as notificações do usuário autenticado como lidas.
     """
+
     def post(self, request):
         if not request.user.is_authenticated:
             return HttpResponseForbidden("Você precisa estar autenticado para marcar notificações como lidas.")
 
         Notificacao.objects.filter(destinatario=request.user, lida=False).update(lida=True)
         return redirect(request.META.get("HTTP_REFERER", "/"))
+
 
 class ConsultaChamadaView(DeveTerCargoMixin, DetailView):
     model = Consulta

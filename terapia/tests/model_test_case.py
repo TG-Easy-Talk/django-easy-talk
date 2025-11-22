@@ -102,24 +102,24 @@ class ModelTestCase(TestCase, BaseTestCase):
         cls.consultas = cls.criar_consultas_genericas(cls.paciente_dummy, cls.psicologo_sempre_disponivel)
 
     
+    INTERVALOS_GENERICOS = [
+        (7, time(22, 0), 1, time(2, 0)),
+        (1, time(8, 0), 1, time(12, 0)),
+        (1, time(14, 0), 1, time(18, 0)),
+        (2, time(8, 0), 2, time(12, 0)),
+        (2, time(14, 0), 2, time(18, 0)),
+        (3, time(8, 0), 3, time(12, 0)),
+        (3, time(14, 0), 3, time(18, 0)),
+        (4, time(22, 0), 4, time(23, 0)),
+        (5, time(1, 0), 5, time(3, 0)),
+        (6, time(23, 0), 7, time(12, 0)),
+    ]
+
     @staticmethod
     def get_disponibilidade_generica():
-        intervalos = [
-            (7, time(22, 0), 1, time(2, 0)),
-            (1, time(8, 0), 1, time(12, 0)),
-            (1, time(14, 0), 1, time(18, 0)),
-            (2, time(8, 0), 2, time(12, 0)),
-            (2, time(14, 0), 2, time(18, 0)),
-            (3, time(8, 0), 3, time(12, 0)),
-            (3, time(14, 0), 3, time(18, 0)),
-            (4, time(22, 0), 4, time(23, 0)),
-            (5, time(1, 0), 5, time(3, 0)),
-            (6, time(23, 0), 7, time(12, 0)),
-        ]
-
         disponibilidade = []
 
-        for intervalo in intervalos:
+        for intervalo in ModelTestCase.INTERVALOS_GENERICOS:
             disponibilidade.append(
                 IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
                     dia_semana_inicio_iso=intervalo[0],

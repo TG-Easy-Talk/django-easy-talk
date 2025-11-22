@@ -167,7 +167,7 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
         for fuso in self.fusos_para_teste:
             data_hora_inicio_convertida = timezone.localtime(data_hora_inicio, fuso)
             data_hora_fim_convertida = timezone.localtime(data_hora_fim, fuso)
-            intervalo_igual = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            intervalo_igual = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
                 data_hora_inicio_convertida.isoweekday(),
                 data_hora_inicio_convertida.time(),
                 data_hora_fim_convertida.isoweekday(),
@@ -183,7 +183,7 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                 self.assertTrue(intervalo.tem_as_mesmas_datas_hora_que(intervalo_igual))
 
             data_hora_inicio_convertida_diferente = data_hora_inicio_convertida - timedelta(minutes=1)
-            intervalo_com_data_hora_inicio_diferente = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            intervalo_com_data_hora_inicio_diferente = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
                 data_hora_inicio_convertida_diferente.isoweekday(),
                 data_hora_inicio_convertida_diferente.time(),
                 data_hora_fim_convertida.isoweekday(),
@@ -199,7 +199,7 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                 self.assertFalse(intervalo.tem_as_mesmas_datas_hora_que(intervalo_com_data_hora_inicio_diferente))
 
             data_hora_fim_convertida_diferente = data_hora_fim_convertida + timedelta(minutes=1)
-            intervalo_com_data_hora_fim_diferente = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+            intervalo_com_data_hora_fim_diferente = IntervaloDisponibilidade.objects.inicializar_por_dia_semana_e_hora(
                 data_hora_inicio_convertida.isoweekday(),
                 data_hora_inicio_convertida.time(),
                 data_hora_fim_convertida_diferente.isoweekday(),
@@ -306,7 +306,10 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                     self.assertTrue(tem_algum_intervalo_com_as_mesmas_datas_hora)
 
         for intervalo, matriz in OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON:
-            intervalos = IntervaloDisponibilidade.from_matriz(matriz)
+            # Usar o mesmo fuso do intervalo esperado para gerar os intervalos da matriz
+            fuso = intervalo.data_hora_inicio.tzinfo
+            with timezone.override(fuso):
+                intervalos = IntervaloDisponibilidade.from_matriz(matriz)
 
             with self.subTest(intervalo=str(intervalo), matriz=matriz):
                 self.assertEqual(len(intervalos), 1)

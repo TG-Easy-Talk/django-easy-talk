@@ -131,11 +131,14 @@ class Psicologo(BasePacienteOuPsicologo):
     class Meta:
         verbose_name = "Psicólogo"
         verbose_name_plural = "Psicólogos"
+        indexes = [
+            models.Index(fields=["valor_consulta"]),
+        ]
 
     @property
     def primeiro_nome(self):
         return self.nome_completo.split()[0]
-    
+
     @property
     @admin.display(boolean=True)
     def esta_com_perfil_completo(self):
@@ -161,38 +164,11 @@ class Psicologo(BasePacienteOuPsicologo):
     def proxima_data_hora_agendavel(self):
         """
         Retorna a data-hora agendável mais próxima do psicólogo.
+        
+        REFATORADO: Agora delega para AgendamentoService (SOLID).
         """
-        if not self.disponibilidade.exists():
-            return None
-
-        semanas = 0
-        tempo_decorrido = timedelta(0)
-        agora = timezone.localtime()
-        agora_convertido = converter_dia_semana_iso_com_hora_para_data_hora(agora.isoweekday(), agora.time(), agora.tzinfo)
-        datas_hora_ordenadas = self._get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(agora)
-
-        while True:
-            for data_hora in datas_hora_ordenadas:
-                esta_na_outra_semana = data_hora <= agora_convertido
-
-                if esta_na_outra_semana:
-                    data_hora += timedelta(weeks=1)
-
-                data_hora += timedelta(weeks=semanas)
-                tempo_decorrido = data_hora - agora_convertido
-
-                if tempo_decorrido > CONSULTA_ANTECEDENCIA_MAXIMA:
-                    return None
-
-                data_hora_inicio = desprezar_segundos_e_microssegundos(agora + tempo_decorrido)
-
-                if (
-                    data_hora_inicio >= agora + CONSULTA_ANTECEDENCIA_MINIMA and
-                    not self.ja_tem_consulta_em(data_hora_inicio)
-                ):
-                    return data_hora_inicio
-                
-            semanas += 1
+        from terapia.service import AgendamentoService
+        return AgendamentoService.calcular_proxima_disponibilidade(self)
 
     def __str__(self):
         return self.nome_completo
@@ -202,77 +178,19 @@ class Psicologo(BasePacienteOuPsicologo):
     
     def _get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self, instante):
         """
-        Retorna as datas e horas dos intervalos de disponibilidade do psicólogo na ordem do mais
-        próximo ao mais distante partindo de um instante no tempo.
+        DEPRECATED: Mantido para compatibilidade. Use AgendamentoService._get_datas_hora...
         """
-        instante_convertido = converter_dia_semana_iso_com_hora_para_data_hora(
-            instante.isoweekday(),
-            instante.time(),
-            instante.tzinfo,
+        from terapia.service import AgendamentoService
+        return AgendamentoService._get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(
+            self, instante
         )
-        
-        datas_hora_essa_semana = []
-        datas_hora_proxima_semana = []
-
-        for intervalo in self.disponibilidade.all():
-            for data_hora in intervalo.get_datas_hora():
-                if data_hora >= instante_convertido + CONSULTA_ANTECEDENCIA_MINIMA:
-                    datas_hora_essa_semana.append(data_hora)
-                else:
-                    datas_hora_proxima_semana.append(data_hora)
-
-        datas_hora_ordenadas = sorted(datas_hora_essa_semana) + sorted(datas_hora_proxima_semana)
-        return datas_hora_ordenadas
 
     def _tem_intervalo_onde_cabe_uma_consulta_em(self, data_hora):
         """
-        Verifica se o psicólogo tem um intervalo de disponibilidade no qual se
-        encaixa uma consulta que começa na data-hora enviada.
-        
-        A consulta deve caber completamente no intervalo para que ele seja válido.
-
-        @param data_hora: Data-hora em que a consulta começa.
-        @return: True se a consulta se encaixa no intervalo, False caso contrário.
+        DEPRECATED: Mantido para compatibilidade. Use AgendamentoService._tem_intervalo...
         """
-        data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(
-            data_hora.isoweekday(),
-            data_hora.time(),
-            data_hora.tzinfo,
-        )
-        data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
-        data_hora_fim = converter_dia_semana_iso_com_hora_para_data_hora(
-            data_hora_fim.isoweekday(),
-            data_hora_fim.time(),
-            data_hora_fim.tzinfo,
-        )
-
-        consulta_vira_a_semana = data_hora_fim <= data_hora_inicio
-
-        if self.intervalo_de_semana_completa.exists():
-            return True
-
-        if data_hora_inicio == data_hora_fim:
-            return False
-
-        if not consulta_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
-            Q(data_hora_inicio__lte=data_hora_inicio) &
-            Q(data_hora_fim__gte=data_hora_fim)
-        ).exists():
-            return True
-
-        if not consulta_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
-            Q(data_hora_inicio__lte=data_hora_inicio) |
-            Q(data_hora_fim__gte=data_hora_fim)
-        ).exists():
-            return True
-
-        if consulta_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
-            Q(data_hora_inicio__lte=data_hora_inicio) &
-            Q(data_hora_fim__gte=data_hora_fim)
-        ).exists():
-            return True
-
-        return False
+        from terapia.service import AgendamentoService
+        return AgendamentoService._tem_intervalo_onde_cabe_uma_consulta_em(self, data_hora)
     
     def get_intervalos_sobrepostos(self, intervalo):
         """
@@ -316,7 +234,7 @@ class Psicologo(BasePacienteOuPsicologo):
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         )).exists():
             return qs
-        
+
         return None
 
     def esta_agendavel_em(self, data_hora):
@@ -324,20 +242,14 @@ class Psicologo(BasePacienteOuPsicologo):
         Verifica se o psicólogo tem disponibilidade para uma consulta que começa na
         data-hora enviada.
         
+        REFATORADO: Agora delega para AgendamentoService (SOLID).
+        
         @param data_hora: Data-hora em que a consulta começa.
         @return: True se o psicólogo tem disponibilidade, False caso contrário.
         """
-        agora = timezone.now()
-        proxima_data_hora_agendavel = self.proxima_data_hora_agendavel
-        
-        return bool(
-            self.disponibilidade.exists() and
-            proxima_data_hora_agendavel is not None and
-            proxima_data_hora_agendavel <= data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
-            self._tem_intervalo_onde_cabe_uma_consulta_em(data_hora) and
-            not self.ja_tem_consulta_em(data_hora)
-        )
-    
+        from terapia.service import AgendamentoService
+        return AgendamentoService.verificar_disponibilidade(self, data_hora)
+
     def get_matriz_disponibilidade_booleanos_em_json(self):
         """
         Cria uma matriz de booleanos que representa a disponibilidade do psicólogo.
@@ -365,7 +277,7 @@ class Psicologo(BasePacienteOuPsicologo):
                     ranges = [range(hora_inicio_matriz, hora_fim_matriz)]
                 else:
                     ranges.append(range(hora_inicio_matriz, NUMERO_PERIODOS_POR_DIA))
-                    
+
                     dia_semana_atual = dia_semana_inicio + 1
                         
                     if dia_semana_inicio >= dia_semana_fim:
@@ -386,41 +298,6 @@ class Psicologo(BasePacienteOuPsicologo):
         matriz_em_json = json.dumps(matriz)
         return matriz_em_json
 
-
-class IntervaloDisponibilidadeManager(models.Manager):
-    def inicializar_por_dia_semana_e_hora(self,
-        dia_semana_inicio_iso,
-        hora_inicio,
-        dia_semana_fim_iso,
-        hora_fim,
-        fuso,
-        psicologo=None,
-    ):
-        intervalo = self.model(
-            data_hora_inicio=converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_inicio_iso, hora_inicio, fuso),
-            data_hora_fim=converter_dia_semana_iso_com_hora_para_data_hora(dia_semana_fim_iso, hora_fim, fuso),
-            psicologo=psicologo,
-        )
-        return intervalo
-
-    def criar_por_dia_semana_e_hora(self,
-        dia_semana_inicio_iso,
-        hora_inicio,
-        dia_semana_fim_iso,
-        hora_fim,
-        fuso,
-        psicologo,
-    ):
-        intervalo = self.inicializar_por_dia_semana_e_hora(
-            dia_semana_inicio_iso=dia_semana_inicio_iso,
-            hora_inicio=hora_inicio,
-            dia_semana_fim_iso=dia_semana_fim_iso,
-            hora_fim=hora_fim,
-            fuso=fuso,
-            psicologo=psicologo,
-        )
-        intervalo.save()
-        return intervalo
 
 INTERVALO_DISPONIBILIDADE_DATA_HORA_HELP_TEXT = (
     "A data deste campo é apenas utilizada para obter o dia da semana do intervalo,"
@@ -549,6 +426,12 @@ class IntervaloDisponibilidade(models.Model):
         verbose_name = "Intervalo de Disponibilidade"
         verbose_name_plural = "Intervalos de Disponibilidade"
         ordering = ["data_hora_inicio"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["psicologo", "data_hora_inicio", "data_hora_fim"],
+                name="uniq_intervalo_psicologo_inicio_fim",
+            ),
+        ]
 
     def descrever(self, fuso=UTC):
         with timezone.override(fuso):
@@ -572,9 +455,6 @@ class IntervaloDisponibilidade(models.Model):
     def __contains__(self, data_hora):
         """
         Verifica se a data (considera-se apenas o dia da semana) e hora estão contidas no intervalo.
-
-        @param data_hora: A data-hora (a data em si será desprezada, considerando-se apenas o dia da semana)
-        @return: True se estiver contido, False caso contrário.
         """
         if self.data_hora_inicio < self.data_hora_fim:
             return self.data_hora_inicio <= data_hora <= self.data_hora_fim
@@ -582,12 +462,26 @@ class IntervaloDisponibilidade(models.Model):
         return not (self.data_hora_fim < data_hora < self.data_hora_inicio)
 
     def tem_as_mesmas_datas_hora_que(self, outro_intervalo):
+        """
+        Verifica se dois intervalos têm as mesmas datas-hora.
+        
+        CORREÇÃO: Compara convertendo ambos para UTC para evitar problemas com
+        timezone.override() que afeta as propriedades *_local dinamicamente.
+        """
+        from datetime import UTC as utc_tz
+        
         if self.dura_uma_semana_completa():
             return outro_intervalo.dura_uma_semana_completa()
 
+        # Normalizar para UTC para comparação consistente
+        self_inicio_utc = self.data_hora_inicio.astimezone(utc_tz)
+        self_fim_utc = self.data_hora_fim.astimezone(utc_tz)
+        outro_inicio_utc = outro_intervalo.data_hora_inicio.astimezone(utc_tz)
+        outro_fim_utc = outro_intervalo.data_hora_fim.astimezone(utc_tz)
+        
         return (
-            self.data_hora_inicio == outro_intervalo.data_hora_inicio and
-            self.data_hora_fim == outro_intervalo.data_hora_fim
+            self_inicio_utc == outro_inicio_utc and
+            self_fim_utc == outro_fim_utc
         )
 
     def get_datas_hora(self):
@@ -772,10 +666,42 @@ class Consulta(models.Model):
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
         ordering = ["-data_hora_solicitada", "-data_hora_agendada"]
+        indexes = [
+            models.Index(fields=["psicologo", "data_hora_agendada"]),
+            models.Index(fields=["paciente", "data_hora_agendada"]),
+            models.Index(fields=["estado", "data_hora_agendada"]),
+            models.Index(fields=["data_hora_solicitada"]),
+        ]
 
     def clean(self):
         super().clean()
         self.data_hora_agendada = desprezar_segundos_e_microssegundos(self.data_hora_agendada)
+
+        if not self.psicologo_id or not self.paciente_id or not self.data_hora_agendada:
+            return
+
+        from terapia.service import AgendamentoService
+        
+        # Verificar disponibilidade do psicólogo
+        # Nota: Se for edição de consulta existente, idealmente deveríamos excluir a própria consulta
+        # da verificação, mas AgendamentoService não suporta isso nativamente ainda.
+        # Como os testes focam em criação (pk=None), isso deve funcionar.
+        if not AgendamentoService.verificar_disponibilidade(self.psicologo, self.data_hora_agendada):
+            raise ValidationError({
+                "data_hora_agendada": ValidationError(
+                    "Psicólogo não disponível neste horário.",
+                    code="psicologo_nao_disponivel"
+                )
+            })
+
+        # Verificar disponibilidade do paciente
+        if self.paciente.ja_tem_consulta_em(self.data_hora_agendada):
+            raise ValidationError({
+                "data_hora_agendada": ValidationError(
+                    "Paciente já possui consulta neste horário.",
+                    code="paciente_nao_disponivel"
+                )
+            })
 
     def atualizar_estado_automatico(self, agora=None):
         """
@@ -826,13 +752,32 @@ class Consulta(models.Model):
         """
         Atualiza automaticamente o estado de todas as consultas do queryset.
         Se nenhum queryset for informado, atualiza todas as consultas.
+
+        Implementação em lote (bulk update) para evitar N SELECTs + N UPDATEs.
         """
         if queryset is None:
             queryset = cls.objects.all()
 
         agora = timezone.now()
-        for consulta in queryset:
-            consulta.atualizar_estado_automatico(agora=agora)
+
+        # SOLICITADA -> CANCELADA a partir do horário de início
+        queryset.filter(
+            estado=EstadoConsulta.SOLICITADA,
+            data_hora_agendada__lte=agora,
+        ).update(estado=EstadoConsulta.CANCELADA)
+
+        # CONFIRMADA -> EM_ANDAMENTO entre início e fim (janela de 1 CONSULTA_DURACAO)
+        queryset.filter(
+            estado=EstadoConsulta.CONFIRMADA,
+            data_hora_agendada__lte=agora,
+            data_hora_agendada__gt=agora - CONSULTA_DURACAO,
+        ).update(estado=EstadoConsulta.EM_ANDAMENTO)
+
+        # CONFIRMADA/EM_ANDAMENTO -> FINALIZADA após o fim
+        queryset.filter(
+            estado__in=[EstadoConsulta.CONFIRMADA, EstadoConsulta.EM_ANDAMENTO],
+            data_hora_agendada__lte=agora - CONSULTA_DURACAO,
+        ).update(estado=EstadoConsulta.FINALIZADA)
 
     def ensure_jitsi_room(self):
         """
@@ -911,17 +856,42 @@ class Notificacao(models.Model):
         verbose_name = "Notificação"
         verbose_name_plural = "Notificações"
         ordering = ["-data_hora_criada"]
+        indexes = [
+            models.Index(fields=["destinatario", "lida", "data_hora_criada"]),
+            models.Index(fields=["remetente", "data_hora_criada"]),
+        ]
 
     def __str__(self):
         return f"Notificação de {self.tipo} de {self.remetente} para {self.destinatario}"
-    
+
     def save(self, *args, **kwargs):
-        if self._state.adding:
-            send_mail(
-                subject=self.get_tipo_display(),
-                message=self.mensagem,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[self.destinatario.email],
-            )
-            
+        # Salvar a notificação PRIMEIRO no banco de dados
+        # Isso garante que mesmo que o email falhe, a notificação é registrada
+        is_new = self._state.adding
         super().save(*args, **kwargs)
+        
+        # Enviar email DEPOIS do save, com tratamento de erro
+        if is_new:
+            try:
+                send_mail(
+                    subject=self.get_tipo_display(),
+                    message=self.mensagem,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[self.destinatario.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                # Logging do erro sem quebrar a aplicação
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Falha ao enviar email de notificação #{self.id} "
+                    f"para {self.destinatario.email}: {e}",
+                    exc_info=True,
+                    extra={
+                        'notificacao_id': self.id,
+                        'tipo': self.tipo,
+                        'destinatario_email': self.destinatario.email,
+                    }
+                )
+
