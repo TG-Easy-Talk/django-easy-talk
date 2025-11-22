@@ -1,0 +1,1136 @@
+[
+  {
+    "nome_completo": "Ana Silva",
+    "crp": "01/12345",
+    "sobre_mim": "Olá, sou a Ana. Minha prática é dedicada a ajudar você a compreender e transformar padrões de pensamento que geram ansiedade. Acredito que, com as ferramentas certas da Terapia Cognitivo-Comportamental, podemos construir juntos um caminho de mais leveza e autonomia. Meu objetivo é oferecer um espaço seguro e acolhedor para que você possa enfrentar seus desafios e retomar o controle da sua vida emocional.",
+    "valor_consulta": "150.00",
+    "foto": "psicologos/fotos/psicologo_1.jpeg",
+    "especializacoes": [
+      "TCC",
+      "Ansiedade",
+      "Depressão",
+      "Relaxamento"
+    ],
+    "email": "ana.silva@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "13:00",
+        "fim": "15:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Bruno Santos",
+    "crp": "02/23456",
+    "sobre_mim": "Como psicanalista, convido você a uma jornada de escuta profunda sobre si mesmo. Meu trabalho é oferecer um espaço onde suas angústias, especialmente as ligadas à depressão, possam ser faladas e ressignificadas. Acredito que, ao investigar as raízes do sofrimento, abrimos portas para transformações duradouras. Estou aqui para caminhar ao seu lado nesse processo de descoberta e reconstrução pessoal.",
+    "valor_consulta": "180.00",
+    "foto": "psicologos/fotos/psicologo_2.jpeg",
+    "especializacoes": [
+      "Psicanálise",
+      "Depressão"
+    ],
+    "email": "bruno.santos@example.com",
+    "disponibilidade": [
+      {
+        "dia": 3,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "12:00",
+        "fim": "16:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Carla Oliveira",
+    "crp": "03/34567",
+    "sobre_mim": "Olá! Meu foco é o atendimento a adolescentes, fase de tantas descobertas e desafios. Na abordagem Humanista, valorizo a sua experiência única e busco criar um vínculo de confiança e respeito. Quero te ajudar a entender seus sentimentos, fortalecer sua autoestima e encontrar sua própria voz no mundo. Aqui, você tem um espaço livre de julgamentos para ser quem você realmente é.",
+    "valor_consulta": "160.00",
+    "foto": "psicologos/fotos/psicologo_3.jpeg",
+    "especializacoes": [
+      "Humanista",
+      "Adolescentes",
+      "Existencial",
+      "Angústia"
+    ],
+    "email": "carla.oliveira@example.com",
+    "disponibilidade": [
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "08:00",
+        "fim": "16:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "08:00",
+        "fim": "13:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "12:00",
+        "fim": "13:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Daniela Costa",
+    "crp": "04/45678",
+    "sobre_mim": "Acredito que nossos relacionamentos são fundamentais para nosso bem-estar. Minha atuação na Terapia Sistêmica busca compreender as dinâmicas entre casais e famílias, identificando padrões que geram conflitos. Meu objetivo é facilitar o diálogo, promover a empatia e ajudar vocês a construírem relações mais saudáveis e harmoniosas. Vamos juntos trabalhar para fortalecer os laços que unem vocês.",
+    "valor_consulta": "200.00",
+    "foto": "psicologos/fotos/psicologo_4.jpeg",
+    "especializacoes": [
+      "Sistêmica",
+      "Casal",
+      "Sexualidade",
+      "LGBTQIA+",
+      "Disfunções Sexuais"
+    ],
+    "email": "daniela.costa@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "10:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Elias Souza",
+    "crp": "05/56789",
+    "sobre_mim": "Entendo que a relação com a comida e com o corpo pode ser complexa e dolorosa. Meu trabalho é pautado na Terapia Cognitivo-Comportamental para te ajudar a superar transtornos alimentares. Busco oferecer um tratamento acolhedor e eficaz, focado na mudança de hábitos e na construção de uma autoimagem mais positiva. Estou aqui para te apoiar na reconquista da sua saúde e do seu equilíbrio.",
+    "valor_consulta": "170.00",
+    "foto": "psicologos/fotos/psicologo_5.jpeg",
+    "especializacoes": [
+      "TCC",
+      "Transtornos Alimentares",
+      "Depressão"
+    ],
+    "email": "elias.souza@example.com",
+    "disponibilidade": [
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "17:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Fernanda Lima",
+    "crp": "06/67890",
+    "sobre_mim": "Se você busca alta performance, seja no esporte ou na vida, estou aqui para te ajudar. Com a Psicologia do Esporte, trabalhamos o foco, a motivação e o controle emocional para que você alcance seus objetivos. Acredito que o preparo mental é tão importante quanto o físico. Vamos juntos desenvolver estratégias para que você possa superar seus limites e atingir o seu potencial máximo.",
+    "valor_consulta": "190.00",
+    "foto": "psicologos/fotos/psicologo_6.jpeg",
+    "especializacoes": [
+      "Esportiva",
+      "Coaching",
+      "Motivação"
+    ],
+    "email": "fernanda.lima@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "09:00",
+        "fim": "13:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "10:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Gabriela Rocha",
+    "crp": "07/78901",
+    "sobre_mim": "O universo infantil é encantador e cheio de nuances. Meu trabalho é acolher as crianças e suas famílias, oferecendo um olhar atento às suas necessidades emocionais. Através da ludoterapia e da orientação parental, busco auxiliar no desenvolvimento saudável e na resolução de conflitos. Acredito na parceria com os pais para construir um ambiente de afeto e segurança para os pequenos.",
+    "valor_consulta": "160.00",
+    "foto": "psicologos/fotos/psicologo_7.jpeg",
+    "especializacoes": [
+      "Infantil",
+      "Orientação Parental",
+      "Comunicação Não-Violenta",
+      "Limites"
+    ],
+    "email": "gabriela.rocha@example.com",
+    "disponibilidade": [
+      {
+        "dia": 1,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "16:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "10:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "14:00",
+        "fim": "15:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Hugo Martins",
+    "crp": "08/89012",
+    "sobre_mim": "A vida adulta traz desafios que, por vezes, parecem difíceis de carregar sozinhos. Minha prática em Terapia Cognitivo-Comportamental é voltada para te ajudar a lidar com o estresse, as tomadas de decisão e as mudanças de vida. Ofereço um espaço de escuta ativa e prática, focado em encontrar soluções e promover o seu bem-estar. Vamos trabalhar juntos para construir uma vida mais plena.",
+    "valor_consulta": "150.00",
+    "foto": "psicologos/fotos/psicologo_8.jpeg",
+    "especializacoes": [
+      "TCC",
+      "Adultos"
+    ],
+    "email": "hugo.martins@example.com",
+    "disponibilidade": [
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "12:00",
+        "fim": "14:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Isabela Ferreira",
+    "crp": "09/90123",
+    "sobre_mim": "Lidar com a perda é um dos processos mais dolorosos da vida. Minha abordagem existencial busca oferecer um refúgio seguro para que você possa vivenciar seu luto e encontrar novos significados. Acredito que, mesmo na dor, é possível ressignificar a existência e encontrar caminhos para seguir em frente. Estou aqui para te escutar com empatia e respeito no seu tempo e no seu ritmo.",
+    "valor_consulta": "175.00",
+    "foto": "psicologos/fotos/psicologo_9.jpeg",
+    "especializacoes": [
+      "Luto",
+      "Existencial",
+      "Liberdade",
+      "Perdas"
+    ],
+    "email": "isabela.ferreira@example.com",
+    "disponibilidade": [
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "16:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "09:00",
+        "fim": "13:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "09:00",
+        "fim": "10:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "João Pereira",
+    "crp": "10/01234",
+    "sobre_mim": "Sua carreira é uma parte importante da sua identidade. Meu foco é te ajudar a navegar pelos desafios do mundo do trabalho, seja em transição de carreira, desenvolvimento de liderança ou busca por propósito profissional. Utilizo ferramentas da psicologia organizacional para que você possa alinhar seus objetivos pessoais com sua trajetória profissional, alcançando mais satisfação e sucesso.",
+    "valor_consulta": "220.00",
+    "foto": "psicologos/fotos/psicologo_10.jpeg",
+    "especializacoes": [
+      "Organizacional",
+      "Carreira",
+      "Coaching",
+      "Transição"
+    ],
+    "email": "joao.pereira@example.com",
+    "disponibilidade": [
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "16:00",
+        "fim": "17:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Karina Alves",
+    "crp": "11/12345",
+    "sobre_mim": "A mente humana é fascinante e resiliente. Como neuropsicóloga, meu trabalho é avaliar e reabilitar funções cognitivas, ajudando você a recuperar ou desenvolver habilidades após lesões ou em quadros neurológicos. Busco oferecer um atendimento personalizado, focado na sua qualidade de vida e autonomia. Vamos juntos traçar estratégias para potencializar o funcionamento do seu cérebro.",
+    "valor_consulta": "250.00",
+    "foto": "psicologos/fotos/psicologo_11.jpeg",
+    "especializacoes": [
+      "Neuropsicologia",
+      "Reabilitação",
+      "Memória",
+      "Avaliação"
+    ],
+    "email": "karina.alves@example.com",
+    "disponibilidade": [
+      {
+        "dia": 3,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "14:00",
+        "fim": "17:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Lucas Mendes",
+    "crp": "12/23456",
+    "sobre_mim": "Na Gestalt-terapia, o foco é o aqui e agora. Convido você a ampliar sua consciência sobre si mesmo e sobre como se relaciona com o mundo. Meu objetivo é te ajudar a integrar pensamentos, sentimentos e ações, promovendo um autoconhecimento genuíno. Acredito que, ao nos tornarmos mais conscientes, ganhamos liberdade para fazer escolhas mais autênticas e viver de forma mais plena.",
+    "valor_consulta": "160.00",
+    "foto": "psicologos/fotos/psicologo_12.jpeg",
+    "especializacoes": [
+      "Gestalt",
+      "Autoconhecimento",
+      "Criatividade",
+      "Awareness"
+    ],
+    "email": "lucas.mendes@example.com",
+    "disponibilidade": [
+      {
+        "dia": 5,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "10:00",
+        "fim": "12:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Mariana Costa",
+    "crp": "13/34567",
+    "sobre_mim": "A maternidade é uma jornada intensa de transformações. Meu trabalho é acolher gestantes e mães, oferecendo suporte emocional desde a gravidez até o pós-parto. Entendo os desafios e as belezas desse momento e estou aqui para te ajudar a vivenciar a maternidade com mais leveza e segurança. Vamos juntas cuidar da sua saúde mental e fortalecer o vínculo com seu bebê.",
+    "valor_consulta": "180.00",
+    "foto": "psicologos/fotos/psicologo_13.jpeg",
+    "especializacoes": [
+      "Perinatal",
+      "Maternidade",
+      "Criação com Apego",
+      "Família"
+    ],
+    "email": "mariana.costa@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "11:00",
+        "fim": "14:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "09:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Nicole Ramos",
+    "crp": "14/45678",
+    "sobre_mim": "A recuperação da dependência química é um processo de coragem e perseverança. Utilizo a TCC para te ajudar a identificar gatilhos, desenvolver estratégias de enfrentamento e prevenir recaídas. Meu compromisso é oferecer um tratamento sem julgamentos, focado na sua reabilitação e na reconstrução da sua vida. Acredito na sua capacidade de mudança e estou aqui para te apoiar nessa luta.",
+    "valor_consulta": "170.00",
+    "foto": "psicologos/fotos/psicologo_14.jpeg",
+    "especializacoes": [
+      "Dependência Química",
+      "TCC",
+      "Família",
+      "Conflitos"
+    ],
+    "email": "nicole.ramos@example.com",
+    "disponibilidade": [
+      {
+        "dia": 5,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "10:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "11:00",
+        "fim": "13:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Olivia Dias",
+    "crp": "15/56789",
+    "sobre_mim": "Enfrentar uma doença ou um tratamento médico pode ser assustador. Como psicóloga hospitalar, meu papel é oferecer suporte emocional a pacientes e familiares nesse momento delicado. Busco humanizar o cuidado, ajudando a lidar com o diagnóstico, a adesão ao tratamento e as mudanças na rotina. Estou aqui para te ouvir e te fortalecer, promovendo saúde e bem-estar integral.",
+    "valor_consulta": "190.00",
+    "foto": "psicologos/fotos/psicologo_15.jpeg",
+    "especializacoes": [
+      "Hospitalar",
+      "Saúde",
+      "Psicossomática"
+    ],
+    "email": "olivia.dias@example.com",
+    "disponibilidade": [
+      {
+        "dia": 3,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "13:00",
+        "fim": "16:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Pedro Gomes",
+    "crp": "16/67890",
+    "sobre_mim": "Atuo na interseção entre a Psicologia e o Direito, oferecendo avaliações e acompanhamento em contextos judiciais. Meu trabalho é pautado na ética e na imparcialidade, buscando compreender as complexidades humanas envolvidas em processos legais. Seja em varas de família ou criminais, meu objetivo é contribuir com análises técnicas que auxiliem na tomada de decisões justas e humanizadas.",
+    "valor_consulta": "210.00",
+    "foto": "psicologos/fotos/psicologo_16.jpeg",
+    "especializacoes": [
+      "Jurídica",
+      "Forense",
+      "Perícia",
+      "Mediação"
+    ],
+    "email": "pedro.gomes@example.com",
+    "disponibilidade": [
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "08:00",
+        "fim": "16:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "12:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Quitéria Vargas",
+    "crp": "17/78901",
+    "sobre_mim": "Acredito que a saúde mental não pode ser dissociada do contexto social. Minha prática é voltada para o fortalecimento de vínculos comunitários e a promoção de direitos. Trabalho com grupos e indivíduos, buscando empoderar e dar voz às suas histórias. Meu objetivo é construir, junto com você, caminhos para a superação de vulnerabilidades e para a construção de uma sociedade mais justa.",
+    "valor_consulta": "140.00",
+    "foto": "psicologos/fotos/psicologo_17.jpeg",
+    "especializacoes": [
+      "Social",
+      "Comunitária",
+      "Empoderamento"
+    ],
+    "email": "quiteria.vargas@example.com",
+    "disponibilidade": [
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "10:00",
+        "fim": "15:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "16:00",
+        "fim": "18:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Rafaela Nunes",
+    "crp": "18/89012",
+    "sobre_mim": "Aprender é um processo único para cada indivíduo. Como psicopedagoga, busco compreender como você aprende e quais barreiras podem estar no caminho. Meu trabalho é investigar dificuldades de aprendizagem e desenvolver estratégias personalizadas para superá-las. Acredito que todos têm potencial para aprender e crescer. Vamos juntos descobrir a melhor forma de potenciar seus estudos.",
+    "valor_consulta": "165.00",
+    "foto": "psicologos/fotos/psicologo_18.jpeg",
+    "especializacoes": [
+      "Psicopedagogia",
+      "Aprendizagem",
+      "Dislexia",
+      "Dificuldades Escolares"
+    ],
+    "email": "rafaela.nunes@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "18:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Samara Torres",
+    "crp": "19/90123",
+    "sobre_mim": "A sexualidade e a identidade de gênero são partes fundamentais de quem somos. Ofereço um espaço seguro e afirmativo para que você possa explorar essas questões livre de preconceitos. Meu trabalho é te apoiar na compreensão dos seus desejos, na aceitação do seu corpo e na vivência plena da sua identidade. Estou aqui para te ajudar a construir uma relação mais saudável consigo mesmo.",
+    "valor_consulta": "200.00",
+    "foto": "psicologos/fotos/psicologo_19.jpeg",
+    "especializacoes": [
+      "Sexualidade",
+      "Gênero"
+    ],
+    "email": "samara.torres@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "09:00",
+        "fim": "17:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Mariana Barbosa",
+    "crp": "20/01234",
+    "sobre_mim": "Relacionamentos são construções diárias. Minha especialidade é ajudar casais a reencontrarem a conexão e o diálogo. Trabalho para identificar os nós que impedem a fluidez da relação, promovendo a escuta empática e o respeito mútuo. Acredito que é possível transformar crises em oportunidades de crescimento conjunto. Vamos trabalhar para que o amor e a parceria voltem a ser o centro.",
+    "valor_consulta": "180.00",
+    "foto": "psicologos/fotos/psicologo_20.jpeg",
+    "especializacoes": [
+      "Casal",
+      "Relacionamentos",
+      "Habilidades Sociais",
+      "Família"
+    ],
+    "email": "mariana.barbosa@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "08:00",
+        "fim": "16:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Arthur Müller",
+    "crp": "21/01234",
+    "sobre_mim": "A ansiedade muitas vezes é um sinal de algo que precisa ser ouvido. Na clínica psicanalítica, ofereço um espaço para que você possa falar livremente e investigar os sentidos desse sintoma. Não busco apenas silenciar o desconforto, mas entender sua origem e função na sua vida. Convido você a um trabalho de elaboração pessoal, visando uma vida com mais autonomia e menos sofrimento.",
+    "valor_consulta": "190.00",
+    "foto": "psicologos/fotos/psicologo_21.jpeg",
+    "especializacoes": [
+      "Psicanálise",
+      "Ansiedade",
+      "Relaxamento",
+      "Estresse",
+      "Pânico"
+    ],
+    "email": "arthur.muller@example.com",
+    "disponibilidade": [
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "10:00",
+        "fim": "14:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "10:00",
+        "fim": "11:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Sofia Bianchi",
+    "crp": "22/12345",
+    "sobre_mim": "A depressão pode tirar as cores da vida, mas é possível recuperá-las. Minha abordagem em TCC é prática e colaborativa, focada em reestruturar pensamentos e retomar atividades prazerosas. Trabalho para que você possa quebrar o ciclo da inatividade e do desânimo. Acredito na sua força para superar esse momento e estou aqui para te fornecer as ferramentas necessárias para essa jornada.",
+    "valor_consulta": "210.00",
+    "foto": "psicologos/fotos/psicologo_22.jpeg",
+    "especializacoes": [
+      "TCC",
+      "Depressão",
+      "Estresse"
+    ],
+    "email": "sofia.bianchi@example.com",
+    "disponibilidade": [
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "16:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "08:00",
+        "fim": "12:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "12:00",
+        "fim": "14:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "David Okafor",
+    "crp": "23/23456",
+    "sobre_mim": "Nossa identidade é moldada por muitas histórias, inclusive as sociais e raciais. Meu trabalho é oferecer um espaço de acolhimento para que você possa elaborar questões sobre pertencimento, autoestima e vivências de preconceito. Acredito no poder da escuta para fortalecer quem você é. Vamos juntos construir narrativas que valorizem sua trajetória e promovam sua saúde mental.",
+    "valor_consulta": "180.00",
+    "foto": "psicologos/fotos/psicologo_23.jpeg",
+    "especializacoes": [
+      "Identidade",
+      "Social",
+      "Direitos Humanos",
+      "Vulnerabilidade"
+    ],
+    "email": "david.okafor@example.com",
+    "disponibilidade": [
+      {
+        "dia": 5,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "15:00",
+        "fim": "16:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Aisha Bello",
+    "crp": "24/34567",
+    "sobre_mim": "Ser mulher traz desafios únicos. Minha clínica é um espaço dedicado ao fortalecimento da autoestima e ao empoderamento feminino. Trabalho com questões de gênero, carreira e relacionamentos, buscando ajudar você a reconhecer sua própria potência. Acredito que, ao nos conectarmos com nossa essência, somos capazes de transformar nossas vidas e ocupar os espaços que desejamos.",
+    "valor_consulta": "200.00",
+    "foto": "psicologos/fotos/psicologo_24.jpeg",
+    "especializacoes": [
+      "Empoderamento",
+      "Mulheres",
+      "Ciclos Femininos"
+    ],
+    "email": "aisha.bello@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "16:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "14:00",
+        "fim": "18:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Kenji Tanaka",
+    "crp": "25/45678",
+    "sobre_mim": "O equilíbrio entre alta performance e saúde mental é possível. Meu foco é ajudar profissionais e estudantes a lidarem com a pressão e o estresse do dia a dia. Utilizo técnicas para otimizar seu rendimento sem sacrificar seu bem-estar. Acredito que o sucesso sustentável vem do autoconhecimento e do gerenciamento emocional. Vamos trabalhar para que você alcance seus objetivos com saúde.",
+    "valor_consulta": "220.00",
+    "foto": "psicologos/fotos/psicologo_25.jpeg",
+    "especializacoes": [
+      "Performance",
+      "Estresse",
+      "Esportiva",
+      "Gestão de Estresse"
+    ],
+    "email": "kenji.tanaka@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "10:00",
+        "fim": "12:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "12:00",
+        "fim": "13:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Mei Ling",
+    "crp": "26/56789",
+    "sobre_mim": "Mudar de país ou viver entre culturas é uma experiência enriquecedora, mas desafiadora. Ofereço atendimento em mandarim e português para te apoiar nesse processo de adaptação cultural. Meu objetivo é ser uma ponte, ajudando você a integrar suas vivências e a lidar com a saudade e os choques culturais. Estou aqui para te ajudar a construir um sentimento de lar, onde quer que você esteja.",
+    "valor_consulta": "195.00",
+    "foto": "psicologos/fotos/psicologo_26.jpeg",
+    "especializacoes": [
+      "Bilingue",
+      "Adaptação Cultural",
+      "Saudade"
+    ],
+    "email": "mei.ling@example.com",
+    "disponibilidade": [
+      {
+        "dia": 1,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "13:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "10:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Rahul Sharma",
+    "crp": "27/67890",
+    "sobre_mim": "Em um mundo acelerado, encontrar a calma interior é essencial. Minha prática integra a psicologia com técnicas de Mindfulness para te ajudar a reduzir o estresse e a ansiedade. Ensino você a estar presente no agora, cultivando uma atenção plena e gentil consigo mesmo. Acredito que a paz mental é uma habilidade que pode ser treinada. Vamos juntos aprender a desacelerar e viver melhor.",
+    "valor_consulta": "175.00",
+    "foto": "psicologos/fotos/psicologo_27.jpeg",
+    "especializacoes": [
+      "Mindfulness",
+      "Estresse",
+      "Ansiedade"
+    ],
+    "email": "rahul.sharma@example.com",
+    "disponibilidade": [
+      {
+        "dia": 2,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "10:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Priya Patel",
+    "crp": "28/78901",
+    "sobre_mim": "A família é nosso primeiro vínculo, e nem sempre é fácil. Meu trabalho é mediar conflitos e facilitar a comunicação entre gerações. Busco entender as diferentes perspectivas para construir pontes de entendimento e respeito. Acredito que é possível honrar as tradições e, ao mesmo tempo, permitir o crescimento individual. Estou aqui para apoiar sua família na busca por harmonia.",
+    "valor_consulta": "185.00",
+    "foto": "psicologos/fotos/psicologo_28.jpeg",
+    "especializacoes": [
+      "Família",
+      "Conflitos",
+      "Relacionamentos",
+      "Habilidades Sociais"
+    ],
+    "email": "priya.patel@example.com",
+    "disponibilidade": [
+      {
+        "dia": 3,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "09:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "09:00",
+        "fim": "10:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Carlos Silva",
+    "crp": "29/89012",
+    "sobre_mim": "Homens também precisam cuidar da mente. Ofereço um espaço seguro para que você possa falar sobre suas emoções, pressões e desafios da masculinidade contemporânea. Meu trabalho é desconstruir estigmas e promover uma saúde mental integral. Acredito que a força está em reconhecer a vulnerabilidade e buscar ajuda. Vamos juntos construir uma versão mais saudável e autêntica de você mesmo.",
+    "valor_consulta": "160.00",
+    "foto": "psicologos/fotos/psicologo_29.jpeg",
+    "especializacoes": [
+      "Saúde do Homem",
+      "Masculinidade",
+      "Gênero",
+      "Sexualidade"
+    ],
+    "email": "carlos.silva@example.com",
+    "disponibilidade": [
+      {
+        "dia": 5,
+        "inicio": "10:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "09:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "08:00",
+        "fim": "17:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Juliana Costa",
+    "crp": "30/90123",
+    "sobre_mim": "Amar é um verbo que se conjuga no dia a dia. Minha terapia de casal foca em melhorar a comunicação e a intimidade. Ajudo vocês a identificarem os padrões que desgastam a relação e a desenvolverem novas formas de interação. Acredito que todo relacionamento tem potencial para ser uma fonte de apoio e felicidade. Estou aqui para mediar esse reencontro e fortalecer o vínculo de vocês.",
+    "valor_consulta": "170.00",
+    "foto": "psicologos/fotos/psicologo_30.jpeg",
+    "especializacoes": [
+      "Casal",
+      "Relacionamentos",
+      "Sexualidade"
+    ],
+    "email": "juliana.costa@example.com",
+    "disponibilidade": [
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "13:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "12:00",
+        "fim": "13:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Alejandro Rodriguez",
+    "crp": "31/01234",
+    "sobre_mim": "A experiência de imigrar traz consigo perdas e ganhos. Atendo em espanhol e português, oferecendo um espaço de escuta para quem vive a realidade de ser estrangeiro. Trabalho questões de identidade, saudade e adaptação. Meu objetivo é te ajudar a integrar suas raízes com sua nova vida, transformando o desafio da imigração em uma oportunidade de crescimento e enriquecimento pessoal.",
+    "valor_consulta": "165.00",
+    "foto": "psicologos/fotos/psicologo_31.jpeg",
+    "especializacoes": [
+      "Bilingue",
+      "Imigração",
+      "Identidade",
+      "Social",
+      "Expatriados"
+    ],
+    "email": "alejandro.rodriguez@example.com",
+    "disponibilidade": [
+      {
+        "dia": 4,
+        "inicio": "08:00",
+        "fim": "17:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "08:00",
+        "fim": "16:00"
+      },
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 3,
+        "inicio": "12:00",
+        "fim": "14:00"
+      },
+      {
+        "dia": 5,
+        "inicio": "13:00",
+        "fim": "15:00"
+      }
+    ]
+  },
+  {
+    "nome_completo": "Camila Fernandez",
+    "crp": "32/12345",
+    "sobre_mim": "A felicidade pode ser construída. Com base na Psicologia Positiva, meu trabalho não foca apenas na ausência de doença, mas na promoção do florescimento humano. Ajudo você a identificar suas forças, cultivar emoções positivas e encontrar propósito. Acredito que todos temos recursos internos para viver uma vida plena e significativa. Vamos juntos focar no que há de melhor em você.",
+    "valor_consulta": "175.00",
+    "foto": "psicologos/fotos/psicologo_32.jpeg",
+    "especializacoes": [
+      "Psicologia Positiva",
+      "Bem-estar",
+      "Forças de Caráter"
+    ],
+    "email": "camila.fernandez@example.com",
+    "disponibilidade": [
+      {
+        "dia": 1,
+        "inicio": "08:00",
+        "fim": "18:00"
+      },
+      {
+        "dia": 2,
+        "inicio": "10:00",
+        "fim": "15:00"
+      }
+    ]
+  }
+]
