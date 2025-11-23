@@ -140,5 +140,5 @@ Se o objetivo SMART for alcançado, o payback será de 1 ano.
 
 | Nome                       | GitHub |
 |----------------------------|--------|
-| Vinícius dos Santos Andrade | [GitHub](https://github.com/viniciusandrade-ufsj) |
-| Felipe de Carvalho Santos   | [GitHub](https://github.com/felipearnemom) |
+| Felipe de Carvalho Santos   | [https://github.com/Felipinho5](https://github.com/Felipinho5) |
+| Vinícius dos Santos Andrade | [https://github.com/viniciusdsandrade](https://github.com/viniciusdsandrade) |
