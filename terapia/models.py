@@ -806,11 +806,32 @@ class Consulta(models.Model):
         if inicio <= agora < fim:
             if self.estado == EstadoConsulta.SOLICITADA:
                 novo_estado = EstadoConsulta.CANCELADA
+                for destinatario in (self.paciente.usuario, self.psicologo.usuario):
+                    Notificacao.objects.create(
+                        tipo=TipoNotificacao.CONSULTA_EXPIRADA,
+                        destinatario=destinatario,
+                        consulta=self,
+                    )
+
             elif self.estado == EstadoConsulta.CONFIRMADA:
                 novo_estado = EstadoConsulta.EM_ANDAMENTO
+                for destinatario in (self.paciente.usuario, self.psicologo.usuario):
+                    Notificacao.objects.create(
+                        tipo=TipoNotificacao.CONSULTA_EM_ANDAMENTO,
+                        destinatario=destinatario,
+                        consulta=self,
+                    )
+
         elif agora >= fim:
             if self.estado == EstadoConsulta.SOLICITADA:
                 novo_estado = EstadoConsulta.CANCELADA
+                for destinatario in (self.paciente.usuario, self.psicologo.usuario):
+                    Notificacao.objects.create(
+                        tipo=TipoNotificacao.CONSULTA_EXPIRADA,
+                        destinatario=destinatario,
+                        consulta=self,
+                    )
+
             elif self.estado in (EstadoConsulta.CONFIRMADA, EstadoConsulta.EM_ANDAMENTO):
                 novo_estado = EstadoConsulta.FINALIZADA
 
@@ -869,6 +890,8 @@ class TipoNotificacao(models.TextChoices):
     CONSULTA_CONFIRMADA = "CONSULTA_CONFIRMADA", "Consulta Confirmada"
     CONSULTA_CANCELADA = "CONSULTA_CANCELADA", "Consulta Cancelada"
     CONSULTA_RECUSADA = "CONSULTA_RECUSADA", "Consulta Recusada"
+    CONSULTA_EM_ANDAMENTO = "CONSULTA_EM_ANDAMENTO", "Consulta Em Andamento"
+    CONSULTA_EXPIRADA = "CONSULTA_EXPIRADA", "Consulta Expirada"
 
 class Notificacao(models.Model):
     tipo = models.CharField("Tipo", max_length=50, choices=TipoNotificacao.choices)
@@ -876,13 +899,15 @@ class Notificacao(models.Model):
     data_hora_criada = models.DateTimeField(auto_now_add=True)
     remetente = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        verbose_name="Paciente",
+        verbose_name="Remetente",
         on_delete=models.CASCADE,
         related_name="notificacoes_como_remetente",
+        blank=True,
+        null=True,
     )
     destinatario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        verbose_name="Psicólogo",
+        verbose_name="Destinatário",
         on_delete=models.CASCADE,
         related_name="notificacoes_como_destinatario",
     )
@@ -900,8 +925,16 @@ class Notificacao(models.Model):
             TipoNotificacao.CONSULTA_CONFIRMADA: "O psicólogo {remetente} aceitou sua solicitação de consulta agendada para {data_hora_agendada}.",
             TipoNotificacao.CONSULTA_RECUSADA: "O psicólogo {remetente} recusou sua solicitação de consulta agendada para {data_hora_agendada}.",
             TipoNotificacao.CONSULTA_CANCELADA: "O paciente {remetente} cancelou a consulta agendada para {data_hora_agendada}.",
+            TipoNotificacao.CONSULTA_EM_ANDAMENTO: 'Você tem uma consulta em andamento. Acesse "Minhas Consultas" para ingressar na chamada.',
+            TipoNotificacao.CONSULTA_EXPIRADA: "A solicitação de consulta agendada para {data_hora_agendada} expirou por não ter sido respondida.",
         }
 
+        if self.tipo == TipoNotificacao.CONSULTA_EM_ANDAMENTO:
+            return mensagens[self.tipo]
+        elif self.tipo == TipoNotificacao.CONSULTA_EXPIRADA:
+            return mensagens[self.tipo].format(
+                data_hora_agendada=timezone.localtime(self.consulta.data_hora_agendada).strftime("%d/%m/%Y %H:%M"),
+            )
         return mensagens[self.tipo].format(
             remetente=self.remetente.paciente.nome if self.remetente.is_paciente else self.remetente.psicologo.nome_completo,
             data_hora_agendada=timezone.localtime(self.consulta.data_hora_agendada).strftime("%d/%m/%Y %H:%M"),

@@ -54,7 +54,7 @@
 
                     <td class="align-middle">
                         <div class="d-flex justify-content-end align-items-center gap-2" style="height:100%">
-                            {% if request.user.is_paciente and consulta.estado != 'CANCELADA' and consulta.estado != 'FINALIZADA' %}
+                            {% if request.user.is_paciente and consulta.estado != 'CANCELADA' and consulta.estado != 'EM_ANDAMENTO' and consulta.estado != 'FINALIZADA' %}
                                 <form method="post"
                                     action="{% url 'consulta_cancelar' consulta.pk %}"
                                     class="d-inline m-0"
