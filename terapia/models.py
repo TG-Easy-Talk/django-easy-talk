@@ -92,7 +92,7 @@ class PsicologoCompletosManager(models.Manager):
             Q(especializacoes__isnull=False) &
             Q(disponibilidade__isnull=False)
         )
-    
+
     def get_queryset(self):
         return super().get_queryset().filter(self.get_filtros()).distinct()
 
@@ -135,7 +135,7 @@ class Psicologo(BasePacienteOuPsicologo):
     @property
     def primeiro_nome(self):
         return self.nome_completo.split()[0]
-    
+
     @property
     @admin.display(boolean=True)
     def esta_com_perfil_completo(self):
@@ -144,19 +144,19 @@ class Psicologo(BasePacienteOuPsicologo):
             self.especializacoes.exists() and
             self.disponibilidade.exists()
         )
-    
+
     @property
     def intervalo_de_semana_completa(self):
         return self.disponibilidade.filter(data_hora_inicio=F("data_hora_fim"))
-    
+
     @property
     def intervalos_que_nao_viram_a_semana(self):
         return self.disponibilidade.filter(data_hora_inicio__lt=F("data_hora_fim"))
-    
+
     @property
     def intervalo_que_vira_a_semana(self):
         return self.disponibilidade.filter(data_hora_fim__lt=F("data_hora_inicio"))
-    
+
     @property
     def proxima_data_hora_agendavel(self):
         """
@@ -191,7 +191,7 @@ class Psicologo(BasePacienteOuPsicologo):
                     not self.ja_tem_consulta_em(data_hora_inicio)
                 ):
                     return data_hora_inicio
-                
+
             semanas += 1
 
     def __str__(self):
@@ -199,7 +199,7 @@ class Psicologo(BasePacienteOuPsicologo):
 
     def get_absolute_url(self):
         return reverse("perfil", kwargs={"pk": self.pk})
-    
+
     def _get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(self, instante):
         """
         Retorna as datas e horas dos intervalos de disponibilidade do psicólogo na ordem do mais
@@ -210,7 +210,7 @@ class Psicologo(BasePacienteOuPsicologo):
             instante.time(),
             instante.tzinfo,
         )
-        
+
         datas_hora_essa_semana = []
         datas_hora_proxima_semana = []
 
@@ -228,22 +228,27 @@ class Psicologo(BasePacienteOuPsicologo):
         """
         Verifica se o psicólogo tem um intervalo de disponibilidade no qual se
         encaixa uma consulta que começa na data-hora enviada.
-        
+
         A consulta deve caber completamente no intervalo para que ele seja válido.
 
         @param data_hora: Data-hora em que a consulta começa.
         @return: True se a consulta se encaixa no intervalo, False caso contrário.
         """
+        # Normalize to weekday representation in UTC
+        data_hora_utc = timezone.localtime(data_hora, UTC)
+
         data_hora_inicio = converter_dia_semana_iso_com_hora_para_data_hora(
-            data_hora.isoweekday(),
-            data_hora.time(),
-            data_hora.tzinfo,
+            data_hora_utc.isoweekday(),
+            data_hora_utc.time(),
+            UTC,
         )
-        data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
+
+        # Calculate end time
+        data_hora_fim_temp = data_hora_utc + CONSULTA_DURACAO
         data_hora_fim = converter_dia_semana_iso_com_hora_para_data_hora(
-            data_hora_fim.isoweekday(),
-            data_hora_fim.time(),
-            data_hora_fim.tzinfo,
+            data_hora_fim_temp.isoweekday(),
+            data_hora_fim_temp.time(),
+            UTC,
         )
 
         consulta_vira_a_semana = data_hora_fim <= data_hora_inicio
@@ -254,31 +259,58 @@ class Psicologo(BasePacienteOuPsicologo):
         if data_hora_inicio == data_hora_fim:
             return False
 
-        if not consulta_vira_a_semana and self.intervalos_que_nao_viram_a_semana.filter(
-            Q(data_hora_inicio__lte=data_hora_inicio) &
-            Q(data_hora_fim__gte=data_hora_fim)
-        ).exists():
-            return True
+        # Convert availability intervals to UTC for comparison
+        intervalos_nao_viram = self.intervalos_que_nao_viram_a_semana.all()
+        for intervalo in intervalos_nao_viram:
+            intervalo_inicio_utc = timezone.localtime(intervalo.data_hora_inicio, UTC)
+            intervalo_fim_utc = timezone.localtime(intervalo.data_hora_fim, UTC)
 
-        if not consulta_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
-            Q(data_hora_inicio__lte=data_hora_inicio) |
-            Q(data_hora_fim__gte=data_hora_fim)
-        ).exists():
-            return True
+            intervalo_inicio_normalized = converter_dia_semana_iso_com_hora_para_data_hora(
+                intervalo_inicio_utc.isoweekday(),
+                intervalo_inicio_utc.time(),
+                UTC,
+            )
+            intervalo_fim_normalized = converter_dia_semana_iso_com_hora_para_data_hora(
+                intervalo_fim_utc.isoweekday(),
+                intervalo_fim_utc.time(),
+                UTC,
+            )
 
-        if consulta_vira_a_semana and self.intervalo_que_vira_a_semana.filter(
-            Q(data_hora_inicio__lte=data_hora_inicio) &
-            Q(data_hora_fim__gte=data_hora_fim)
-        ).exists():
-            return True
+            if not consulta_vira_a_semana:
+                if intervalo_inicio_normalized <= data_hora_inicio and intervalo_fim_normalized >= data_hora_fim:
+                    return True
+
+        intervalos_viram = self.intervalo_que_vira_a_semana.all()
+        for intervalo in intervalos_viram:
+            intervalo_inicio_utc = timezone.localtime(intervalo.data_hora_inicio, UTC)
+            intervalo_fim_utc = timezone.localtime(intervalo.data_hora_fim, UTC)
+
+            intervalo_inicio_normalized = converter_dia_semana_iso_com_hora_para_data_hora(
+                intervalo_inicio_utc.isoweekday(),
+                intervalo_inicio_utc.time(),
+                UTC,
+            )
+            intervalo_fim_normalized = converter_dia_semana_iso_com_hora_para_data_hora(
+                intervalo_fim_utc.isoweekday(),
+                intervalo_fim_utc.time(),
+                UTC,
+            )
+
+            if not consulta_vira_a_semana:
+                if intervalo_inicio_normalized <= data_hora_inicio or intervalo_fim_normalized >= data_hora_fim:
+                    return True
+
+            if consulta_vira_a_semana:
+                if intervalo_inicio_normalized <= data_hora_inicio and intervalo_fim_normalized >= data_hora_fim:
+                    return True
 
         return False
-    
+
     def get_intervalos_sobrepostos(self, intervalo):
         """
         Verifica se o psicólogo tem um intervalo de disponibilidade que sobrepõe
         o intervalo enviado como parâmetro.
-        
+
         Se houver qualquer sobreposição, mesmo que parcial, com extremidades inclusas,
         retorna True.
         """
@@ -295,7 +327,7 @@ class Psicologo(BasePacienteOuPsicologo):
 
         if intervalo.data_hora_inicio == intervalo.data_hora_fim and self.disponibilidade.exists():
             return self.disponibilidade.all()
-        
+
         if not intervalo.vira_a_semana() and (qs := intervalos_que_nao_viram_a_semana.filter(
             Q(data_hora_inicio__lte=intervalo.data_hora_fim) &
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
@@ -316,20 +348,20 @@ class Psicologo(BasePacienteOuPsicologo):
             Q(data_hora_fim__gte=intervalo.data_hora_inicio)
         )).exists():
             return qs
-        
+
         return None
 
     def esta_agendavel_em(self, data_hora):
         """
         Verifica se o psicólogo tem disponibilidade para uma consulta que começa na
         data-hora enviada.
-        
+
         @param data_hora: Data-hora em que a consulta começa.
         @return: True se o psicólogo tem disponibilidade, False caso contrário.
         """
         agora = timezone.now()
         proxima_data_hora_agendavel = self.proxima_data_hora_agendavel
-        
+
         return bool(
             self.disponibilidade.exists() and
             proxima_data_hora_agendavel is not None and
@@ -337,7 +369,7 @@ class Psicologo(BasePacienteOuPsicologo):
             self._tem_intervalo_onde_cabe_uma_consulta_em(data_hora) and
             not self.ja_tem_consulta_em(data_hora)
         )
-    
+
     def get_matriz_disponibilidade_booleanos_em_json(self):
         """
         Cria uma matriz de booleanos que representa a disponibilidade do psicólogo.
@@ -365,9 +397,9 @@ class Psicologo(BasePacienteOuPsicologo):
                     ranges = [range(hora_inicio_matriz, hora_fim_matriz)]
                 else:
                     ranges.append(range(hora_inicio_matriz, NUMERO_PERIODOS_POR_DIA))
-                    
+
                     dia_semana_atual = dia_semana_inicio + 1
-                        
+
                     if dia_semana_inicio >= dia_semana_fim:
                         dia_semana_atual -= 7
 
@@ -468,8 +500,8 @@ class IntervaloDisponibilidadeManager(models.Manager):
         )
         intervalo.save()
         return intervalo
-    
-    
+
+
 INTERVALO_DISPONIBILIDADE_DATA_HORA_VALIDADORES = [
     validate_intervalo_disponibilidade_data_hora_range,
     validate_divisivel_por_duracao_consulta,
@@ -497,7 +529,7 @@ class IntervaloDisponibilidade(models.Model):
     @property
     def data_hora_inicio_local(self):
         return timezone.localtime(self.data_hora_inicio)
-    
+
     @property
     def data_hora_fim_local(self):
         return timezone.localtime(self.data_hora_fim)
@@ -505,19 +537,19 @@ class IntervaloDisponibilidade(models.Model):
     @property
     def dia_semana_inicio_local(self):
         return self.data_hora_inicio_local.isoweekday()
-    
+
     @property
     def dia_semana_fim_local(self):
         return self.data_hora_fim_local.isoweekday()
-    
+
     @property
     def hora_inicio_local(self):
         return self.data_hora_inicio_local.time()
-    
+
     @property
     def hora_fim_local(self):
         return self.data_hora_fim_local.time()
-    
+
     dias_semana_iso = {
         1: "Segunda",
         2: "Terça",
@@ -531,11 +563,11 @@ class IntervaloDisponibilidade(models.Model):
     @property
     def nome_dia_semana_inicio_local(self):
         return self.dias_semana_iso[self.dia_semana_inicio_local]
-    
+
     @property
     def nome_dia_semana_fim_local(self):
         return self.dias_semana_iso[self.dia_semana_fim_local]
-    
+
     @property
     def duracao(self):
         duracao = self.data_hora_fim - self.data_hora_inicio
@@ -562,7 +594,7 @@ class IntervaloDisponibilidade(models.Model):
         Verifica se o intervalo começa em uma semana e termina em outra.
         """
         return self.data_hora_fim <= self.data_hora_inicio
-    
+
     def dura_uma_semana_completa(self):
         """
         Verifica se o intervalo dura exatamente uma semana completa.
@@ -585,9 +617,19 @@ class IntervaloDisponibilidade(models.Model):
         if self.dura_uma_semana_completa():
             return outro_intervalo.dura_uma_semana_completa()
 
+        # Compare using weekday and time components only (timezone-agnostic)
+        self_inicio_utc = timezone.localtime(self.data_hora_inicio, UTC)
+        self_fim_utc = timezone.localtime(self.data_hora_fim, UTC)
+        outro_inicio_utc = timezone.localtime(outro_intervalo.data_hora_inicio, UTC)
+        outro_fim_utc = timezone.localtime(outro_intervalo.data_hora_fim, UTC)
+
         return (
-            self.data_hora_inicio == outro_intervalo.data_hora_inicio and
-            self.data_hora_fim == outro_intervalo.data_hora_fim
+                self_inicio_utc.isoweekday() == outro_inicio_utc.isoweekday() and
+                self_inicio_utc.hour == outro_inicio_utc.hour and
+                self_inicio_utc.minute == outro_inicio_utc.minute and
+                self_fim_utc.isoweekday() == outro_fim_utc.isoweekday() and
+                self_fim_utc.hour == outro_fim_utc.hour and
+                self_fim_utc.minute == outro_fim_utc.minute
         )
 
     def get_datas_hora(self):
@@ -602,7 +644,7 @@ class IntervaloDisponibilidade(models.Model):
         while True:
             datas_hora.append(data_hora_atual)
             data_hora_atual = data_hora_atual + CONSULTA_DURACAO
-            
+
             if data_hora_atual > converter_dia_semana_iso_com_hora_para_data_hora(7, time(23, 59), data_hora_atual.tzinfo):
                 data_hora_atual -= timedelta(weeks=1)
                 virou_a_semana = True
@@ -621,7 +663,7 @@ class IntervaloDisponibilidade(models.Model):
         if self.data_hora_inicio is not None and self.data_hora_fim is not None:
             self.data_hora_inicio = desprezar_segundos_e_microssegundos(self.data_hora_inicio)
             self.data_hora_fim = desprezar_segundos_e_microssegundos(self.data_hora_fim)
-            
+
             if hasattr(self, "psicologo") and self.psicologo:
                 if intervalos_sobrepostos := self.psicologo.get_intervalos_sobrepostos(self):
                     intervalos_str = ""
@@ -643,7 +685,7 @@ class IntervaloDisponibilidade(models.Model):
                         params={"intervalos": intervalos_str},
                         code="sobreposicao_intervalos",
                     )
-                
+
     @staticmethod
     def from_matriz(matriz_disponibilidade_booleanos):
         """
@@ -717,14 +759,14 @@ class IntervaloDisponibilidade(models.Model):
 
                 if i >= len(m):
                     break
-                
+
                 j += 1
-      
+
             j = 0
             i += 1
 
         return disponibilidade
-                        
+
 
 class EstadoConsulta(models.TextChoices):
     SOLICITADA = "SOLICITADA", "Solicitada"
@@ -772,10 +814,58 @@ class Consulta(models.Model):
         verbose_name = "Consulta"
         verbose_name_plural = "Consultas"
         ordering = ["-data_hora_solicitada", "-data_hora_agendada"]
+        indexes = [
+            # Filtragens por estado + janela de tempo (cron, dashboards)
+            models.Index(
+                fields=['estado', 'data_hora_agendada'],
+                name='consulta_estado_dh_idx',
+            ),
+            # Conflitos de agenda e listagens por paciente em função do horário
+            models.Index(
+                fields=['paciente', 'data_hora_agendada'],
+                name='consulta_paciente_dh_idx',
+            ),
+            # Conflitos de agenda e listagens por psicólogo em função do horário
+            models.Index(
+                fields=['psicologo', 'data_hora_agendada'],
+                name='consulta_psicologo_dh_idx',
+            ),
+        ]
 
     def clean(self):
         super().clean()
         self.data_hora_agendada = desprezar_segundos_e_microssegundos(self.data_hora_agendada)
+
+        # Validar se o psicólogo está disponível no horário
+        if self.psicologo and self.data_hora_agendada:
+            if not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
+                raise ValidationError({
+                    'data_hora_agendada': ValidationError(
+                        'O psicólogo não está disponível neste horário.',
+                        code='psicologo_nao_disponivel'
+                    )
+                })
+
+        # Validar se o paciente está disponível no horário (não tem outra consulta)
+        if self.paciente and self.data_hora_agendada:
+            consultas_conflitantes = Consulta.objects.filter(
+                paciente=self.paciente,
+                data_hora_agendada=self.data_hora_agendada
+            ).exclude(
+                estado__in=[EstadoConsulta.CANCELADA, EstadoConsulta.FINALIZADA]
+            )
+
+            # Excluir a própria consulta se estiver editando
+            if self.pk:
+                consultas_conflitantes = consultas_conflitantes.exclude(pk=self.pk)
+
+            if consultas_conflitantes.exists():
+                raise ValidationError({
+                    'data_hora_agendada': ValidationError(
+                        'O paciente já tem uma consulta agendada neste horário.',
+                        code='paciente_nao_disponivel'
+                    )
+                })
 
     def atualizar_estado_automatico(self, agora=None):
         """
@@ -947,7 +1037,7 @@ class Notificacao(models.Model):
 
     def __str__(self):
         return f"Notificação de {self.tipo} de {self.remetente} para {self.destinatario}"
-    
+
     def save(self, *args, **kwargs):
         if self._state.adding:
             send_mail(
@@ -956,5 +1046,5 @@ class Notificacao(models.Model):
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[self.destinatario.email],
             )
-            
+
         super().save(*args, **kwargs)

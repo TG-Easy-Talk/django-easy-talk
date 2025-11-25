@@ -306,7 +306,9 @@ class IntervaloDisponibilidadeModelTest(ModelTestCase):
                     self.assertTrue(tem_algum_intervalo_com_as_mesmas_datas_hora)
 
         for intervalo, matriz in OUTRAS_MATRIZES_DISPONIBILIDADE_BOOLEANOS_EM_JSON:
-            intervalos = IntervaloDisponibilidade.from_matriz(matriz)
+            # Usar UTC para consistência com os intervalos esperados que foram criados em UTC
+            with timezone.override(UTC):
+                intervalos = IntervaloDisponibilidade.from_matriz(matriz)
 
             with self.subTest(intervalo=str(intervalo), matriz=matriz):
                 self.assertEqual(len(intervalos), 1)
