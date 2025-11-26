@@ -1,4 +1,5 @@
 from pathlib import Path
+from decouple import config
 from django.urls import reverse_lazy
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -8,9 +9,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$c=8t#fntxw=r42q0#^9avu-l)m@9x3iigcf^+k9)(v!li^j$3'
+SECRET_KEY = config('SECRET_KEY')
 
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
+
+LOGIN_ATTEMPTS = config('LOGIN_ATTEMPTS', default=5, cast=int)
+REGISTER_ATTEMPTS = config('REGISTER_ATTEMPTS', default=3, cast=int)
+
+LOGIN_RATE_LIMIT = f"{LOGIN_ATTEMPTS}/h"
+REGISTER_RATE_LIMIT = f"{REGISTER_ATTEMPTS}/h"
 
 ALLOWED_HOSTS = [
     '98.84.189.25'

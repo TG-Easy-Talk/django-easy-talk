@@ -15,6 +15,9 @@ from django.views import View
 from django.views.generic import FormView, ListView, TemplateView, UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import ContextMixin, FormMixin, SingleObjectMixin
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from .models import Notificacao
 
 from terapia.constantes import (
@@ -92,6 +95,7 @@ class CadastroEscolhaView(TemplateView, FluxoAlternativoLoginContextMixin):
     template_name = 'conta/cadastro_escolha.html'
 
 
+@method_decorator(ratelimit(key='ip', rate=settings.REGISTER_RATE_LIMIT, method='POST', block=True), name='post')
 class CadastroView(TemplateView, FluxoAlternativoLoginContextMixin):
     template_name = 'conta/cadastro.html'
 
@@ -172,6 +176,7 @@ class PsicologoCadastroView(CadastroView):
         return context
 
 
+@method_decorator(ratelimit(key='ip', rate=settings.LOGIN_RATE_LIMIT, method='POST', block=True), name='post')
 class CustomLoginView(LoginView):
     """
     Exibe o formulário de login e, em caso de sucesso,
