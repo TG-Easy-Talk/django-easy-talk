@@ -973,6 +973,18 @@ class Consulta(models.Model):
             f"({timezone.get_current_timezone_name()}) com "
             f"{self.paciente.nome} e {self.psicologo.nome_completo}"
         )
+    
+    def save(self, *args, **kwargs):
+        pk = self.pk
+        consulta = super().save(*args, **kwargs)
+        if pk is None:
+            Notificacao.objects.create(
+                tipo=TipoNotificacao.CONSULTA_SOLICITADA,
+                remetente=self.paciente.usuario,
+                destinatario=self.psicologo.usuario,
+                consulta=self,
+            )
+        return consulta
 
 
 class TipoNotificacao(models.TextChoices):

@@ -41,6 +41,12 @@ class="navbar {% if request.user.is_anonymous %} navbar-expand-lg {% else %} nav
                             <a class="d-block d-sm-none nav-link me-lg-5 text-nowrap text-warning" href="#" onclick="logout()">Encerrar sessão</a>
                         </li>
                         <li class="nav-item m-0 mx-lg-4">
+                            <style>
+                                .notificacoes-popover {
+                                    max-height: 50vh;
+                                    overflow-y: auto;
+                                }
+                            </style>
                             <button id="notificationBell" class="btn btn-dark position-relative" type="button"
                                 data-bs-toggle="popover" data-bs-html="true" data-bs-placement="bottom"
                                 data-bs-custom-class="notificacoes-popover"
