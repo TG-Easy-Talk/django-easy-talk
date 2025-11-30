@@ -1,49 +1,49 @@
 <style>
     .grade-intervalos {
         display: grid;
-        grid-template-columns: repeat({{ NUMERO_PERIODOS_POR_DIA|add:"1" }}, 1fr);
+        grid-template-columns: repeat(25, 1fr);
     }
 
-    .grade-intervalos > *[data-grade] {
+    .grade-intervalos>*[data-grade] {
         cursor: pointer;
         min-height: 1rem;
     }
 
     .prevent-select {
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10 and IE 11 */
-        user-select: none; /* Standard syntax */
+        -webkit-user-select: none;
+        /* Safari */
+        -ms-user-select: none;
+        /* IE 10 and IE 11 */
+        user-select: none;
+        /* Standard syntax */
     }
 </style>
 
-<div class="w-100 overflow-x-auto overflow-x-lg-visible">
-    <div draggable="false" class="grade-intervalos mt-5" style="min-width: 870px;">
+<div class="w-100 overflow-x-auto text-center">
+    <div draggable="false" class="grade-intervalos mt-5 mx-auto text-start"
+        style="min-width: 870px; width: max-content;">
         {% for _ in "1234567" %}
-            <div draggable="false" class="text-end font-monospace me-3">
-                {% if forloop.counter|divisibleby:"7" %}
-                    Sáb
-                {% elif forloop.counter|divisibleby:"6" %}
-                    Sex
-                {% elif forloop.counter|divisibleby:"5" %}
-                    Qui
-                {% elif forloop.counter|divisibleby:"4" %}
-                    Qua
-                {% elif forloop.counter|divisibleby:"3" %}
-                    Ter
-                {% elif forloop.counter|divisibleby:"2" %}
-                    Seg
-                {% else %}
-                    Dom
-                {% endif %}
-            </div>
+        <div draggable="false" class="text-end font-monospace me-3">
+            {% if forloop.counter|divisibleby:"7" %}
+            Sáb
+            {% elif forloop.counter|divisibleby:"6" %}
+            Sex
+            {% elif forloop.counter|divisibleby:"5" %}
+            Qui
+            {% elif forloop.counter|divisibleby:"4" %}
+            Qua
+            {% elif forloop.counter|divisibleby:"3" %}
+            Ter
+            {% elif forloop.counter|divisibleby:"2" %}
+            Seg
+            {% else %}
+            Dom
+            {% endif %}
+        </div>
 
-            {% for _ in numero_periodos_por_dia_range %}
-                <div
-                    data-grade
-                    data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
-                    data-linha="{{ forloop.parentloop.counter0 }}"
-                    data-coluna="{{ forloop.counter0 }}"
-                    class="position-relative border-bottom border-primary
+        {% for _ in numero_periodos_por_dia_range %}
+        <div data-grade data-selecionado="{% if forloop.counter|divisibleby:'4' %}true{% else %}false{% endif %}"
+            data-linha="{{ forloop.parentloop.counter0 }}" data-coluna="{{ forloop.counter0 }}" class="position-relative border-bottom border-primary
                         {% if forloop.parentloop.first %}
                             border-top
                         {% endif %}
@@ -53,21 +53,22 @@
                         {% endif %}
 
                         border-end
-                    "
-                >
-                    {% if forloop.parentloop.first %}
-                        <div draggable="false" class="font-monospace position-absolute translate-middle" style="top: -100%; cursor: default;">
-                            {{ forloop.counter0 }}h
-                        </div>
+                    ">
+            {% if forloop.parentloop.first %}
+            <div draggable="false" class="font-monospace position-absolute translate-middle"
+                style="top: -100%; cursor: default;">
+                {{ forloop.counter0 }}h
+            </div>
 
-                        {% if forloop.last %}
-                            <div draggable="false" class="font-monospace position-absolute translate-middle start-100" style="top: -100%; cursor: default;">
-                                {{ forloop.counter }}h
-                            </div>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            {% endfor %}
+            {% if forloop.last %}
+            <div draggable="false" class="font-monospace position-absolute translate-middle start-100"
+                style="top: -100%; cursor: default;">
+                {{ forloop.counter }}h
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endfor %}
         {% endfor %}
     </div>
 </div>

@@ -25,41 +25,33 @@
 {% endif %}
 
 {% if is_editing %}
-<form method="post">
-    {% csrf_token %}
-    {{ form.semana_referencia }}
+{{ form.semana_referencia }}
 
-    <p class="mb-2">Disponibilidade nesta semana:</p>
+<p class="mb-2">Disponibilidade nesta semana:</p>
 
-    <div class="mb-4">
-        {{ form.disponibilidade }}
+<div class="mb-4">
+    {{ form.disponibilidade }}
+</div>
+
+<div class="form-check mb-4">
+    {{ form.replicar_semanas }}
+    <label class="form-check-label" for="{{ form.replicar_semanas.id_for_label }}">
+        Replicar para todas as semanas futuras
+    </label>
+    <div class="form-text text-muted small mt-1">
+        Se marcado, esta disponibilidade se tornará o novo padrão para todas as semanas seguintes.
+        Semanas anteriores não serão afetadas.
     </div>
-
-    <div class="card bg-light mb-4">
-        <div class="card-body">
-            <h6 class="card-title fw-bold">Replicação</h6>
-            <div class="form-check">
-                {{ form.replicar_semanas }}
-                <label class="form-check-label" for="{{ form.replicar_semanas.id_for_label }}">
-                    Replicar para todas as semanas futuras
-                </label>
-                <div class="form-text text-muted small mt-1">
-                    Se marcado, esta disponibilidade se tornará o novo padrão para todas as semanas seguintes.
-                    Semanas anteriores não serão afetadas.
-                </div>
-            </div>
-            {% if form.replicar_semanas.errors %}
-            <div class="text-danger small mt-1">
-                {{ form.replicar_semanas.errors }}
-            </div>
-            {% endif %}
-        </div>
+    {% if form.replicar_semanas.errors %}
+    <div class="text-danger small mt-1">
+        {{ form.replicar_semanas.errors }}
     </div>
+    {% endif %}
+</div>
 
-    <button type="submit" class="w-100 btn text-white btn-primary">
-        Salvar Disponibilidade
-    </button>
-</form>
+<button type="submit" class="w-100 btn text-white btn-primary">
+    Salvar Disponibilidade
+</button>
 {% else %}
 <p class="mb-2">Disponibilidade nesta semana:</p>
 
