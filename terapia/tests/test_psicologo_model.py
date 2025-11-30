@@ -209,12 +209,17 @@ class PsicologoModelTest(ModelTestCase):
         )
         
         from terapia.models import IntervaloDisponibilidadeTemplate
+        
+        # Ensure we use UTC components regardless of system timezone
+        inicio_utc = intervalo.data_hora_inicio.astimezone(UTC)
+        fim_utc = intervalo.data_hora_fim.astimezone(UTC)
+
         IntervaloDisponibilidadeTemplate.objects.create(
             psicologo=psicologo_com_agenda_lotada,
-            dia_semana_inicio_iso=intervalo.dia_semana_inicio_local,
-            hora_inicio=intervalo.hora_inicio_local,
-            dia_semana_fim_iso=intervalo.dia_semana_fim_local,
-            hora_fim=intervalo.hora_fim_local,
+            dia_semana_inicio_iso=inicio_utc.isoweekday(),
+            hora_inicio=inicio_utc.time(),
+            dia_semana_fim_iso=fim_utc.isoweekday(),
+            hora_fim=fim_utc.time(),
         )
 
         with freeze_time(uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
@@ -1046,6 +1051,15 @@ class PsicologoModelTest(ModelTestCase):
                 descricao="Cálculo de uma data-hora de início válida a partir de um intervalo existente do psicólogo",
             )
 
+            # Delete corresponding template as well
+            inicio_utc = intervalo.data_hora_inicio.astimezone(UTC)
+            from terapia.models import IntervaloDisponibilidadeTemplate
+            IntervaloDisponibilidadeTemplate.objects.filter(
+                psicologo=self.psicologo_completo,
+                dia_semana_inicio_iso=inicio_utc.isoweekday(),
+                hora_inicio=inicio_utc.time()
+            ).delete()
+            
             intervalo.delete()
 
             fazer_assertions_para_cada_fuso(
@@ -1057,6 +1071,7 @@ class PsicologoModelTest(ModelTestCase):
             )
 
             intervalos_do_psicologo.delete()
+            self.psicologo_completo.disponibilidade_template.all().delete()
 
             fazer_assertions_para_cada_fuso(
                 metodo_assertion=self.assertFalse,

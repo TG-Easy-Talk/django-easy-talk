@@ -16,7 +16,7 @@ class SecurityTests(TestCase):
             self.assertNotEqual(response.status_code, 403, f"Request {i+1} blocked prematurely")
 
         response = self.client.post(url, {'username': 'test', 'password': 'password'})
-        self.assertEqual(response.status_code, 403, "6th login request should be blocked")
+        self.assertEqual(response.status_code, 429, "6th login request should be blocked")
 
     def test_registration_rate_limit(self):
         # Limit is 3/h.
@@ -29,4 +29,4 @@ class SecurityTests(TestCase):
                 self.assertNotEqual(response.status_code, 403, f"Request {i+1} to {url} blocked prematurely")
 
             response = self.client.post(url, {})
-            self.assertEqual(response.status_code, 403, f"4th request to {url} should be blocked")
+            self.assertEqual(response.status_code, 429, f"4th request to {url} should be blocked")

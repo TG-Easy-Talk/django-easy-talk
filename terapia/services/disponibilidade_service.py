@@ -124,6 +124,7 @@ class DisponibilidadeService:
             datetime.combine(inicio, template.hora_inicio),
             fuso_referencia
         )
+        
         data_hora_fim = timezone.make_aware(
             datetime.combine(fim, template.hora_fim),
             fuso_referencia
@@ -264,9 +265,9 @@ class DisponibilidadeService:
         intervalos = IntervaloDisponibilidade.from_matriz(matriz_disponibilidade)
         overrides = []
         
-        # Use UTC as reference timezone for overrides to ensure consistency
-        from datetime import UTC
-        fuso_referencia = UTC
+        # Use current timezone as reference to correctly interpret local times
+        from django.utils import timezone
+        fuso_referencia = timezone.get_current_timezone()
         
         for intervalo in intervalos:
             # Calculate actual dates based on week start + weekday offset

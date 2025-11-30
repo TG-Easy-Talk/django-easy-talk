@@ -6,8 +6,9 @@ from terapia.forms import (
     PsicologoFiltrosForm,
     ConsultaFiltrosForm,
 )
-from terapia.models import IntervaloDisponibilidade, Consulta
+from terapia.models import IntervaloDisponibilidade, Consulta, IntervaloDisponibilidadeOverride
 from .model_test_case import ModelTestCase
+from django.utils import timezone
 
 class FormsTestCase(ModelTestCase):
     def test_psicologo_disponibilidade_change_form_valid(self):
@@ -33,14 +34,17 @@ class FormsTestCase(ModelTestCase):
         self.assertTrue(form.is_valid())
         psicologo = form.save()
         
-        intervalos = IntervaloDisponibilidade.objects.filter(psicologo=psicologo)
-        self.assertTrue(intervalos.exists())
+        overrides = IntervaloDisponibilidadeOverride.objects.filter(psicologo=psicologo)
+        self.assertTrue(overrides.exists())
         
         # Deve ter criado um intervalo na segunda-feira
-        intervalo = intervalos.first()
-        self.assertEqual(intervalo.dia_semana_inicio_local, 1)
-        self.assertEqual(intervalo.hora_inicio_local.hour, 8)
-        self.assertEqual(intervalo.hora_fim_local.hour, 12)
+        override = overrides.first()
+        inicio_local = timezone.localtime(override.data_hora_inicio)
+        fim_local = timezone.localtime(override.data_hora_fim)
+        
+        self.assertEqual(inicio_local.isoweekday(), 1)
+        self.assertEqual(inicio_local.hour, 8)
+        self.assertEqual(fim_local.hour, 12)
 
     def test_consulta_creation_form_valid(self):
         """Testa se o formulário de criação de consulta associa corretamente paciente e psicólogo."""

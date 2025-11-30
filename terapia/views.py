@@ -349,7 +349,7 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
         form.save()
         Notificacao.objects.create(
             tipo=TipoNotificacao.CONSULTA_SOLICITADA,
-            remetente=form.paciente.usuario,
+            remetente=form.instance.paciente.usuario,
             destinatario=form.psicologo.usuario,
             consulta=form.instance,
         )

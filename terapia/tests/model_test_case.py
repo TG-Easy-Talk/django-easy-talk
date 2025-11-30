@@ -6,6 +6,7 @@ from terapia.models import (
     Paciente,
     Psicologo,
     IntervaloDisponibilidade,
+    IntervaloDisponibilidadeTemplate,
     Consulta,
 )
 from django.contrib.auth import get_user_model
@@ -95,6 +96,16 @@ class ModelTestCase(TestCase, BaseTestCase):
             valor_consulta=100.00,
         )
         cls.psicologo_sempre_disponivel.especializacoes.set(cls.especializacoes)
+        
+        # Create template for 24/7 availability
+        IntervaloDisponibilidadeTemplate.objects.create(
+            psicologo=cls.psicologo_sempre_disponivel,
+            dia_semana_inicio_iso=1,
+            hora_inicio=time(0, 0),
+            dia_semana_fim_iso=7,
+            hora_fim=time(23, 59, 59, 999999),
+        )
+
         cls.intervalo_de_semana_completa = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
             1, time(0, 0), 1, time(0, 0), UTC, cls.psicologo_sempre_disponivel,
         )
@@ -141,12 +152,16 @@ class ModelTestCase(TestCase, BaseTestCase):
             intervalo.save()
             
             # Create corresponding template for new architecture
+            # Ensure we use UTC components regardless of system timezone
+            inicio_utc = intervalo.data_hora_inicio.astimezone(UTC)
+            fim_utc = intervalo.data_hora_fim.astimezone(UTC)
+
             IntervaloDisponibilidadeTemplate.objects.create(
                 psicologo=psicologo,
-                dia_semana_inicio_iso=intervalo.dia_semana_inicio_local,
-                hora_inicio=intervalo.hora_inicio_local,
-                dia_semana_fim_iso=intervalo.dia_semana_fim_local,
-                hora_fim=intervalo.hora_fim_local,
+                dia_semana_inicio_iso=inicio_utc.isoweekday(),
+                hora_inicio=inicio_utc.time(),
+                dia_semana_fim_iso=fim_utc.isoweekday(),
+                hora_fim=fim_utc.time(),
             )
 
     @staticmethod

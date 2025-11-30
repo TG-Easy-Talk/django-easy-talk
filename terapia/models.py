@@ -167,7 +167,7 @@ class Psicologo(BasePacienteOuPsicologo):
         """
         from terapia.services import DisponibilidadeService
         
-        agora = timezone.localtime()
+        agora = timezone.now()
         data_limite = agora + CONSULTA_ANTECEDENCIA_MAXIMA
         
         # Iterate week by week
@@ -178,13 +178,13 @@ class Psicologo(BasePacienteOuPsicologo):
         while semana_iter <= semana_limite:
             intervalos = DisponibilidadeService.obter_intervalos_para_semana(self, semana_iter)
             
-            # Normalize and sort
+            # Sort intervals by start time
             lista_intervalos = []
-            for i in intervalos:
-                if isinstance(i, dict):
-                    lista_intervalos.append((i['data_hora_inicio'], i['data_hora_fim']))
+            for intervalo in intervalos:
+                if isinstance(intervalo, dict):
+                    lista_intervalos.append((intervalo['data_hora_inicio'], intervalo['data_hora_fim']))
                 else:
-                    lista_intervalos.append((i.data_hora_inicio, i.data_hora_fim))
+                    lista_intervalos.append((intervalo.data_hora_inicio, intervalo.data_hora_fim))
             
             lista_intervalos.sort(key=lambda x: x[0])
             
@@ -385,7 +385,9 @@ class Psicologo(BasePacienteOuPsicologo):
             return False
             
         # Check availability intervals for that specific week
-        intervalos = DisponibilidadeService.obter_intervalos_para_semana(self, data_hora)
+        # Use UTC to ensure consistency with template definition
+        data_hora_utc = data_hora.astimezone(UTC)
+        intervalos = DisponibilidadeService.obter_intervalos_para_semana(self, data_hora_utc)
         
         data_hora_fim_consulta = data_hora + CONSULTA_DURACAO
         
