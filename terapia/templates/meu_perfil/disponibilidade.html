@@ -55,8 +55,7 @@
 {% else %}
 <p class="mb-2">Disponibilidade nesta semana:</p>
 
-{% include "geral/tabela_disponibilidade.html" with var_name='dt2' rounded='rounded-0'
-CONSULTA_DURACAO_MINUTOS=CONSULTA_DURACAO_MINUTOS matriz_disponibilidade_booleanos_em_json=matriz_json %}
+{% include "geral/tabela_disponibilidade.html" with var_name='dt2' rounded='rounded-0' CONSULTA_DURACAO_MINUTOS=CONSULTA_DURACAO_MINUTOS matriz_disponibilidade_booleanos_em_json=matriz_json %}
 
 <a href="?semana={{ semana_inicio|date:'Y-m-d' }}" class="mt-4 w-100 btn text-white btn-primary">
     Editar Disponibilidade
