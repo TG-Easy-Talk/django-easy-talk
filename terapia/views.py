@@ -478,23 +478,63 @@ class PsicologoFotoDePerfilView(DeveSerPsicologoMixin, UpdateView):
         return Psicologo.objects.get(usuario=self.request.user)
     
 
-class PsicologoDisponibilidadeView(DeveSerPsicologoMixin, TemplateView, TabelaDisponibilidadeContextMixin):
+class PsicologoDisponibilidadeView(DeveSerPsicologoMixin, UpdateView, TabelaDisponibilidadeContextMixin):
     template_name = "meu_perfil/disponibilidade.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["psicologo"] = Psicologo.objects.get(usuario=self.request.user)
-        return context
-    
-
-class PsicologoEditarDisponibilidadeView(DeveSerPsicologoMixin, UpdateView, TabelaDisponibilidadeContextMixin):
-    template_name = "meu_perfil/disponibilidade_editar.html"
     form_class = PsicologoDisponibilidadeChangeForm
     context_object_name = "psicologo"
     success_url = reverse_lazy("meu_perfil_disponibilidade")
 
     def get_object(self, queryset=None):
         return Psicologo.objects.get(usuario=self.request.user)
+    
+    def get_form_kwargs(self):
+        from datetime import datetime
+        from django.utils import timezone
+        
+        kwargs = super().get_form_kwargs()
+        
+        # Get semana from query string
+        semana_str = self.request.GET.get('semana')
+        if semana_str:
+            try:
+                kwargs['semana_referencia'] = datetime.strptime(semana_str, '%Y-%m-%d').date()
+            except ValueError:
+                kwargs['semana_referencia'] = timezone.localdate()
+        else:
+            kwargs['semana_referencia'] = timezone.localdate()
+        
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        from terapia.services import DisponibilidadeService
+        from datetime import datetime
+        from django.utils import timezone
+        
+        context = super().get_context_data(**kwargs)
+        psicologo = self.get_object()
+        
+        # Get semana parameter from query string (or form kwargs if available)
+        semana_referencia = self.get_form_kwargs()['semana_referencia']
+        
+        semana_inicio = DisponibilidadeService.obter_semana_inicio(semana_referencia)
+        semana_fim = semana_inicio + timedelta(days=6)
+        
+        context["semana_inicio"] = semana_inicio
+        context["semana_fim"] = semana_fim
+        context["semana_anterior"] = semana_inicio - timedelta(weeks=1)
+        context["semana_proxima"] = semana_inicio + timedelta(weeks=1)
+        context["hoje"] = timezone.localdate()
+        context["tem_template"] = psicologo.disponibilidade_template.exists()
+        context["matriz_json"] = psicologo.get_matriz_disponibilidade_booleanos_em_json(semana_inicio)
+        context["is_editing"] = bool(self.request.GET.get('semana'))
+        
+        return context
+    
+    def get_success_url(self):
+        # Preserve the week parameter in the success URL
+        url = super().get_success_url()
+        semana_referencia = self.get_form_kwargs()['semana_referencia']
+        return f"{url}?semana={semana_referencia.strftime('%Y-%m-%d')}"
 
 
 class ConsultaChecklistUpdateView(DeveSerPsicologoMixin, View):

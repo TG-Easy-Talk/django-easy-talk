@@ -134,9 +134,20 @@ class ModelTestCase(TestCase, BaseTestCase):
 
     @classmethod
     def set_disponibilidade_generica(cls, psicologo):
+        from terapia.models import IntervaloDisponibilidadeTemplate
+        
         for intervalo in cls.get_disponibilidade_generica():
             intervalo.psicologo = psicologo
             intervalo.save()
+            
+            # Create corresponding template for new architecture
+            IntervaloDisponibilidadeTemplate.objects.create(
+                psicologo=psicologo,
+                dia_semana_inicio_iso=intervalo.dia_semana_inicio_local,
+                hora_inicio=intervalo.hora_inicio_local,
+                dia_semana_fim_iso=intervalo.dia_semana_fim_local,
+                hora_fim=intervalo.hora_fim_local,
+            )
 
     @staticmethod
     def get_consultas_genericas():

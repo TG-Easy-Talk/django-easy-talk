@@ -139,10 +139,13 @@ class Psicologo(BasePacienteOuPsicologo):
     @property
     @admin.display(boolean=True)
     def esta_com_perfil_completo(self):
+        from terapia.services import DisponibilidadeService
+        from django.utils import timezone
+        
         return bool(
             self.valor_consulta and
             self.especializacoes.exists() and
-            self.disponibilidade.exists()
+            DisponibilidadeService.tem_disponibilidade_na_semana(self, timezone.localdate())
         )
 
     @property
@@ -162,37 +165,45 @@ class Psicologo(BasePacienteOuPsicologo):
         """
         Retorna a data-hora agendável mais próxima do psicólogo.
         """
-        if not self.disponibilidade.exists():
-            return None
-
-        semanas = 0
-        tempo_decorrido = timedelta(0)
+        from terapia.services import DisponibilidadeService
+        
         agora = timezone.localtime()
-        agora_convertido = converter_dia_semana_iso_com_hora_para_data_hora(agora.isoweekday(), agora.time(), agora.tzinfo)
-        datas_hora_ordenadas = self._get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(agora)
-
-        while True:
-            for data_hora in datas_hora_ordenadas:
-                esta_na_outra_semana = data_hora <= agora_convertido
-
-                if esta_na_outra_semana:
-                    data_hora += timedelta(weeks=1)
-
-                data_hora += timedelta(weeks=semanas)
-                tempo_decorrido = data_hora - agora_convertido
-
-                if tempo_decorrido > CONSULTA_ANTECEDENCIA_MAXIMA:
-                    return None
-
-                data_hora_inicio = desprezar_segundos_e_microssegundos(agora + tempo_decorrido)
-
-                if (
-                    data_hora_inicio >= agora + CONSULTA_ANTECEDENCIA_MINIMA and
-                    not self.ja_tem_consulta_em(data_hora_inicio)
-                ):
-                    return data_hora_inicio
-
-            semanas += 1
+        data_limite = agora + CONSULTA_ANTECEDENCIA_MAXIMA
+        
+        # Iterate week by week
+        semana_atual = DisponibilidadeService.obter_semana_inicio(agora)
+        semana_limite = DisponibilidadeService.obter_semana_inicio(data_limite)
+        
+        semana_iter = semana_atual
+        while semana_iter <= semana_limite:
+            intervalos = DisponibilidadeService.obter_intervalos_para_semana(self, semana_iter)
+            
+            # Normalize and sort
+            lista_intervalos = []
+            for i in intervalos:
+                if isinstance(i, dict):
+                    lista_intervalos.append((i['data_hora_inicio'], i['data_hora_fim']))
+                else:
+                    lista_intervalos.append((i.data_hora_inicio, i.data_hora_fim))
+            
+            lista_intervalos.sort(key=lambda x: x[0])
+            
+            for inicio, fim in lista_intervalos:
+                # Generate slots
+                slot = inicio
+                while slot + CONSULTA_DURACAO <= fim:
+                    if slot >= agora + CONSULTA_ANTECEDENCIA_MINIMA:
+                        if slot > data_limite:
+                            return None
+                        
+                        if not self.ja_tem_consulta_em(slot):
+                            return slot
+                    
+                    slot += CONSULTA_DURACAO
+            
+            semana_iter += timedelta(weeks=1)
+            
+        return None
 
     def __str__(self):
         return self.nome_completo
@@ -359,35 +370,80 @@ class Psicologo(BasePacienteOuPsicologo):
         @param data_hora: Data-hora em que a consulta começa.
         @return: True se o psicólogo tem disponibilidade, False caso contrário.
         """
+        from terapia.services import DisponibilidadeService
+        
         agora = timezone.now()
-        proxima_data_hora_agendavel = self.proxima_data_hora_agendavel
+        
+        # Basic validation
+        if data_hora < agora + CONSULTA_ANTECEDENCIA_MINIMA:
+            return False
+            
+        if data_hora > agora + CONSULTA_ANTECEDENCIA_MAXIMA:
+            return False
+            
+        if self.ja_tem_consulta_em(data_hora):
+            return False
+            
+        # Check availability intervals for that specific week
+        intervalos = DisponibilidadeService.obter_intervalos_para_semana(self, data_hora)
+        
+        data_hora_fim_consulta = data_hora + CONSULTA_DURACAO
+        
+        for intervalo in intervalos:
+            # Handle both template dicts and override objects
+            if isinstance(intervalo, dict):
+                inicio = intervalo['data_hora_inicio']
+                fim = intervalo['data_hora_fim']
+            else:
+                inicio = intervalo.data_hora_inicio
+                fim = intervalo.data_hora_fim
+                
+            # Check if consultation fits in interval
+            if inicio <= data_hora and fim >= data_hora_fim_consulta:
+                return True
+                
+        return False
 
-        return bool(
-            self.disponibilidade.exists() and
-            proxima_data_hora_agendavel is not None and
-            proxima_data_hora_agendavel <= data_hora <= agora + CONSULTA_ANTECEDENCIA_MAXIMA and
-            self._tem_intervalo_onde_cabe_uma_consulta_em(data_hora) and
-            not self.ja_tem_consulta_em(data_hora)
-        )
-
-    def get_matriz_disponibilidade_booleanos_em_json(self):
+    def get_matriz_disponibilidade_booleanos_em_json(self, semana_referencia=None):
         """
         Cria uma matriz de booleanos que representa a disponibilidade do psicólogo.
         A ideia é que a matriz seja interpretável nos templates, então
         ela é retornada como uma string de JSON que pode ser decodificada
         pelo JavaScript no template.
         """
+        from terapia.services import DisponibilidadeService
+        
+        if semana_referencia is None:
+            semana_referencia = timezone.localdate()
+            
         def domingo_a_sabado(matriz_disponibilidade_booleanos):
             matriz_disponibilidade_booleanos.insert(0, matriz_disponibilidade_booleanos.pop())
 
         matriz = [[False] * NUMERO_PERIODOS_POR_DIA for _ in range(7)]
+        
+        intervalos = DisponibilidadeService.obter_intervalos_para_semana(self, semana_referencia)
 
-        if self.disponibilidade.exists():
-            for intervalo in self.disponibilidade.all():
-                dia_semana_inicio = intervalo.dia_semana_inicio_local - 1
-                dia_semana_fim = intervalo.dia_semana_fim_local - 1
-                hil = intervalo.hora_inicio_local
-                hfl = intervalo.hora_fim_local
+        if intervalos:
+            for intervalo in intervalos:
+                # Handle both template dicts and override objects
+                if isinstance(intervalo, dict):
+                    # Template dict already has timezone aware datetimes
+                    data_hora_inicio = intervalo['data_hora_inicio']
+                    data_hora_fim = intervalo['data_hora_fim']
+                else:
+                    data_hora_inicio = intervalo.data_hora_inicio
+                    data_hora_fim = intervalo.data_hora_fim
+                
+                # Convert to local time
+                data_hora_inicio = timezone.localtime(data_hora_inicio)
+                data_hora_fim = timezone.localtime(data_hora_fim)
+                
+                dia_semana_inicio = data_hora_inicio.isoweekday() - 1
+                dia_semana_fim = data_hora_fim.isoweekday() - 1
+                
+                hil = data_hora_inicio.time()
+                hfl = data_hora_fim.time()
+                
                 hora_inicio_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hil.hour, minutes=hil.minute).total_seconds() / 3600)
                 hora_fim_matriz = regra_de_3_numero_periodos_por_dia(timedelta(hours=hfl.hour, minutes=hfl.minute).total_seconds() / 3600)
 
@@ -1048,3 +1104,150 @@ class Notificacao(models.Model):
             )
 
         super().save(*args, **kwargs)
+
+
+# ============================================================================
+# New Models for Weekly Availability Granularity (Hybrid Architecture)
+# ============================================================================
+
+class IntervaloDisponibilidadeTemplate(models.Model):
+    """
+    Template de disponibilidade recorrente semanal.
+    Define o horário "padrão" do psicólogo que se repete toda semana.
+    
+    Este modelo não armazena datas específicas, apenas dias da semana (1-7) e horários.
+    Quando consultado, o sistema converte este template para datas reais conforme necessário.
+    """
+    dia_semana_inicio_iso = models.IntegerField(
+        "Dia da semana de início",
+        help_text="1=Segunda, 2=Terça, ..., 7=Domingo (formato ISO)",
+    )
+    hora_inicio = models.TimeField("Hora de início")
+    dia_semana_fim_iso = models.IntegerField(
+        "Dia da semana de fim",
+        help_text="1=Segunda, 2=Terça, ..., 7=Domingo (formato ISO)",
+    )
+    hora_fim = models.TimeField("Hora de fim")
+    psicologo = models.ForeignKey(
+        Psicologo,
+        verbose_name="Psicólogo",
+        on_delete=models.CASCADE,
+        related_name="disponibilidade_template"
+    )
+    
+    class Meta:
+        verbose_name = "Template de Disponibilidade"
+        verbose_name_plural = "Templates de Disponibilidade"
+        ordering = ["dia_semana_inicio_iso", "hora_inicio"]
+    
+    def __str__(self):
+        dias = {1: "Seg", 2: "Ter", 3: "Qua", 4: "Qui", 5: "Sex", 6: "Sáb", 7: "Dom"}
+        return f"{dias.get(self.dia_semana_inicio_iso)} {self.hora_inicio.strftime('%H:%M')} - {dias.get(self.dia_semana_fim_iso)} {self.hora_fim.strftime('%H:%M')}"
+    
+    @property
+    def vira_a_semana(self):
+        """Verifica se o intervalo começa em uma semana e termina em outra."""
+        if self.dia_semana_inicio_iso == self.dia_semana_fim_iso:
+            return self.hora_fim <= self.hora_inicio
+        return self.dia_semana_fim_iso < self.dia_semana_inicio_iso
+    
+    def clean(self):
+        super().clean()
+        
+        # Validate day of week range
+        if not (1 <= self.dia_semana_inicio_iso <= 7):
+            raise ValidationError("Dia da semana de início deve estar entre 1 (Segunda) e 7 (Domingo)")
+        if not (1 <= self.dia_semana_fim_iso <= 7):
+            raise ValidationError("Dia da semana de fim deve estar entre 1 (Segunda) e 7 (Domingo)")
+
+
+class IntervaloDisponibilidadeOverride(models.Model):
+    """
+    Override de disponibilidade para uma semana específica.
+    Permite adicionar horários extras ou substituir completamente o template para uma semana.
+    
+    Este modelo armazena datas reais (não apenas dias da semana).
+    """
+    semana_inicio = models.DateField(
+        "Segunda-feira da semana",
+        help_text="Sempre armazenar a segunda-feira da semana (isoweekday=1)",
+        db_index=True,
+    )
+    data_hora_inicio = models.DateTimeField("Data e hora de início")
+    data_hora_fim = models.DateTimeField("Data e hora de fim")
+    psicologo = models.ForeignKey(
+        Psicologo,
+        verbose_name="Psicólogo",
+        on_delete=models.CASCADE,
+        related_name="disponibilidade_overrides"
+    )
+    
+    class Meta:
+        verbose_name = "Override de Disponibilidade"
+        verbose_name_plural = "Overrides de Disponibilidade"
+        ordering = ["semana_inicio", "data_hora_inicio"]
+        indexes = [
+            models.Index(fields=['psicologo', 'semana_inicio']),
+            models.Index(fields=['data_hora_inicio', 'data_hora_fim']),
+        ]
+        unique_together = [['psicologo', 'semana_inicio', 'data_hora_inicio']]
+    
+    def __str__(self):
+        return f"{self.psicologo.primeiro_nome} - Semana {self.semana_inicio.strftime('%d/%m/%Y')}: {self.data_hora_inicio.strftime('%d/%m %H:%M')} - {self.data_hora_fim.strftime('%d/%m %H:%M')}"
+    
+    def clean(self):
+        super().clean()
+        
+        # Ensure semana_inicio is always a Monday
+        if self.semana_inicio and self.semana_inicio.weekday() != 0:
+            raise ValidationError("semana_inicio deve ser sempre uma segunda-feira")
+
+
+class SemanaDisponibilidadeConfig(models.Model):
+    """
+    Configuração de como uma semana específica deve se comportar.
+    
+    - TEMPLATE: Usa o template padrão do psicólogo (comportamento default)
+    - CUSTOM: Usa apenas overrides, ignora o template
+    - UNAVAILABLE: Psicólogo indisponível nesta semana (sem atendimentos)
+    """
+    COMPORTAMENTO_CHOICES = [
+        ('TEMPLATE', 'Usar template padrão'),
+        ('CUSTOM', 'Horários customizados (ignorar template)'),
+        ('UNAVAILABLE', 'Indisponível (sem atendimentos)'),
+    ]
+    
+    psicologo = models.ForeignKey(
+        Psicologo,
+        verbose_name="Psicólogo",
+        on_delete=models.CASCADE,
+        related_name="config_semanas"
+    )
+    semana_inicio = models.DateField(
+        "Segunda-feira da semana",
+        help_text="Sempre armazenar a segunda-feira da semana (isoweekday=1)",
+        db_index=True,
+    )
+    comportamento = models.CharField(
+        "Comportamento",
+        max_length=20,
+        choices=COMPORTAMENTO_CHOICES,
+        default='TEMPLATE'
+    )
+    
+    class Meta:
+        verbose_name = "Configuração de Semana"
+        verbose_name_plural = "Configurações de Semanas"
+        unique_together = [['psicologo', 'semana_inicio']]
+        ordering = ["semana_inicio"]
+    
+    def __str__(self):
+        return f"{self.psicologo.primeiro_nome} - Semana {self.semana_inicio.strftime('%d/%m/%Y')}: {self.get_comportamento_display()}"
+    
+    def clean(self):
+        super().clean()
+        
+        # Ensure semana_inicio is always a Monday
+        if self.semana_inicio and self.semana_inicio.weekday() != 0:
+            raise ValidationError("semana_inicio deve ser sempre uma segunda-feira")
+

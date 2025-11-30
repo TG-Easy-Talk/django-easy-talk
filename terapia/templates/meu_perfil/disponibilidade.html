@@ -5,28 +5,70 @@
 {% block form_descricao %}Defina sua rotina semanal de disponibilidade para consultas.{% endblock %}
 
 {% block form %}
-    <p>Disponibilidade semanal atual:</p>
-
-    {% include "geral/tabela_disponibilidade.html" with var_name='dt2' rounded='rounded-0' CONSULTA_DURACAO_MINUTOS=CONSULTA_DURACAO_MINUTOS matriz_disponibilidade_booleanos_em_json=psicologo.get_matriz_disponibilidade_booleanos_em_json %}
-    
-    <a href="{% url "meu_perfil_disponibilidade_editar" %}" class="mt-4 w-100 btn text-white btn-primary">
-        Editar
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="?semana={{ semana_anterior|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Anterior
     </a>
+    <div class="text-center">
+        <h6 class="mb-0 fw-bold">Semana de {{ semana_inicio|date:"d/m" }} a {{ semana_fim|date:"d/m/Y" }}</h6>
+    </div>
+    <a href="?semana={{ semana_proxima|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">
+        Próxima <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
 
-    <div class="modal fade" id="disponibilidadeModal" tabindex="-1" aria-labelledby="disponibilidadeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="disponibilidadeModalLabel">Editar Disponibilidade</h1>
-                </div>
-                <div class="modal-body">
-                    {{ form }}
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger text-white" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary">Salvar alterações</button>
+{% if not tem_template %}
+<div class="alert alert-warning small mb-3">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    Você ainda não definiu um horário padrão. Defina um template para facilitar o agendamento de semanas futuras.
+</div>
+{% endif %}
+
+{% if is_editing %}
+<form method="post">
+    {% csrf_token %}
+    {{ form.semana_referencia }}
+
+    <p class="mb-2">Disponibilidade nesta semana:</p>
+
+    <div class="mb-4">
+        {{ form.disponibilidade }}
+    </div>
+
+    <div class="card bg-light mb-4">
+        <div class="card-body">
+            <h6 class="card-title fw-bold">Replicação</h6>
+            <div class="form-check">
+                {{ form.replicar_semanas }}
+                <label class="form-check-label" for="{{ form.replicar_semanas.id_for_label }}">
+                    Replicar para todas as semanas futuras
+                </label>
+                <div class="form-text text-muted small mt-1">
+                    Se marcado, esta disponibilidade se tornará o novo padrão para todas as semanas seguintes.
+                    Semanas anteriores não serão afetadas.
                 </div>
             </div>
+            {% if form.replicar_semanas.errors %}
+            <div class="text-danger small mt-1">
+                {{ form.replicar_semanas.errors }}
+            </div>
+            {% endif %}
         </div>
     </div>
+
+    <button type="submit" class="w-100 btn text-white btn-primary">
+        Salvar Disponibilidade
+    </button>
+</form>
+{% else %}
+<p class="mb-2">Disponibilidade nesta semana:</p>
+
+{% include "geral/tabela_disponibilidade.html" with var_name='dt2' rounded='rounded-0'
+CONSULTA_DURACAO_MINUTOS=CONSULTA_DURACAO_MINUTOS matriz_disponibilidade_booleanos_em_json=matriz_json %}
+
+<a href="?semana={{ semana_inicio|date:'Y-m-d' }}" class="mt-4 w-100 btn text-white btn-primary">
+    Editar Disponibilidade
+</a>
+{% endif %}
+
 {% endblock %}

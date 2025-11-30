@@ -199,14 +199,23 @@ class PsicologoModelTest(ModelTestCase):
 
         data_hora_inicio = uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada + CONSULTA_ANTECEDENCIA_MINIMA
         data_hora_fim = data_hora_inicio + CONSULTA_DURACAO
-        IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
+        intervalo = IntervaloDisponibilidade.objects.criar_por_dia_semana_e_hora(
             dia_semana_inicio_iso=data_hora_inicio.isoweekday(),
             hora_inicio=data_hora_inicio.time(),
             dia_semana_fim_iso=data_hora_fim.isoweekday(),
             hora_fim=data_hora_fim.time(),
             fuso=data_hora_inicio.tzinfo,
             psicologo=psicologo_com_agenda_lotada,
-        ),
+        )
+        
+        from terapia.models import IntervaloDisponibilidadeTemplate
+        IntervaloDisponibilidadeTemplate.objects.create(
+            psicologo=psicologo_com_agenda_lotada,
+            dia_semana_inicio_iso=intervalo.dia_semana_inicio_local,
+            hora_inicio=intervalo.hora_inicio_local,
+            dia_semana_fim_iso=intervalo.dia_semana_fim_local,
+            hora_fim=intervalo.hora_fim_local,
+        )
 
         with freeze_time(uma_antecedencia_minima_antes_do_primeiro_agendamento_do_psicologo_com_agenda_lotada):
             tempo_decorrido = CONSULTA_ANTECEDENCIA_MINIMA

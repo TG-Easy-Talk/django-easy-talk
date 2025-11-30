@@ -17,7 +17,7 @@ urlpatterns = [
     path('meu-perfil/informacoes-profissionais/', views.PsicologoInfoProfissionalView.as_view(), name='meu_perfil_info_profissional'),
     path('meu-perfil/foto-de-perfil/', views.PsicologoFotoDePerfilView.as_view(), name='meu_perfil_foto'),
     path('meu-perfil/disponibilidade/', views.PsicologoDisponibilidadeView.as_view(), name='meu_perfil_disponibilidade'),
-    path('meu-perfil/disponibilidade/editar/', views.PsicologoEditarDisponibilidadeView.as_view(), name='meu_perfil_disponibilidade_editar'),
+
     path("consultas/<int:pk>/aceitar/", views.AceitarConsultaPsicologoView.as_view(), name="consulta_aceitar"),
     path("consultas/<int:pk>/checklist/", views.ConsultaChecklistUpdateView.as_view(), name="consulta_checklist"),
     path("consultas/<int:pk>/anotacoes/", views.ConsultaAnotacoesUpdateView.as_view(), name="consulta_anotacoes"),

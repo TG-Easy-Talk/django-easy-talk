@@ -13,9 +13,10 @@ class CustomDateTimeInput(forms.DateTimeInput):
 class DisponibilidadeInput(forms.HiddenInput):
     template_name = 'meu_perfil/componentes/disponibilidade_widget.html'
 
-    def __init__(self, psicologo=None, attrs=None):
+    def __init__(self, psicologo=None, semana_referencia=None, attrs=None):
         super().__init__(attrs)
         self.psicologo = psicologo
+        self.semana_referencia = semana_referencia
 
     def get_context(self, name, value, attrs):
         from .views import TabelaDisponibilidadeContextMixin
@@ -28,4 +29,4 @@ class DisponibilidadeInput(forms.HiddenInput):
 
 
     def format_value(self, value):
-        return self.psicologo.get_matriz_disponibilidade_booleanos_em_json()
+        return self.psicologo.get_matriz_disponibilidade_booleanos_em_json(self.semana_referencia)

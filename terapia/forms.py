@@ -137,35 +137,92 @@ class PsicologoDisponibilidadeChangeForm(forms.ModelForm):
     template_name = "meu_perfil/componentes/form_disponibilidade.html"
 
     disponibilidade = forms.JSONField(required=False)
+    semana_referencia = forms.DateField(
+        required=False,
+        widget=forms.HiddenInput(),
+        help_text="Segunda-feira da semana sendo editada"
+    )
+    replicar_semanas = forms.BooleanField(
+        required=False,
+        label="Replicar para as próximas semanas",
+        help_text="Se marcado, esta disponibilidade será aplicada para todas as semanas futuras.",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+        })
+    )
 
     class Meta:
         model = Psicologo
         fields = []
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, semana_referencia=None, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Set week reference (defaults to today)
+        if semana_referencia:
+            self.semana_referencia = semana_referencia
+        else:
+            from django.utils import timezone
+            self.semana_referencia = timezone.localdate()
+        
+        self.fields["semana_referencia"].initial = self.semana_referencia
         self.fields["disponibilidade"].widget = DisponibilidadeInput(
             psicologo=self.instance,
+            semana_referencia=self.semana_referencia,
         )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        from terapia.services import DisponibilidadeService
+        from django.utils import timezone
+        
+        semana_atual = DisponibilidadeService.obter_semana_inicio(timezone.localdate())
+        semana_ref = DisponibilidadeService.obter_semana_inicio(self.semana_referencia)
+        
+        if semana_ref < semana_atual:
+            raise forms.ValidationError("Não é possível editar a disponibilidade de semanas passadas.")
+            
+        return cleaned_data
+
     def clean_disponibilidade(self):
-        return IntervaloDisponibilidade.from_matriz(self.cleaned_data.get("disponibilidade"))
+        import json
+        data = self.cleaned_data.get("disponibilidade")
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                raise forms.ValidationError("Formato inválido de JSON.")
+        
+        # Basic validation of structure
+        if not isinstance(data, list) or not all(isinstance(row, list) for row in data):
+             raise forms.ValidationError("Formato inválido para matriz de disponibilidade.")
+             
+        return data
 
     def save(self, commit=True):
+        from terapia.services import DisponibilidadeService
+        
         psicologo = super().save(commit=False)
-        disponibilidade = self.cleaned_data.get("disponibilidade", [])
-
-        for intervalo in disponibilidade:
-            intervalo.psicologo = psicologo
-
-        IntervaloDisponibilidade.objects.filter(psicologo=psicologo).delete()
-        IntervaloDisponibilidade.objects.bulk_create(disponibilidade)
-
+        matriz = self.cleaned_data.get("disponibilidade", [])
+        replicar = self.cleaned_data.get("replicar_semanas", False)
+        
+        if replicar:
+            # "Replicate" means setting this as the new default (Template)
+            # while preserving history for past weeks
+            DisponibilidadeService.definir_novo_padrao_a_partir_de(
+                psicologo, self.semana_referencia, matriz
+            )
+        else:
+            # Just an override for this specific week
+            DisponibilidadeService.salvar_override_semana(
+                psicologo, self.semana_referencia, matriz
+            )
+        
         if commit:
             psicologo.save()
-            self.save_m2m()
 
         return psicologo
+
 
 
 class ConsultaCreationForm(forms.ModelForm):
