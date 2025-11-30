@@ -6,24 +6,21 @@
 
     .grade-intervalos>*[data-grade] {
         cursor: pointer;
-        min-height: 1rem;
+        min-height: 2.5rem;
+        transition: background-color 0.1s;
     }
 
     .prevent-select {
         -webkit-user-select: none;
-        /* Safari */
         -ms-user-select: none;
-        /* IE 10 and IE 11 */
         user-select: none;
-        /* Standard syntax */
     }
 </style>
 
-<div class="w-100 overflow-x-auto text-center">
-    <div draggable="false" class="grade-intervalos mt-5 mx-auto text-start"
-        style="min-width: 870px; width: max-content;">
+<div class="w-100 overflow-x-auto">
+    <div draggable="false" class="grade-intervalos mt-5 text-start" style="width: 98%;">
         {% for _ in "1234567" %}
-        <div draggable="false" class="text-end font-monospace me-3">
+        <div draggable="false" class="text-end font-monospace me-2 align-self-center small">
             {% if forloop.counter|divisibleby:"7" %}
             Sáb
             {% elif forloop.counter|divisibleby:"6" %}
