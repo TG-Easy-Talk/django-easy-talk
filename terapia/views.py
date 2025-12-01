@@ -347,12 +347,6 @@ class PerfilView(FormView, SingleObjectMixin, TabelaDisponibilidadeContextMixin)
     
     def form_valid(self, form):
         form.save()
-        Notificacao.objects.create(
-            tipo=TipoNotificacao.CONSULTA_SOLICITADA,
-            remetente=form.instance.paciente.usuario,
-            destinatario=form.instance.psicologo.usuario,
-            consulta=form.instance,
-        )
         return super().form_valid(form)
     
 

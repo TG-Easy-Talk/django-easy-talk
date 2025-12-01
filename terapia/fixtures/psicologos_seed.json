@@ -110,8 +110,8 @@
       "Sistêmica",
       "Casal",
       "Sexualidade",
-      "LGBTQIA+",
-      "Disfunções Sexuais"
+      "Namoro",
+      "Divórcio"
     ],
     "email": "daniela.costa@example.com",
     "disponibilidade": [
@@ -628,7 +628,7 @@
     "foto": "psicologos/fotos/psicologo_19.jpeg",
     "especializacoes": [
       "Sexualidade",
-      "Gênero"
+      "Casamento"
     ],
     "email": "samara.torres@example.com",
     "disponibilidade": [
@@ -1067,7 +1067,7 @@
     ]
   },
   {
-    "nome_completo": "Alejandro Rodriguez",
+    "nome_completo": "Alejandra Rodriguez",
     "crp": "31/01234",
     "sobre_mim": "A experiência de imigrar traz consigo perdas e ganhos. Atendo em espanhol e português, oferecendo um espaço de escuta para quem vive a realidade de ser estrangeiro. Trabalho questões de identidade, saudade e adaptação. Meu objetivo é te ajudar a integrar suas raízes com sua nova vida, transformando o desafio da imigração em uma oportunidade de crescimento e enriquecimento pessoal.",
     "valor_consulta": "165.00",
@@ -1109,7 +1109,7 @@
     ]
   },
   {
-    "nome_completo": "Camila Fernandez",
+    "nome_completo": "Bruno Fernandez",
     "crp": "32/12345",
     "sobre_mim": "A felicidade pode ser construída. Com base na Psicologia Positiva, meu trabalho não foca apenas na ausência de doença, mas na promoção do florescimento humano. Ajudo você a identificar suas forças, cultivar emoções positivas e encontrar propósito. Acredito que todos temos recursos internos para viver uma vida plena e significativa. Vamos juntos focar no que há de melhor em você.",
     "valor_consulta": "175.00",
