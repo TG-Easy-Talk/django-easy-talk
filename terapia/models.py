@@ -795,7 +795,7 @@ class Consulta(models.Model):
         default=EstadoConsulta.SOLICITADA,
     )
     anotacoes = models.TextField("Anotações", blank=True, null=True)
-    checklist_tarefas = models.TextField("Checklist de tarefas", blank=True, null=True)
+    checklist_tarefas = models.JSONField("Checklist de tarefas", default=list, blank=True, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='consultas')
     psicologo = models.ForeignKey(
         Psicologo,
@@ -838,7 +838,13 @@ class Consulta(models.Model):
 
         # Validar se o psicólogo está disponível no horário
         if self.psicologo and self.data_hora_agendada:
-            if not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
+            validar_disponibilidade = True
+            if self.pk:
+                original = Consulta.objects.get(pk=self.pk)
+                if original.data_hora_agendada == self.data_hora_agendada:
+                    validar_disponibilidade = False
+
+            if validar_disponibilidade and not self.psicologo.esta_agendavel_em(self.data_hora_agendada):
                 raise ValidationError({
                     'data_hora_agendada': ValidationError(
                         'O psicólogo não está disponível neste horário.',

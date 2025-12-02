@@ -516,24 +516,62 @@ class ConsultaChecklistUpdateView(DeveSerPsicologoMixin, View):
     Espera um campo `checklist_tarefas` no POST e opcionalmente `next` para redirecionar.
     """
     def post(self, request, pk):
+        import json
+        
         if not request.user.is_psicologo:
             return HttpResponseForbidden("Sua conta precisa ser do tipo psicólogo.")
 
         consulta = get_object_or_404(Consulta, pk=pk, psicologo=request.user.psicologo)
 
-        form = ConsultaChecklistForm(request.POST, instance=consulta)
-        if form.is_valid():
-            checklist = form.cleaned_data.get("checklist_tarefas")
-            # Salvar None se string vazia para manter consistência com null=True
-            if checklist is None or checklist.strip() == "":
-                consulta.checklist_tarefas = None
+        checklist_raw = request.POST.get("checklist_tarefas", "")
+        
+        try:
+            # Parse JSON string to Python object
+            if checklist_raw:
+                checklist = json.loads(checklist_raw)
+                if not isinstance(checklist, list):
+                    checklist = []
             else:
-                consulta.checklist_tarefas = checklist
+                checklist = []
+            
+            consulta.checklist_tarefas = checklist
             consulta.save(update_fields=["checklist_tarefas"])
             messages.success(request, "Checklist salvo com sucesso.")
-        else:
-            # Caso raro de validação, anexar mensagem
-            messages.error(request, "Não foi possível salvar o checklist. Verifique os dados.")
+        except (json.JSONDecodeError, ValueError):
+            messages.error(request, "Formato de checklist inválido.")
+
+        next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or reverse_lazy("minhas_consultas")
+        return redirect(next_url)
+
+
+class ConsultaChecklistPacienteUpdateView(DeveTerCargoMixin, View):
+    """
+    Permite que o paciente atualize o status e comentários do checklist.
+    """
+    def post(self, request, pk):
+        import json
+        
+        if not request.user.is_paciente:
+            return HttpResponseForbidden("Sua conta precisa ser do tipo paciente.")
+
+        consulta = get_object_or_404(Consulta, pk=pk, paciente=request.user.paciente)
+        
+        checklist_raw = request.POST.get("checklist_tarefas", "")
+        
+        try:
+            # Parse JSON string to Python object
+            if checklist_raw:
+                checklist = json.loads(checklist_raw)
+                if not isinstance(checklist, list):
+                    checklist = []
+            else:
+                checklist = []
+            
+            consulta.checklist_tarefas = checklist
+            consulta.save(update_fields=["checklist_tarefas"])
+            messages.success(request, "Checklist atualizado com sucesso.")
+        except (json.JSONDecodeError, ValueError):
+            messages.error(request, "Formato de checklist inválido.")
 
         next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or reverse_lazy("minhas_consultas")
         return redirect(next_url)
@@ -555,7 +593,7 @@ class ConsultaAnotacoesUpdateView(DeveSerPsicologoMixin, View):
         if form.is_valid():
             anot = form.cleaned_data.get("anotacoes")
             # Salvar None se string vazia para manter consistência com null=True
-            if anot is None or anot.strip() == "":
+            if not anot or anot.strip() == "":
                 consulta.anotacoes = None
             else:
                 consulta.anotacoes = anot
@@ -579,38 +617,3 @@ class MarcarNotificacoesComoLidasView(DeveTerCargoMixin, View):
         Notificacao.objects.filter(destinatario=request.user, lida=False).update(lida=True)
         return redirect(request.META.get("HTTP_REFERER", "/"))
 
-class ConsultaChamadaView(DeveTerCargoMixin, DetailView):
-    model = Consulta
-    context_object_name = "consulta"
-    template_name = "consulta/consulta.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        consulta = self.get_object()
-
-        if request.user.is_paciente:
-            if consulta.paciente != request.user.paciente:
-                return HttpResponseForbidden("Você não pode acessar esta consulta.")
-        elif request.user.is_psicologo:
-            if consulta.psicologo != request.user.psicologo:
-                return HttpResponseForbidden("Você não pode acessar esta consulta.")
-        else:
-            return HttpResponseForbidden("Sua conta precisa ser paciente ou psicólogo.")
-
-        consulta.atualizar_estado_automatico()
-
-        if consulta.estado != EstadoConsulta.EM_ANDAMENTO:
-            return HttpResponseForbidden("Esta consulta não está em um estado que permita chamada de vídeo.")
-
-        consulta.ensure_jitsi_room()
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        consulta = self.object
-
-        ctx["JITSI_DOMAIN"] = "meet.jit.si"
-        ctx["JITSI_ROOM"] = consulta.jitsi_room
-        ctx["JITSI_USER_NAME"] = self.request.user.get_full_name() or str(self.request.user)
-
-        return ctx

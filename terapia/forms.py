@@ -198,8 +198,30 @@ class ConsultaChecklistForm(forms.ModelForm):
         model = Consulta
         fields = ["checklist_tarefas"]
         widgets = {
-            "checklist_tarefas": forms.Textarea(attrs={"rows": 8, "placeholder": "Escreva a checklist desta consulta (tarefas, recomendações, etc.)..."}),
+            "checklist_tarefas": forms.HiddenInput(),
         }
+    
+    def clean_checklist_tarefas(self):
+        import json
+        data = self.cleaned_data.get('checklist_tarefas')
+        
+        # Se já é uma lista (por exemplo, vindo do banco), retorna direto
+        if isinstance(data, list):
+            return data
+        
+        # Se é uma string vazia ou None
+        if not data:
+            return []
+        
+        # Se é uma string JSON, faz o parse
+        if isinstance(data, str):
+            try:
+                parsed = json.loads(data)
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, ValueError):
+                raise forms.ValidationError("Formato de checklist inválido.")
+        
+        return []
 
 
 class ConsultaAnotacoesForm(forms.ModelForm):
