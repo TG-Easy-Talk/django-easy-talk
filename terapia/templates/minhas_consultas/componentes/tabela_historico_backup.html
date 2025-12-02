@@ -1,7 +1,25 @@
-{{ request.user.is_psicologo|json_script:"user_is_psicologo" }}
-
 <div class="table-responsive shadow-sm rounded-3 border">
     <table class="table table-borderless text-center mb-0">
+        {% comment %} <colgroup>
+            <col style="width: 25%;">
+            <col style="width: 25%;">
+            <col style="width: 25%;">
+            <col style="width: 25%;">
+        </colgroup> {% endcomment %}
+        {% comment %} <thead class="table-primary">
+            <tr>
+                <th class="text-white border-0" scope="col">
+                    {% if request.user.is_paciente %}
+                    Profissional
+                    {% elif request.user.is_psicologo %}
+                    Paciente
+                    {% endif %}
+                </th>
+                <th class="text-white border-0" scope="col">Estado</th>
+                <th class="text-white border-0" scope="col">Data e horário</th>
+                <th class="text-white border-0" scope="col">Ação</th>
+            </tr>
+        </thead> {% endcomment %}
         <tbody class="text-nowrap">
             {% for consulta in consultas %}
             <tr class="{% if not forloop.last %}border-bottom{% endif %}">
@@ -33,21 +51,16 @@
 
                 <td class="align-middle">
                     <div class="d-flex justify-content-end align-items-center gap-2" style="height:100%">
-
-                        {% if request.user.is_paciente %}
-                        {% with e=consulta.estado %}
-                        {% if e != 'CANCELADA' and e != 'EM_ANDAMENTO' and e != 'FINALIZADA' %}
+                        {% if request.user.is_paciente and consulta.estado != 'CANCELADA' and consulta.estado !=
+                        'EM_ANDAMENTO' and consulta.estado != 'FINALIZADA' %}
                         <form method="post" action="{% url 'consulta_cancelar' consulta.pk %}" class="d-inline m-0"
                             onsubmit="return confirm('Confirma cancelar esta consulta?');">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="{{ request.get_full_path }}">
                             <button type="submit" class="btn btn-danger text-white btn-sm">Cancelar</button>
                         </form>
-                        {% endif %}
-                        {% endwith %}
-                        {% endif %}
 
-                        {% if request.user.is_psicologo and consulta.estado == 'SOLICITADA' %}
+                        {% elif request.user.is_psicologo and consulta.estado == 'SOLICITADA' %}
                         <form method="post" action="{% url 'consulta_aceitar' consulta.pk %}" class="d-inline m-0"
                             onsubmit="return confirm('Confirma aceitar esta consulta?');">
                             {% csrf_token %}
@@ -117,9 +130,8 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="checklistModalLabel{{ consulta.pk }}">
-                    Checklist: {{ consulta.data_hora_agendada|date:"d/m/Y" }}
-                </h1>
+                <h1 class="modal-title fs-5" id="checklistModalLabel{{ consulta.pk }}">Checklist da consulta em {{
+                    consulta.data_hora_agendada|date:"d/m/Y" }}</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -152,56 +164,63 @@
                 <script>
                     (function () {
                         const consultaId = '{{ consulta.pk }}';
-                        const isPsicologo = JSON.parse(document.getElementById('user_is_psicologo').textContent);
-                        const container = document.getElementById(`checklist-container-${consultaId}`);
-                        const dataScript = document.getElementById(consultaId);
-                        let checklistData = JSON.parse(dataScript.textContent) || [];
+                        const isPsicologo = {{ request.user.is_psicologo| yesno: "true,false"
+                    }};
+                    const container = document.getElementById(`checklist-container-${consultaId}`);
+                    const dataScript = document.getElementById(consultaId); // ID from json_script
+                    let checklistData = JSON.parse(dataScript.textContent) || [];
 
-                        if (!Array.isArray(checklistData)) checklistData = [];
+                    // Ensure data is a list
+                    if (!Array.isArray(checklistData)) checklistData = [];
 
-                        function render() {
-                            container.innerHTML = '';
-                            if (checklistData.length === 0) {
-                                container.innerHTML = '<p class="text-muted text-center small">Nenhuma tarefa no checklist.</p>';
-                                return;
-                            }
-
-                            checklistData.forEach((item, index) => {
-                                const row = document.createElement('div');
-                                row.className = 'card p-2';
-
-                                if (isPsicologo) {
-                                    row.innerHTML = `
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" placeholder="Descrição da tarefa" value="${item.texto || ''}" onchange="updateItem(${consultaId}, ${index}, 'texto', this.value)">
-                                            <button type="button" class="btn btn-outline-danger" onclick="removeChecklistItem('${consultaId}', ${index})"><i class="bi bi-trash"></i></button>
-                                        </div>
-                                        ${item.comentario ? `<div class="small text-muted mt-1 ms-1"><i class="bi bi-chat-left-text"></i> Paciente: ${item.comentario}</div>` : ''}
-                                        ${item.feita ? '<div class="small text-success mt-1 ms-1"><i class="bi bi-check-circle-fill"></i> Concluída</div>' : ''}
-                                    `;
-                                } else {
-                                    row.innerHTML = `
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="check-${consultaId}-${index}" ${item.feita ? 'checked' : ''} onchange="updateItem(${consultaId}, ${index}, 'feita', this.checked)">
-                                            <label class="form-check-label fw-bold" for="check-${consultaId}-${index}">
-                                                ${item.texto || 'Tarefa sem descrição'}
-                                            </label>
-                                        </div>
-                                        <input type="text" class="form-control form-control-sm mt-2" placeholder="Comentário (opcional)" value="${item.comentario || ''}" onchange="updateItem(${consultaId}, ${index}, 'comentario', this.value)">
-                                    `;
-                                }
-                                container.appendChild(row);
-                            });
+                    function render() {
+                        container.innerHTML = '';
+                        if (checklistData.length === 0) {
+                            container.innerHTML = '<p class="text-muted text-center small">Nenhuma tarefa no checklist.</p>';
+                            return;
                         }
 
-                        window.checklistRegistry = window.checklistRegistry || {};
-                        window.checklistRegistry[consultaId] = {
-                            data: checklistData,
-                            render: render
-                        };
+                        checklistData.forEach((item, index) => {
+                            const row = document.createElement('div');
+                            row.className = 'card p-2';
 
-                        render();
-                    })();
+                            if (isPsicologo) {
+                                row.innerHTML = `
+                                                    <div class="input-group">
+                                                        <input type="text" class="form-control" placeholder="Descrição da tarefa" value="${item.texto || ''}" onchange="updateItem(${consultaId}, ${index}, 'texto', this.value)">
+                                                        <button type="button" class="btn btn-outline-danger" onclick="removeChecklistItem('${consultaId}', ${index})"><i class="bi bi-trash"></i></button>
+                                                    </div>
+                                                    ${item.comentario ? `<div class="small text-muted mt-1 ms-1"><i class="bi bi-chat-left-text"></i> Paciente: ${item.comentario}</div>` : ''}
+                                                    ${item.feita ? '<div class="small text-success mt-1 ms-1"><i class="bi bi-check-circle-fill"></i> Concluída</div>' : ''}
+                                                `;
+                            } else {
+                                // Paciente
+                                row.innerHTML = `
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="check-${consultaId}-${index}" ${item.feita ? 'checked' : ''} onchange="updateItem(${consultaId}, ${index}, 'feita', this.checked)">
+                                                        <label class="form-check-label fw-bold" for="check-${consultaId}-${index}">
+                                                            ${item.texto || 'Tarefa sem descrição'}
+                                                        </label>
+                                                    </div>
+                                                    <input type="text" class="form-control form-control-sm mt-2" placeholder="Comentário (opcional)" value="${item.comentario || ''}" onchange="updateItem(${consultaId}, ${index}, 'comentario', this.value)">
+                                                `;
+                            }
+                            container.appendChild(row);
+                        });
+                    }
+
+                    // Global functions for this scope (attached to window with unique names or just local if we handle events differently)
+                    // To avoid polluting global scope and collisions, we attach to a global registry or just use inline events referring to a global handler.
+                    // Let's use a global handler pattern.
+
+                    window.checklistRegistry = window.checklistRegistry || {};
+                    window.checklistRegistry[consultaId] = {
+                        data: checklistData,
+                        render: render
+                    };
+
+                    render();
+                                }) ();
                 </script>
             </div>
         </div>
@@ -215,9 +234,8 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="anotacoesModalLabel{{ consulta.pk }}">
-                    Anotações: {{ consulta.data_hora_agendada|date:"d/m/Y" }}
-                </h1>
+                <h1 class="modal-title fs-5" id="anotacoesModalLabel{{ consulta.pk }}">Anotações da consulta em {{
+                    consulta.data_hora_agendada|date:"d/m/Y" }}</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -239,9 +257,8 @@
                 {% else %}
                 <div class="mb-3">
                     <label class="form-label fw-bold">Anotações do Psicólogo:</label>
-                    <div class="p-3 bg-light border rounded" style="white-space: pre-wrap;">
-                        {{ consulta.anotacoes|default:"Nenhuma anotação disponível." }}
-                    </div>
+                    <div class="p-3 bg-light border rounded" style="white-space: pre-wrap;">{{
+                        consulta.anotacoes|default:"Nenhuma anotação disponível." }}</div>
                 </div>
                 <div class="d-flex justify-content-end">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
