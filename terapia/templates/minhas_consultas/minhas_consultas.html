@@ -17,10 +17,39 @@
 <div class="row gap-5 align-items-start m-0">
 
     <main class="col p-0">
+        {% if proxima_consulta %}
+        <div class="card mb-4 border-success shadow-sm">
+            <div class="card-header bg-success text-white fw-bold">
+                <i class="bi bi-calendar-check me-2"></i> Próxima Consulta
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">
+                    {{ proxima_consulta.data_hora_agendada|date:"d/m/Y" }} às {{                     proxima_consulta.data_hora_agendada|date:"H:i" }}
+                </h5>
+                <p class="card-text">
+                    Com <strong>
+                        {% if request.user.is_paciente %}
+                        {{ proxima_consulta.psicologo.nome_completo }}
+                        {% else %}
+                        {{ proxima_consulta.paciente.nome }}
+                        {% endif %}
+                    </strong>
+                </p>
+                <span class="badge bg-{{ proxima_consulta.classe }} text-white">
+                    {{ proxima_consulta.get_estado_display }}
+                </span>
+                {% if proxima_consulta.jitsi_join_url and proxima_consulta.estado == 'CONFIRMADA' %}
+                <a href="{% url 'consulta_chamada' proxima_consulta.pk %}" class="btn btn-primary btn-sm ms-2">Entrar na
+                    Sala</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         {% if consultas %}
-            {% include 'minhas_consultas/componentes/tabela_historico.html' with usuario=request.user %}
+        {% include 'minhas_consultas/componentes/tabela_historico.html' with usuario=request.user %}
         {% else %}
-            Nenhuma consulta encontrada.
+        Nenhuma consulta encontrada.
         {% endif %}
     </main>
 </div>

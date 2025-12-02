@@ -196,6 +196,8 @@ class CustomLoginView(LoginView):
         ]
         return context
 
+    def get_success_url(self):
+        return reverse_lazy('minhas_consultas')
 
 class CancelarConsultaPacienteView(DeveTerCargoMixin, View):
     def post(self, request, pk):
@@ -443,12 +445,28 @@ class MinhasConsultasView(DeveTerCargoMixin, ListView, GetFormMixin):
             EstadoConsulta.FINALIZADA: "completed",
         }
 
+        agora = timezone.now()
+        proxima_consulta = None
+
         for consulta in context["consultas"]:
             consulta.classe = consulta_classes_dict.get(consulta.estado, "")
 
             if consulta.estado != EstadoConsulta.EM_ANDAMENTO:
                 consulta.classe += " text-white"
 
+            if proxima_consulta and proxima_consulta.estado == EstadoConsulta.EM_ANDAMENTO:
+                continue
+
+            if consulta.estado == EstadoConsulta.EM_ANDAMENTO:
+                proxima_consulta = consulta
+            elif (
+                    consulta.estado in [EstadoConsulta.CONFIRMADA, EstadoConsulta.SOLICITADA] and
+                    consulta.data_hora_agendada >= agora
+            ):
+                if proxima_consulta is None or consulta.data_hora_agendada < proxima_consulta.data_hora_agendada:
+                    proxima_consulta = consulta
+
+        context["proxima_consulta"] = proxima_consulta
         return context
 
 
