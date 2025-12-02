@@ -72,33 +72,26 @@
 
                         {% if consulta.estado == 'FINALIZADA' %}
 
-                        {% if request.user.is_paciente %}
-                        {% if consulta.checklist_tarefas %}
-                        <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
-                            class="btn btn-info btn-sm">
-                            Checklist
-                        </button>
-                        {% else %}
-                        <span class="text-body-secondary">Sem checklist.</span>
-                        {% endif %}
+                            {% if request.user.is_paciente %}
+                                {% if consulta.checklist_tarefas %}
+                                    <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
+                                        class="btn btn-info btn-sm">
+                                        Checklist
+                                    </button>
+                                {% else %}
+                                    <span class="text-body-secondary">Sem checklist.</span>
+                                {% endif %}
 
-                        {% if consulta.anotacoes %}
-                        <button data-bs-toggle="modal" data-bs-target="#anotacoesModal{{ consulta.pk }}"
-                            class="btn btn-outline-warning btn-sm">
-                            Ver Anotações
-                        </button>
-                        {% endif %}
-
-                        {% elif request.user.is_psicologo %}
-                        <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
-                            class="btn btn-info btn-sm">
-                            Checklist
-                        </button>
-                        <button data-bs-toggle="modal" data-bs-target="#anotacoesModal{{ consulta.pk }}"
-                            class="btn btn-warning btn-sm">
-                            Anotações
-                        </button>
-                        {% endif %}
+                            {% elif request.user.is_psicologo %}
+                                <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
+                                    class="btn btn-info btn-sm">
+                                    Checklist
+                                </button>
+                                <button data-bs-toggle="modal" data-bs-target="#anotacoesModal{{ consulta.pk }}"
+                                    class="btn btn-warning btn-sm">
+                                    Anotações
+                                </button>
+                            {% endif %}
 
                         {% endif %}
                     </div>
@@ -129,7 +122,7 @@
                 </div>
 
                 {% if request.user.is_psicologo %}
-                <button type="button" class="btn btn-outline-secondary btn-sm mb-3"
+                <button type="button" class="btn btn-outline-primary btn-sm mb-3"
                     onclick="addChecklistItem('{{ consulta.pk }}')">
                     <i class="bi bi-plus-lg"></i> Adicionar Tarefa
                 </button>
