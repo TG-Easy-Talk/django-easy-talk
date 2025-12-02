@@ -40,12 +40,12 @@ class ConsultaModelTest(ModelTestCase):
         self.assertEqual(consulta.psicologo, self.psicologo_sempre_disponivel)
         self.assertEqual(consulta.data_hora_agendada, data_hora_agendada)
         self.assertIsNone(consulta.anotacoes)
-        self.assertIsNone(consulta.checklist_tarefas)
+        self.assertEqual(consulta.checklist_tarefas, [])
         self.assertEqual(consulta.estado, EstadoConsulta.SOLICITADA)
         self.assertIsNone(consulta.duracao)
 
         anotacoes = "Paciente explicou o que está passando"
-        checklist_tarefas = "1. Fazer exercícios de respiração, 2. Praticar exercício"
+        checklist_tarefas = [{"texto": "Fazer exercícios", "feita": False, "comentario": ""}]
         duracao = timedelta(minutes=45)
         estado = EstadoConsulta.EM_ANDAMENTO
 
