@@ -13,8 +13,8 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-LOGIN_ATTEMPTS = config('LOGIN_ATTEMPTS', default=5, cast=int)
-REGISTER_ATTEMPTS = config('REGISTER_ATTEMPTS', default=3, cast=int)
+LOGIN_ATTEMPTS = config('LOGIN_ATTEMPTS', default=50, cast=int)
+REGISTER_ATTEMPTS = config('REGISTER_ATTEMPTS', default=50, cast=int)
 
 LOGIN_RATE_LIMIT = f"{LOGIN_ATTEMPTS}/h"
 REGISTER_RATE_LIMIT = f"{REGISTER_ATTEMPTS}/h"
