@@ -67,3 +67,29 @@ class AgendamentoService:
                     falhas.append((slot, str(e)))
 
         return criadas, falhas
+
+
+class PsicologoService:
+    @staticmethod
+    def obter_proxima_disponibilidade(psicologo):
+        return psicologo.proxima_data_hora_agendavel
+
+    @staticmethod
+    def verificar_disponibilidade(psicologo, data_hora):
+        return psicologo.esta_agendavel_em(data_hora)
+
+    @staticmethod
+    def gerar_matriz_disponibilidade(psicologo):
+        return psicologo.get_matriz_disponibilidade_booleanos_em_json()
+
+    @staticmethod
+    def _tem_intervalo_onde_cabe_uma_consulta_em(psicologo, data_hora):
+        return psicologo._tem_intervalo_onde_cabe_uma_consulta_em(data_hora)
+
+    @staticmethod
+    def obter_intervalos_sobrepostos(psicologo, intervalo):
+        return psicologo.get_intervalos_sobrepostos(intervalo)
+
+    @staticmethod
+    def _get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(psicologo, instante):
+        return psicologo._get_datas_hora_dos_intervalos_da_mais_proxima_a_mais_distante_partindo_de(instante)
