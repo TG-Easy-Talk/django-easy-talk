@@ -82,6 +82,13 @@
                                     <span class="text-body-secondary">Sem checklist.</span>
                                 {% endif %}
 
+                                {% if consulta.anotacoes %}
+                                    <button data-bs-toggle="modal" data-bs-target="#anotacoesModal{{ consulta.pk }}"
+                                            class="btn btn-warning btn-sm ms-1">
+                                        Anotações
+                                    </button>
+                                {% endif %}
+
                             {% elif request.user.is_psicologo %}
                                 <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
                                     class="btn btn-info btn-sm">
