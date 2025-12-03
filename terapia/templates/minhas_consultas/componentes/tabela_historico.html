@@ -72,26 +72,26 @@
 
                         {% if consulta.estado == 'FINALIZADA' %}
 
-                            {% if request.user.is_paciente %}
-                                {% if consulta.checklist_tarefas %}
-                                    <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
-                                        class="btn btn-info btn-sm">
-                                        Checklist
-                                    </button>
-                                {% else %}
-                                    <span class="text-body-secondary">Sem checklist.</span>
-                                {% endif %}
+                        {% if request.user.is_paciente %}
+                        <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
+                            class="btn btn-info btn-sm">
+                            Checklist
+                        </button>
+                        <button data-bs-toggle="modal" data-bs-target="#anotacoesModal{{ consulta.pk }}"
+                            class="btn btn-outline-warning btn-sm">
+                            Ver Anotações
+                        </button>
 
-                            {% elif request.user.is_psicologo %}
-                                <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
-                                    class="btn btn-info btn-sm">
-                                    Checklist
-                                </button>
-                                <button data-bs-toggle="modal" data-bs-target="#anotacoesModal{{ consulta.pk }}"
-                                    class="btn btn-warning btn-sm">
-                                    Anotações
-                                </button>
-                            {% endif %}
+                        {% elif request.user.is_psicologo %}
+                        <button data-bs-toggle="modal" data-bs-target="#checklistModal{{ consulta.pk }}"
+                            class="btn btn-info btn-sm">
+                            Checklist
+                        </button>
+                        <button data-bs-toggle="modal" data-bs-target="#anotacoesModal{{ consulta.pk }}"
+                            class="btn btn-warning btn-sm">
+                            Anotações
+                        </button>
+                        {% endif %}
 
                         {% endif %}
                     </div>
@@ -104,7 +104,7 @@
 
 {% for consulta in consultas %}
 {% if consulta.estado == 'FINALIZADA' %}
-{% if consulta.checklist_tarefas or request.user.is_psicologo %}
+{% if consulta.checklist_tarefas or request.user.is_psicologo or request.user.is_paciente %}
 <div class="modal fade" id="checklistModal{{ consulta.pk }}" tabindex="-1"
     aria-labelledby="checklistModalLabel{{ consulta.pk }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
