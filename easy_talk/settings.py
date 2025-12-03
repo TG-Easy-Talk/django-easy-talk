@@ -1,5 +1,5 @@
 from pathlib import Path
-from decouple import config
+# from decouple import config
 from django.urls import reverse_lazy
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -9,12 +9,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = 'django-insecure-secret-key'
 
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = True
 
-LOGIN_ATTEMPTS = config('LOGIN_ATTEMPTS', default=50, cast=int)
-REGISTER_ATTEMPTS = config('REGISTER_ATTEMPTS', default=50, cast=int)
+LOGIN_ATTEMPTS = 50
+REGISTER_ATTEMPTS = 50
 
 LOGIN_RATE_LIMIT = f"{LOGIN_ATTEMPTS}/h"
 REGISTER_RATE_LIMIT = f"{REGISTER_ATTEMPTS}/h"
@@ -143,3 +143,36 @@ FIXTURE_DIRS = [BASE_DIR / 'fixtures']
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@easytalk.com'
+
+# ============================
+# Configuração do django-ratelimit
+# ============================
+
+def get_client_ip_for_ratelimit(request):
+    """
+    Retorna o IP do cliente para uso pelo django-ratelimit.
+
+    Prioridade:
+    1) HTTP_X_FORWARDED_FOR (primeiro IP da cadeia)
+    2) HTTP_X_REAL_IP
+    3) REMOTE_ADDR (fallback)
+    """
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if forwarded_for:
+        # Pode vir algo como "ip1, ip2, ip3"; pega o primeiro
+        ip = forwarded_for.split(",")[0].strip()
+        if ip:
+            return ip
+
+    ip = request.META.get("HTTP_X_REAL_IP")
+    if ip:
+        return ip
+
+    ip = request.META.get("REMOTE_ADDR")
+    if ip:
+        return ip
+
+    # Fallback defensivo: evita ImproperlyConfigured se tudo vier vazio
+    return "127.0.0.1"
+
+RATELIMIT_IP_META_KEY = get_client_ip_for_ratelimit
